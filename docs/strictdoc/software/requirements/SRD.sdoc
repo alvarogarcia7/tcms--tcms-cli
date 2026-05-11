@@ -1,0 +1,107 @@
+[DOCUMENT]
+TITLE: Software Requirement Data
+
+[TEXT]
+STATEMENT: >>>
+Describes software high level requirements that will satisfy system requirements, plus derived requirements.
+<<<
+
+[[SECTION]]
+TITLE: System overview
+
+[TEXT]
+STATEMENT: >>>
+Locates the current software component in the system. Describes the allocated system requirements and safety related aspects, and failure conditions.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: High Level Requirements
+
+[TEXT]
+STATEMENT: >>>
+Specifies all software high level requirements
+<<<
+
+[[SECTION]]
+TITLE: Operational and functional requirements
+
+[TEXT]
+STATEMENT: >>>
+For each operating mode, specifies what the software does.
+<<<
+
+[REQUIREMENT]
+UID: HLR-001
+TITLE: HLR title example
+STATEMENT: >>>
+HLR statement example
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: MYSYS-001
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Performance requirements
+
+[TEXT]
+STATEMENT: >>>
+Specifies expected operational performance precision and accuracy.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Timing requirements
+
+[TEXT]
+STATEMENT: >>>
+Specifies expected real time constraints, latencies, timing accuracies.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Memory and hardware resources requirements
+
+[TEXT]
+STATEMENT: >>>
+Specifies the need of hardware resources to perform the software function.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Hardware software interfaces
+
+[TEXT]
+STATEMENT: >>>
+Specifies the input and output devices standards, protocols, formats, timing.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Failure detection requirements
+
+[TEXT]
+STATEMENT: >>>
+Specifies robustness strategy, and failure monitoring and reporting.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Partitioning requirements
+
+[TEXT]
+STATEMENT: >>>
+Specifies resource partitioning constraints and requirements.
+<<<
+
+[[/SECTION]]
+
+[[/SECTION]]

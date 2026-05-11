@@ -1,0 +1,152 @@
+[DOCUMENT]
+TITLE: Software Design Description
+
+[TEXT]
+STATEMENT: >>>
+Defines the software architecture and low level requirements, that will satisfy high level requirements.
+<<<
+
+[[SECTION]]
+TITLE: Overview
+
+[TEXT]
+STATEMENT: >>>
+Detailed description of how the software requirements are allocated to processors and tasks
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Architecture
+
+[TEXT]
+STATEMENT: >>>
+Defines the software structure to achieve the high level requirements
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Interface
+
+[TEXT]
+STATEMENT: >>>
+Describes input and output interfaces
+<<<
+
+[[SECTION]]
+TITLE: Low level requirements
+
+[REQUIREMENT]
+UID: LLR-001
+TITLE: LLR title example
+STATEMENT: >>>
+The software component **imu** shall ....
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-001
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Detailed design
+
+[TEXT]
+STATEMENT: >>>
+TBD
+<<<
+
+[[/SECTION]]
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Dataflow and Control flow
+
+[TEXT]
+STATEMENT: >>>
+Describes dataflow and control flow between software components.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Resource limitations
+
+[TEXT]
+STATEMENT: >>>
+For instance time and memory.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scheduling
+
+[TEXT]
+STATEMENT: >>>
+Describes threads attributes and synchronization.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Partitioning concerns
+
+[TEXT]
+STATEMENT: >>>
+Describes partitioning design concerns.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Software components
+
+[TEXT]
+STATEMENT: >>>
+Detailed description of software components defined in the architecture.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Derived requirements
+
+[TEXT]
+STATEMENT: >>>
+To be analysed by safety analysis process.
+<<<
+
+[REQUIREMENT]
+UID: LLR-002
+TITLE: Derived LLR example
+STATEMENT: >>>
+Derived LLR statement example.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: DERIVED
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Deactivated code
+
+[TEXT]
+STATEMENT: >>>
+Description of the means to deactivate some peace of the code.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Safety related design
+
+[TEXT]
+STATEMENT: >>>
+Rationale of safety related design decisions
+<<<
+
+[[/SECTION]]

@@ -171,3 +171,8 @@ jobs:
         run: |
           export PATH="$HOME/.cargo/bin:$PATH"
           make test-e2e-all
+
+      - name: Validate StrictDoc export
+        run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          make strictdoc-validate

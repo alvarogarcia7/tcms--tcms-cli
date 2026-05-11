@@ -357,6 +357,11 @@ rust:build-test-lint:
       fi
     - echo "===== Final sccache Statistics ====="
     - sccache --show-stats
+
+    # Validate StrictDoc export
+    - echo "===== Validating StrictDoc Export ====="
+    - export PATH="$HOME/.cargo/bin:$PATH"
+    - make strictdoc-validate
   after_script:
     - export PATH="$HOME/.cargo/bin:$PATH"
     - |
