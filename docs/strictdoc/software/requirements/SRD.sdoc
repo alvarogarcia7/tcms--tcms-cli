@@ -453,4 +453,795 @@ RELATIONS:
 - TYPE: Parent
   VALUE: SYS-EXEC-EDT-001
 
+[REQUIREMENT]
+UID: HLR-VER-006
+TITLE: Mismatch Detail Analysis
+STATEMENT: >>>
+The verifier shall provide detailed analysis of output mismatches including character-level
+differences, line-by-line comparisons, and visual highlighting of divergences.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VER-003
+
+[REQUIREMENT]
+UID: HLR-VER-007
+TITLE: Test Result Aggregation
+STATEMENT: >>>
+The verifier shall aggregate verification results from multiple test cases and generate
+comprehensive summary reports with pass/fail statistics and success rates.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VER-004
+
+[REQUIREMENT]
+UID: HLR-VER-008
+TITLE: Verification Logging
+STATEMENT: >>>
+The verifier shall record all verification steps with timestamps and provide detailed
+audit trails of comparison operations.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VER-005
+
+[REQUIREMENT]
+UID: HLR-TC-009
+TITLE: Step Command Validation
+STATEMENT: >>>
+The software shall validate step commands for proper shell syntax and detect potential
+issues before test execution.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TC-003
+
+[REQUIREMENT]
+UID: HLR-TC-010
+TITLE: Variable Capture Patterns
+STATEMENT: >>>
+The software shall support multiple variable capture patterns including regex extraction,
+command substitution, and JSON path selection.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TC-004
+
+[REQUIREMENT]
+UID: HLR-TC-011
+TITLE: Expected Output Specification
+STATEMENT: >>>
+The software shall allow flexible expected output specification with support for exact
+matching, regex patterns, and JSON schema validation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TC-005
+
+[REQUIREMENT]
+UID: HLR-TC-012
+TITLE: Prerequisite Verification
+STATEMENT: >>>
+The software shall verify all prerequisites before test execution and report prerequisite
+failures with detailed reasons.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TC-006
+
+[REQUIREMENT]
+UID: HLR-TC-013
+TITLE: Environment Variable Validation
+STATEMENT: >>>
+The software shall validate that all required environment variables are present and
+correctly formatted before executing tests.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TC-007
+
+[REQUIREMENT]
+UID: HLR-TC-014
+TITLE: Lifecycle Hook Execution
+STATEMENT: >>>
+The software shall execute lifecycle hooks at all eight defined lifecycle points with
+proper error handling and context passing.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TC-008
+
+[REQUIREMENT]
+UID: HLR-YAML-008
+TITLE: YAML Schema Extraction
+STATEMENT: >>>
+The software shall extract schema field from YAML files and use it to automatically
+resolve the appropriate JSON schema for validation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-YAML-001
+
+[REQUIREMENT]
+UID: HLR-YAML-009
+TITLE: YAML Content Type Detection
+STATEMENT: >>>
+The software shall extract and use the type field from YAML files to determine the
+correct processing pipeline for the content.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-YAML-002
+
+[REQUIREMENT]
+UID: HLR-YAML-010
+TITLE: Test Case YAML Deserialization
+STATEMENT: >>>
+The software shall deserialize test case YAML files into structured TestCase objects
+with full support for all nested fields and sequences.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-YAML-003
+
+[REQUIREMENT]
+UID: HLR-YAML-011
+TITLE: JSON Output Escaping
+STATEMENT: >>>
+The software shall properly escape command output for JSON encoding using the most
+robust method available (jq, json-escape, or shell fallback).
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-YAML-004
+
+[REQUIREMENT]
+UID: HLR-YAML-012
+TITLE: Verification Result Serialization
+STATEMENT: >>>
+The software shall serialize verification results to YAML format with all metadata,
+step results, and comparison details preserved.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-YAML-005
+
+[REQUIREMENT]
+UID: HLR-YAML-013
+TITLE: Container YAML Generation
+STATEMENT: >>>
+The software shall generate container YAML files that aggregate test metadata and
+verification results for documentation generation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-YAML-006
+
+[REQUIREMENT]
+UID: HLR-YAML-014
+TITLE: YAML Data Integrity
+STATEMENT: >>>
+The software shall preserve all test case information through YAML load-save cycles
+without loss, corruption, or modification.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-YAML-007
+
+[REQUIREMENT]
+UID: HLR-SCHEMA-009
+TITLE: Schema File Caching
+STATEMENT: >>>
+The software shall load, cache, and efficiently serve JSON schema files for validation
+with proper invalidation on schema changes.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SCHEMA-001
+
+[REQUIREMENT]
+UID: HLR-SCHEMA-010
+TITLE: Schema Constraint Validation
+STATEMENT: >>>
+The software shall validate YAML content against all schema constraints including
+required properties, types, and value restrictions.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SCHEMA-002
+
+[REQUIREMENT]
+UID: HLR-SCHEMA-011
+TITLE: Recursive Structure Validation
+STATEMENT: >>>
+The software shall recursively validate nested objects such as sequences and steps
+against their respective schema definitions.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SCHEMA-003
+
+[REQUIREMENT]
+UID: HLR-SCHEMA-012
+TITLE: Pattern Syntax Validation
+STATEMENT: >>>
+The software shall validate regex patterns and variable name formats for syntactic
+correctness according to predefined pattern specifications.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SCHEMA-004
+
+[REQUIREMENT]
+UID: HLR-SCHEMA-013
+TITLE: Enumeration Constraint Validation
+STATEMENT: >>>
+The software shall validate that enumerated field values match allowed enum sets
+defined in the schema with detailed error reporting.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SCHEMA-005
+
+[REQUIREMENT]
+UID: HLR-SCHEMA-014
+TITLE: Execution Log Format Validation
+STATEMENT: >>>
+The software shall use execution log schema to validate JSON execution output structure
+including all required fields and data types.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SCHEMA-006
+
+[REQUIREMENT]
+UID: HLR-SCHEMA-015
+TITLE: Verification Result Format Validation
+STATEMENT: >>>
+The software shall use verification result schema to validate container YAML structure
+and ensure compatibility with documentation generators.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SCHEMA-007
+
+[REQUIREMENT]
+UID: HLR-SCHEMA-016
+TITLE: Schema Error Reporting
+STATEMENT: >>>
+The software shall report validation errors with specific field paths, constraint types,
+expected values, and actual values for debugging.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SCHEMA-008
+
+[REQUIREMENT]
+UID: HLR-JE-001
+TITLE: JSON String Escaping Implementation
+STATEMENT: >>>
+The json-escape component shall read plain text from stdin and produce valid JSON-escaped
+strings suitable for embedding in JSON field values.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-JE-001
+
+[REQUIREMENT]
+UID: HLR-JE-002
+TITLE: Special Character Escape Handling
+STATEMENT: >>>
+The escaping algorithm shall handle all JSON-required escape sequences including quotes,
+backslashes, newlines, tabs, and control codes.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-JE-002
+
+[REQUIREMENT]
+UID: HLR-J2Y-001
+TITLE: JSON Parsing and Structure Detection
+STATEMENT: >>>
+The converter shall parse JSON input and detect the structure type (batch array, container
+object, or single test case) for appropriate handling.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-J2Y-001
+
+[REQUIREMENT]
+UID: HLR-J2Y-002
+TITLE: YAML Output File Generation
+STATEMENT: >>>
+The converter shall create properly formatted YAML output files with correct naming
+conventions based on test_case_id and directory structure.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-J2Y-003
+
+[REQUIREMENT]
+UID: HLR-VJ-001
+TITLE: JSON Schema Validation Engine
+STATEMENT: >>>
+The validator shall compile and apply JSON schemas to validate payload documents
+against defined constraints and required properties.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VJ-001
+
+[REQUIREMENT]
+UID: HLR-VJ-002
+TITLE: Schema Path Resolution
+STATEMENT: >>>
+The auto-resolution mechanism shall extract the schema field from JSON payloads and
+resolve relative paths to locate actual schema files.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VJ-002
+
+[REQUIREMENT]
+UID: HLR-VJ-003
+TITLE: Constraint Violation Reporting
+STATEMENT: >>>
+On validation failure, the validator shall report each constraint violation with JSON
+pointer path, actual value, and expected constraint description.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VJ-004
+
+[REQUIREMENT]
+UID: HLR-VY-001
+TITLE: Multiple File Validation Coordination
+STATEMENT: >>>
+The validator shall coordinate validation of multiple YAML files with aggregated results
+and summary statistics reporting.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VY-009
+
+[REQUIREMENT]
+UID: HLR-VY-002
+TITLE: Incremental Validation Processing
+STATEMENT: >>>
+The validator shall support incremental validation for large test suites with change
+detection and targeted re-validation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VY-010
+
+[REQUIREMENT]
+UID: HLR-TP-001
+TITLE: Container YAML Structure Validation
+STATEMENT: >>>
+The compatibility checker shall validate container YAML structure including test_results
+array and all nested test result objects.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TP-011
+
+[REQUIREMENT]
+UID: HLR-TP-002
+TITLE: Batch File Processing Framework
+STATEMENT: >>>
+The batch processor shall discover YAML files matching patterns, validate each independently,
+collect results, and generate aggregated reports.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TP-012
+
+[REQUIREMENT]
+UID: HLR-TEX-001
+TITLE: Bash Script Generation from YAML
+STATEMENT: >>>
+The generator shall parse YAML test cases and generate bash scripts with proper variable
+substitution, command execution, and output capture.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TEX-011
+
+[REQUIREMENT]
+UID: HLR-TEX-002
+TITLE: Test Execution and JSON Logging
+STATEMENT: >>>
+The executor shall run generated scripts, capture output with timestamps, and serialize
+results to JSON format for verification.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TEX-012
+
+[REQUIREMENT]
+UID: HLR-TO-001
+TITLE: Parallel Test Execution Management
+STATEMENT: >>>
+The orchestrator shall manage worker thread pool, distribute test cases, coordinate
+execution, and aggregate results.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TO-009
+
+[REQUIREMENT]
+UID: HLR-TO-002
+TITLE: Exponential Backoff Retry Engine
+STATEMENT: >>>
+The retry engine shall implement configurable backoff delays, track retry attempts,
+and respect maximum retry limits.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TO-010
+
+[REQUIREMENT]
+UID: HLR-TRM-001
+TITLE: Test Run Record Persistence
+STATEMENT: >>>
+The manager shall serialize and deserialize test run objects with execution metadata
+and timestamp tracking.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TRV-007
+
+[REQUIREMENT]
+UID: HLR-TRM-002
+TITLE: Test Run Retrieval and Filtering
+STATEMENT: >>>
+The retrieval system shall load all test runs from storage, apply filter criteria,
+and organize results by test case.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TRV-008
+
+[REQUIREMENT]
+UID: HLR-TVR-001
+TITLE: Execution Log Parsing and Loading
+STATEMENT: >>>
+The parser shall read and deserialize JSON execution logs extracting test metadata
+and step results into structured format.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TVR-008
+
+[REQUIREMENT]
+UID: HLR-TVR-002
+TITLE: Batch Verification Coordination
+STATEMENT: >>>
+The coordinator shall process multiple execution logs, verify each against test cases,
+and aggregate verification results.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TVR-009
+
+[REQUIREMENT]
+UID: HLR-SC-001
+TITLE: Output Normalization Pipeline
+STATEMENT: >>>
+The cleaner shall identify and remove ANSI escape sequences and control characters
+from script capture output.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SC-006
+
+[REQUIREMENT]
+UID: HLR-ED-001
+TITLE: Interactive Terminal UI Framework
+STATEMENT: >>>
+The editor shall implement interactive terminal interface using curses library with
+menus, input fields, and real-time validation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-ED-011
+
+[REQUIREMENT]
+UID: HLR-ED-002
+TITLE: Test Case State Management
+STATEMENT: >>>
+The manager shall synchronize UI state with YAML file content and detect unsaved changes.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-ED-012
+
+[REQUIREMENT]
+UID: HLR-ED-003
+TITLE: Fuzzy Search Engine
+STATEMENT: >>>
+The search engine shall implement fuzzy matching for test case selection with configurable
+scoring.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-ED-013
+
+[REQUIREMENT]
+UID: HLR-AV-001
+TITLE: SHA-256 Hash Computation
+STATEMENT: >>>
+The hasher shall compute SHA-256 digest of YAML file content and format result in
+hex notation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-AV-009
+
+[REQUIREMENT]
+UID: HLR-AV-002
+TITLE: ECDSA P-521 Signature Generation
+STATEMENT: >>>
+The signer shall sign hashes using P-521 ECDSA private key and encode signature in
+base64 format for JSON serialization.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-AV-010
+
+[REQUIREMENT]
+UID: HLR-INT-001
+TITLE: Standard Data Format Specification
+STATEMENT: >>>
+The framework shall define standard YAML/JSON structures for data exchange between
+executables with documented schemas.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-INT-001
+
+[REQUIREMENT]
+UID: HLR-INT-002
+TITLE: Unified Error Code Mapping
+STATEMENT: >>>
+The error mapping shall define consistent exit codes: 0=success, 1=validation error,
+2=runtime error, 3=configuration error.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-INT-002
+
+[REQUIREMENT]
+UID: HLR-INT-003
+TITLE: Logging Framework Abstraction Layer
+STATEMENT: >>>
+The logging layer shall abstract env_logger with standard functions and support
+RUST_LOG environment variable.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-INT-003
+
+[REQUIREMENT]
+UID: HLR-INT-004
+TITLE: Configuration File Standardization
+STATEMENT: >>>
+All configuration files shall use TOML or YAML format with documented schemas for
+consistency.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-INT-004
+
+[REQUIREMENT]
+UID: HLR-INT-005
+TITLE: Help and Version Support
+STATEMENT: >>>
+All executables shall provide comprehensive help via --help and semantic versioning
+via --version.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-INT-005
+
+[REQUIREMENT]
+UID: HLR-PERF-001
+TITLE: Streaming and Memory Efficiency
+STATEMENT: >>>
+Large file handling shall use streaming readers to process content in chunks rather
+than loading entire files into memory.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-PERF-001
+
+[REQUIREMENT]
+UID: HLR-PERF-002
+TITLE: Parallel Processing Optimization
+STATEMENT: >>>
+Parallel execution shall minimize synchronization overhead and implement dynamic load
+balancing strategies.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-PERF-002
+
+[REQUIREMENT]
+UID: HLR-PERF-003
+TITLE: Incremental Compilation Caching
+STATEMENT: >>>
+Build system shall leverage incremental compilation caching for faster builds and
+dependency-based rebuild optimization.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-PERF-003
+
+[REQUIREMENT]
+UID: HLR-REL-001
+TITLE: Graceful Error Handling Implementation
+STATEMENT: >>>
+All components shall implement comprehensive try-catch blocks and return descriptive
+error messages.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REL-001
+
+[REQUIREMENT]
+UID: HLR-REL-002
+TITLE: Atomic File Write Operations
+STATEMENT: >>>
+File write operations shall use atomic patterns: write to temporary file, then rename
+to target to ensure consistency.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REL-002
+
+[REQUIREMENT]
+UID: HLR-REL-003
+TITLE: Timeout and Resource Management
+STATEMENT: >>>
+Long-running operations shall implement timeout handlers with proper cleanup of files,
+processes, and memory.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REL-003
+
+[REQUIREMENT]
+UID: HLR-EXEC-VAL-001
+TITLE: YAML Validator CLI Interface
+STATEMENT: >>>
+The validate-yaml executable shall provide comprehensive command-line interface for
+YAML file validation with multiple output formats.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-VAL-001
+
+[REQUIREMENT]
+UID: HLR-EXEC-VAL-002
+TITLE: JSON Validator CLI Interface
+STATEMENT: >>>
+The validate-json executable shall provide command-line interface for JSON validation
+with schema auto-resolution and detailed error reporting.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-VAL-002
+
+[REQUIREMENT]
+UID: HLR-EXEC-GEN-001
+TITLE: Test Executor CLI Commands
+STATEMENT: >>>
+The test-executor executable shall provide commands for script generation, execution,
+variable hydration, and dry-run validation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-GEN-001
+
+[REQUIREMENT]
+UID: HLR-EXEC-GEN-002
+TITLE: JSON Escaper Utility CLI
+STATEMENT: >>>
+The json-escape executable shall read from stdin and output JSON-escaped text with
+optional test mode and verbose logging.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-GEN-002
+
+[REQUIREMENT]
+UID: HLR-EXEC-GEN-003
+TITLE: JSON to YAML Converter CLI
+STATEMENT: >>>
+The json-to-yaml executable shall convert JSON input to YAML output format with format
+detection and batch processing capability.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-GEN-003
+
+[REQUIREMENT]
+UID: HLR-EXEC-GEN-004
+TITLE: Script Cleanup Utility CLI
+STATEMENT: >>>
+The script-cleanup executable shall remove ANSI sequences and control characters from
+captured script output with pattern-based filtering.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-GEN-004
+
+[REQUIREMENT]
+UID: HLR-EXEC-ORCH-001
+TITLE: Test Orchestrator CLI
+STATEMENT: >>>
+The test-orchestrator executable shall manage test execution coordination with parallel
+processing, retry management, and progress reporting.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-ORCH-001
+
+[REQUIREMENT]
+UID: HLR-EXEC-ORCH-002
+TITLE: Testcase Manager CLI
+STATEMENT: >>>
+The testcase-manager executable shall provide test case lifecycle management commands
+for CRUD operations and batch processing.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-ORCH-002
+
+[REQUIREMENT]
+UID: HLR-EXEC-ORCH-003
+TITLE: Test Run Manager CLI
+STATEMENT: >>>
+The test-run-manager executable shall manage test run execution and status tracking
+with historical record management.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-ORCH-003
+
+[REQUIREMENT]
+UID: HLR-EXEC-VER-001
+TITLE: Verifier CLI Interface
+STATEMENT: >>>
+The verifier executable shall provide verification commands with result generation in
+multiple output formats (YAML, JSON, JUnit XML).
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-VER-001
+
+[REQUIREMENT]
+UID: HLR-EXEC-VER-002
+TITLE: TPDG Compatibility Tool CLI
+STATEMENT: >>>
+The tpdg-compat executable shall validate container YAML compatibility with test-plan-doc-gen
+tool and report compatibility issues.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-VER-002
+
+[REQUIREMENT]
+UID: HLR-EXEC-EDT-001
+TITLE: Editor Terminal UI
+STATEMENT: >>>
+The editor executable shall provide interactive terminal UI for test case editing with
+file management and validation feedback.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-EDT-001
+
 [[/SECTION]]
