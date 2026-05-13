@@ -1,107 +1,331 @@
 [DOCUMENT]
-TITLE: Software Requirement Data
-
-[TEXT]
-STATEMENT: >>>
-Describes software high level requirements that will satisfy system requirements, plus derived requirements.
-<<<
+TITLE: Software Requirements Data
+PREFIX: HLR-
 
 [[SECTION]]
-TITLE: System overview
-
-[TEXT]
-STATEMENT: >>>
-Locates the current software component in the system. Describes the allocated system requirements and safety related aspects, and failure conditions.
-<<<
-
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: High Level Requirements
-
-[TEXT]
-STATEMENT: >>>
-Specifies all software high level requirements
-<<<
-
-[[SECTION]]
-TITLE: Operational and functional requirements
-
-[TEXT]
-STATEMENT: >>>
-For each operating mode, specifies what the software does.
-<<<
+TITLE: Verifier Component Requirements
 
 [REQUIREMENT]
-UID: HLR-001
-TITLE: HLR title example
+UID: HLR-VER-001
+TITLE: Execution Log Loading
 STATEMENT: >>>
-HLR statement example
+The verifier shall load execution logs from JSON files and parse them into in-memory
+structures for comparison against test case definitions.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: MYSYS-001
+  VALUE: SYS-VER-001
+
+[REQUIREMENT]
+UID: HLR-VER-002
+TITLE: Output Pattern Matching
+STATEMENT: >>>
+The verifier shall compare actual output against expected patterns using exact match,
+regex match, and JSON schema validation strategies.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VER-002
+
+[REQUIREMENT]
+UID: HLR-VER-003
+TITLE: Exit Code Verification
+STATEMENT: >>>
+The verifier shall verify step exit codes match expected values with optional range
+or set matching.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VER-001
+
+[REQUIREMENT]
+UID: HLR-VER-004
+TITLE: Detailed Mismatch Reporting
+STATEMENT: >>>
+When verification fails, the verifier shall report expected vs actual values with
+character-level highlighting of differences.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VER-003
+
+[REQUIREMENT]
+UID: HLR-VER-005
+TITLE: Batch Verification Orchestration
+STATEMENT: >>>
+The verifier shall orchestrate verification of multiple execution logs with aggregated
+pass/fail counts and summary statistics.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VER-004
 
 [[/SECTION]]
 
 [[SECTION]]
-TITLE: Performance requirements
+TITLE: Test Case Content Requirements
 
-[TEXT]
+[REQUIREMENT]
+UID: HLR-TC-001
+TITLE: Test Case Parsing
 STATEMENT: >>>
-Specifies expected operational performance precision and accuracy.
+The software shall parse test case YAML files extracting test_case_id, title,
+sequences, steps, and metadata fields.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TC-001
+
+[REQUIREMENT]
+UID: HLR-TC-002
+TITLE: Sequence Organization
+STATEMENT: >>>
+The software shall organize test steps into sequences with proper scoping of
+variables and execution order guarantees.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TC-002
+
+[REQUIREMENT]
+UID: HLR-TC-003
+TITLE: Step Command Storage
+STATEMENT: >>>
+The software shall store and retrieve test step commands with command metadata
+(description, expected output, exit code).
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TC-003
+
+[REQUIREMENT]
+UID: HLR-TC-004
+TITLE: Variable Capture Configuration
+STATEMENT: >>>
+The software shall support regex-based and command-based variable capture with
+specification of variable names and extraction patterns.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TC-004
+
+[REQUIREMENT]
+UID: HLR-TC-005
+TITLE: Expected Output Configuration
+STATEMENT: >>>
+The software shall support configurable expected output with match type (exact, regex,
+schema), comparison values, and optional flags.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TC-005
+
+[REQUIREMENT]
+UID: HLR-TC-006
+TITLE: Prerequisite Management
+STATEMENT: >>>
+The software shall manage test prerequisites with type (manual/automatic), description,
+verification commands, and completion status.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TC-006
+
+[REQUIREMENT]
+UID: HLR-TC-007
+TITLE: Environment Variable Management
+STATEMENT: >>>
+The software shall manage required and optional environment variables with defaults,
+validation, and substitution into test commands.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TC-007
+
+[REQUIREMENT]
+UID: HLR-TC-008
+TITLE: Hook Point Configuration
+STATEMENT: >>>
+The software shall support configurable lifecycle hooks at eight execution points with
+command specifications and error handling behavior.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TC-008
 
 [[/SECTION]]
 
 [[SECTION]]
-TITLE: Timing requirements
+TITLE: YAML Input/Output Requirements
 
-[TEXT]
+[REQUIREMENT]
+UID: HLR-YAML-001
+TITLE: YAML Schema Resolution
 STATEMENT: >>>
-Specifies expected real time constraints, latencies, timing accuracies.
+The software shall extract the schema field from YAML files and resolve it to the
+appropriate JSON schema file for validation.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-YAML-001
+
+[REQUIREMENT]
+UID: HLR-YAML-002
+TITLE: YAML Type Detection
+STATEMENT: >>>
+The software shall extract the type field from YAML files to identify the content
+type for appropriate processing and validation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-YAML-002
+
+[REQUIREMENT]
+UID: HLR-YAML-003
+TITLE: Test Case YAML Loading
+STATEMENT: >>>
+The software shall deserialize test case YAML to TestCase structures with proper
+handling of all supported fields and nesting.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-YAML-003
+
+[REQUIREMENT]
+UID: HLR-YAML-004
+TITLE: Execution Log JSON Escaping
+STATEMENT: >>>
+The software shall properly escape command output for JSON encoding using jq, custom
+escaper, or shell fallback methods.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-YAML-004
+
+[REQUIREMENT]
+UID: HLR-YAML-005
+TITLE: Verification Result YAML Generation
+STATEMENT: >>>
+The software shall serialize verification results to YAML format with structured
+output for all test sequences and steps.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-YAML-005
+
+[REQUIREMENT]
+UID: HLR-YAML-006
+TITLE: Container YAML Generation
+STATEMENT: >>>
+The software shall generate container YAML aggregating test metadata and verification
+results for documentation generation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-YAML-006
+
+[REQUIREMENT]
+UID: HLR-YAML-007
+TITLE: YAML Round-trip Preservation
+STATEMENT: >>>
+The software shall preserve test case information through YAML load/save cycles
+without loss or modification.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-YAML-007
 
 [[/SECTION]]
 
 [[SECTION]]
-TITLE: Memory and hardware resources requirements
+TITLE: Test Schema Requirements
 
-[TEXT]
+[REQUIREMENT]
+UID: HLR-SCHEMA-001
+TITLE: Schema File Management
 STATEMENT: >>>
-Specifies the need of hardware resources to perform the software function.
+The software shall load, cache, and serve JSON schema files for validation with
+proper error handling for missing or malformed schemas.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SCHEMA-001
 
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: Hardware software interfaces
-
-[TEXT]
+[REQUIREMENT]
+UID: HLR-SCHEMA-002
+TITLE: Schema Constraint Enforcement
 STATEMENT: >>>
-Specifies the input and output devices standards, protocols, formats, timing.
+The software shall validate YAML content against schema constraints including required
+fields, type constraints, and value restrictions.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SCHEMA-002
 
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: Failure detection requirements
-
-[TEXT]
+[REQUIREMENT]
+UID: HLR-SCHEMA-003
+TITLE: Nested Structure Validation
 STATEMENT: >>>
-Specifies robustness strategy, and failure monitoring and reporting.
+The software shall recursively validate nested objects (sequences, steps, verifications)
+against their schema definitions.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SCHEMA-003
 
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: Partitioning requirements
-
-[TEXT]
+[REQUIREMENT]
+UID: HLR-SCHEMA-004
+TITLE: Pattern Validation
 STATEMENT: >>>
-Specifies resource partitioning constraints and requirements.
+The software shall validate regex patterns and variable name formats against predefined
+patterns to ensure syntactic correctness.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SCHEMA-004
 
-[[/SECTION]]
+[REQUIREMENT]
+UID: HLR-SCHEMA-005
+TITLE: Enumeration Validation
+STATEMENT: >>>
+The software shall validate enumerated field values against allowed enum sets defined
+in the schema.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SCHEMA-005
+
+[REQUIREMENT]
+UID: HLR-SCHEMA-006
+TITLE: Execution Log Schema Support
+STATEMENT: >>>
+The software shall use execution log schema to validate JSON execution output structure
+and required fields.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SCHEMA-006
+
+[REQUIREMENT]
+UID: HLR-SCHEMA-007
+TITLE: Verification Result Schema Support
+STATEMENT: >>>
+The software shall use verification result schema to validate container YAML structure
+and compatibility.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SCHEMA-007
+
+[REQUIREMENT]
+UID: HLR-SCHEMA-008
+TITLE: Validation Error Reporting
+STATEMENT: >>>
+The software shall report validation errors with specific field paths, constraint type,
+expected value, and actual value.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-SCHEMA-008
 
 [[/SECTION]]

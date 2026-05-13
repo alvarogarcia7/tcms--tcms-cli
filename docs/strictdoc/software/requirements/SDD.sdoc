@@ -1,152 +1,330 @@
 [DOCUMENT]
 TITLE: Software Design Description
-
-[TEXT]
-STATEMENT: >>>
-Defines the software architecture and low level requirements, that will satisfy high level requirements.
-<<<
+PREFIX: LLR-
 
 [[SECTION]]
-TITLE: Overview
-
-[TEXT]
-STATEMENT: >>>
-Detailed description of how the software requirements are allocated to processors and tasks
-<<<
-
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: Architecture
-
-[TEXT]
-STATEMENT: >>>
-Defines the software structure to achieve the high level requirements
-<<<
-
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: Interface
-
-[TEXT]
-STATEMENT: >>>
-Describes input and output interfaces
-<<<
-
-[[SECTION]]
-TITLE: Low level requirements
+TITLE: Verifier Component Design
 
 [REQUIREMENT]
-UID: LLR-001
-TITLE: LLR title example
+UID: LLR-VER-001
+TITLE: ExecutionLogVerifier Struct
 STATEMENT: >>>
-The software component **imu** shall ....
+Implement ExecutionLogVerifier in testcase-verification crate with methods for
+loading, parsing, and comparing execution logs against test cases.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: HLR-001
-
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: Detailed design
-
-[TEXT]
-STATEMENT: >>>
-TBD
-<<<
-
-[[/SECTION]]
-
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: Dataflow and Control flow
-
-[TEXT]
-STATEMENT: >>>
-Describes dataflow and control flow between software components.
-<<<
-
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: Resource limitations
-
-[TEXT]
-STATEMENT: >>>
-For instance time and memory.
-<<<
-
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: Scheduling
-
-[TEXT]
-STATEMENT: >>>
-Describes threads attributes and synchronization.
-<<<
-
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: Partitioning concerns
-
-[TEXT]
-STATEMENT: >>>
-Describes partitioning design concerns.
-<<<
-
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: Software components
-
-[TEXT]
-STATEMENT: >>>
-Detailed description of software components defined in the architecture.
-<<<
-
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: Derived requirements
-
-[TEXT]
-STATEMENT: >>>
-To be analysed by safety analysis process.
-<<<
+  VALUE: HLR-VER-001
 
 [REQUIREMENT]
-UID: LLR-002
-TITLE: Derived LLR example
+UID: LLR-VER-002
+TITLE: Pattern Matching Engine
 STATEMENT: >>>
-Derived LLR statement example.
+Implement output matching strategies in testcase-verification: exact match, regex
+compilation and matching, JSON schema validation.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: DERIVED
+  VALUE: HLR-VER-002
+
+[REQUIREMENT]
+UID: LLR-VER-003
+TITLE: Exit Code Comparator
+STATEMENT: >>>
+Implement exit code verification comparing actual vs expected with support for
+numeric comparison and optional range/set matching.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-VER-003
+
+[REQUIREMENT]
+UID: LLR-VER-004
+TITLE: Mismatch Detail Generator
+STATEMENT: >>>
+Implement mismatch reporting showing line-by-line diffs and character-level
+highlighting of actual vs expected output.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-VER-004
+
+[REQUIREMENT]
+UID: LLR-VER-005
+TITLE: Verifier Orchestrator
+STATEMENT: >>>
+Implement orchestration in testcase-orchestration crate processing multiple
+execution logs and aggregating results.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-VER-005
 
 [[/SECTION]]
 
 [[SECTION]]
-TITLE: Deactivated code
+TITLE: Test Case Content Design
 
-[TEXT]
+[REQUIREMENT]
+UID: LLR-TC-001
+TITLE: TestCase Model Structure
 STATEMENT: >>>
-Description of the means to deactivate some peace of the code.
+Define TestCase struct in testcase-models with fields: test_case_id, title,
+description, sequences, prerequisites, environment_variables, hooks.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-TC-001
+
+[REQUIREMENT]
+UID: LLR-TC-002
+TITLE: TestSequence Model
+STATEMENT: >>>
+Define TestSequence struct containing sequence_id, name, steps list, and
+variable scope management.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-TC-002
+
+[REQUIREMENT]
+UID: LLR-TC-003
+TITLE: TestStep Model
+STATEMENT: >>>
+Define TestStep struct with description, command, expected_exit_code,
+expected_output, captured_variables fields.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-TC-003
+
+[REQUIREMENT]
+UID: LLR-TC-004
+TITLE: Variable Capture Handler
+STATEMENT: >>>
+Implement variable capture in testcase-execution with regex extraction and
+command substitution.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-TC-004
+
+[REQUIREMENT]
+UID: LLR-TC-005
+TITLE: Expected Output Specification
+STATEMENT: >>>
+Implement ExpectedOutput struct supporting exact string, regex pattern, and
+JSON schema matching types.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-TC-005
+
+[REQUIREMENT]
+UID: LLR-TC-006
+TITLE: Prerequisite Handler
+STATEMENT: >>>
+Implement prerequisite management in testcase-execution for manual and
+automatic prerequisites with verification.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-TC-006
+
+[REQUIREMENT]
+UID: LLR-TC-007
+TITLE: Environment Variable Hydration
+STATEMENT: >>>
+Implement environment variable loading and validation in testcase-execution
+with support for required/optional with defaults.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-TC-007
+
+[REQUIREMENT]
+UID: LLR-TC-008
+TITLE: Lifecycle Hook Executor
+STATEMENT: >>>
+Implement hook execution in testcase-execution at eight lifecycle points with
+context passing and error handling.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-TC-008
 
 [[/SECTION]]
 
 [[SECTION]]
-TITLE: Safety related design
+TITLE: YAML Input/Output Design
 
-[TEXT]
+[REQUIREMENT]
+UID: LLR-YAML-001
+TITLE: Schema URI Resolver
 STATEMENT: >>>
-Rationale of safety related design decisions
+Implement schema field extraction and URI resolution in testcase-common
+converting URIs to file paths.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-YAML-001
+
+[REQUIREMENT]
+UID: LLR-YAML-002
+TITLE: Type Field Extractor
+STATEMENT: >>>
+Implement type field extraction from YAML for content type identification
+and routing to appropriate handlers.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-YAML-002
+
+[REQUIREMENT]
+UID: LLR-YAML-003
+TITLE: YAML Deserializer
+STATEMENT: >>>
+Implement YAML deserialization in testcase-common using serde_yaml with
+proper error context for parse failures.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-YAML-003
+
+[REQUIREMENT]
+UID: LLR-YAML-004
+TITLE: JSON Escaper
+STATEMENT: >>>
+Implement JSON output escaping in bash-eval with methods: jq command pipe,
+json-escape binary call, shell sed fallback.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-YAML-004
+
+[REQUIREMENT]
+UID: LLR-YAML-005
+TITLE: YAML Serializer for Results
+STATEMENT: >>>
+Implement YAML serialization in testcase-verification for verification
+results with proper formatting.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-YAML-005
+
+[REQUIREMENT]
+UID: LLR-YAML-006
+TITLE: Container YAML Builder
+STATEMENT: >>>
+Implement container YAML generation in testcase-verification aggregating
+test data and verification results.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-YAML-006
+
+[REQUIREMENT]
+UID: LLR-YAML-007
+TITLE: Round-trip Preservation
+STATEMENT: >>>
+Ensure all TestCase fields are preserved through YAML load/serialize cycles
+without information loss.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-YAML-007
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Test Schema Design
+
+[REQUIREMENT]
+UID: LLR-SCHEMA-001
+TITLE: Schema Loader
+STATEMENT: >>>
+Implement schema file loading and caching in testcase-validation from
+schemas/ directory.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-SCHEMA-001
+
+[REQUIREMENT]
+UID: LLR-SCHEMA-002
+TITLE: jsonschema Validator
+STATEMENT: >>>
+Use jsonschema crate in testcase-validation for constraint validation with
+detailed error reporting.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-SCHEMA-002
+
+[REQUIREMENT]
+UID: LLR-SCHEMA-003
+TITLE: Recursive Validator
+STATEMENT: >>>
+Implement recursive validation traversing nested objects and validating
+against nested schema definitions.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-SCHEMA-003
+
+[REQUIREMENT]
+UID: LLR-SCHEMA-004
+TITLE: Regex Pattern Validator
+STATEMENT: >>>
+Validate regex patterns and variable names against permitted formats before
+accepting test case content.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-SCHEMA-004
+
+[REQUIREMENT]
+UID: LLR-SCHEMA-005
+TITLE: Enum Validator
+STATEMENT: >>>
+Validate enumerated field values (status, match_type, hook_type) against
+defined enum sets in schema.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-SCHEMA-005
+
+[REQUIREMENT]
+UID: LLR-SCHEMA-006
+TITLE: Execution Log Validator
+STATEMENT: >>>
+Validate JSON execution logs against execution-log.schema.json in schema validation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-SCHEMA-006
+
+[REQUIREMENT]
+UID: LLR-SCHEMA-007
+TITLE: Container Validator
+STATEMENT: >>>
+Validate container YAML against container.schema.json before use in
+documentation generation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-SCHEMA-007
+
+[REQUIREMENT]
+UID: LLR-SCHEMA-008
+TITLE: Error Message Formatter
+STATEMENT: >>>
+Implement validation error reporting with field path, constraint type,
+expected value, and actual value.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-SCHEMA-008
 
 [[/SECTION]]

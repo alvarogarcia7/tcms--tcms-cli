@@ -6,32 +6,255 @@ TITLE: System Overview
 
 [TEXT]
 STATEMENT: >>>
-Description of the system intended function (what the system does).
+The Test Case Management System (TCMS) is a declarative test case framework that converts
+YAML test case definitions into executable bash scripts, captures execution results, and
+verifies outcomes against expected outputs. The system supports complex test sequences with
+variable capture, conditional verification, and comprehensive documentation generation for
+safety-critical applications.
 <<<
 
 [[/SECTION]]
 
 [[SECTION]]
-TITLE: System Requirements
+TITLE: Verifier Requirements
 
 [REQUIREMENT]
-UID: DERIVED
-TITLE: Derived Requirement Placeholder
+UID: SYS-VER-001
+TITLE: Execution Log Verification
 STATEMENT: >>>
-All software requirements linked to this DERIVED requirement shall be analysed by safety assessment process.
-<<<
-RATIONALE: >>>
-Derived requirement placeholder
+The system shall verify execution logs against test case definitions by comparing actual
+output and exit codes with expected values.
 <<<
 
 [REQUIREMENT]
-UID: MYSYS-001
-TITLE: Inertial Data
+UID: SYS-VER-002
+TITLE: Output Matching Strategies
 STATEMENT: >>>
-The system MYSYS shall provide inertial aircraft attitude
+The system shall support exact string matching, regex pattern matching, and JSON schema
+validation for output verification.
 <<<
-RATIONALE: >>>
-Inertial data are required for piloting, i.e. short term aircraft control.
+
+[REQUIREMENT]
+UID: SYS-VER-003
+TITLE: Verification Result Generation
+STATEMENT: >>>
+The system shall generate verification results in YAML format containing pass/fail status,
+mismatch details, and step-by-step verification outcomes.
+<<<
+
+[REQUIREMENT]
+UID: SYS-VER-004
+TITLE: Batch Verification
+STATEMENT: >>>
+The system shall verify multiple test case execution logs in sequence and aggregate results
+with summary statistics.
+<<<
+
+[REQUIREMENT]
+UID: SYS-VER-005
+TITLE: Verification Metadata
+STATEMENT: >>>
+The system shall include verification metadata including test ID, execution timestamp,
+environment information, and detailed step results in verification output.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Test Case Content Requirements
+
+[REQUIREMENT]
+UID: SYS-TC-001
+TITLE: Test Case Metadata
+STATEMENT: >>>
+Test cases shall include test_case_id, title, description, and optional tags for
+organization and filtering.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TC-002
+TITLE: Test Sequences
+STATEMENT: >>>
+Test cases shall support multiple test sequences, each containing sequence_id, name,
+and an ordered list of test steps.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TC-003
+TITLE: Test Steps
+STATEMENT: >>>
+Test steps shall specify description, command to execute, expected exit code, expected
+output patterns, and variable capture specifications.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TC-004
+TITLE: Variable Capture
+STATEMENT: >>>
+Test steps shall support capturing output values using regex patterns and bash command
+execution for use in subsequent steps.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TC-005
+TITLE: Expected Output Specification
+STATEMENT: >>>
+Expected output shall support exact string values, regex patterns, and JSON schema
+validation with optional partial matching flags.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TC-006
+TITLE: Prerequisites
+STATEMENT: >>>
+Test cases shall support manual and automatic prerequisites with verification commands
+to confirm prerequisite completion.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TC-007
+TITLE: Environment Variables
+STATEMENT: >>>
+Test cases shall specify required and optional environment variables with defaults and
+provide substitution values in test steps.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TC-008
+TITLE: Lifecycle Hooks
+STATEMENT: >>>
+Test cases shall support optional hooks at script_start, setup_test, before_sequence,
+after_sequence, before_step, after_step, teardown_test, and script_end execution points.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: YAML Input/Output Requirements
+
+[REQUIREMENT]
+UID: SYS-YAML-001
+TITLE: YAML Schema Field
+STATEMENT: >>>
+All YAML test case files shall include a schema field at the root level identifying
+the schema URI for validation.
+<<<
+
+[REQUIREMENT]
+UID: SYS-YAML-002
+TITLE: YAML Type Field
+STATEMENT: >>>
+All YAML test case files shall include a type field identifying the content type
+(e.g., test-case, verification-result, container).
+<<<
+
+[REQUIREMENT]
+UID: SYS-YAML-003
+TITLE: Test Case YAML Structure
+STATEMENT: >>>
+Test case YAML files shall be valid YAML with structure conforming to test-case
+schema including sequences, steps, verifications, and metadata.
+<<<
+
+[REQUIREMENT]
+UID: SYS-YAML-004
+TITLE: Execution Log JSON Output
+STATEMENT: >>>
+Generated execution logs shall be in JSON format with proper escaping of special
+characters, newlines, and control codes.
+<<<
+
+[REQUIREMENT]
+UID: SYS-YAML-005
+TITLE: Verification Result YAML Output
+STATEMENT: >>>
+Verification results shall be output as YAML with structured results for each test
+sequence and step.
+<<<
+
+[REQUIREMENT]
+UID: SYS-YAML-006
+TITLE: Container YAML Format
+STATEMENT: >>>
+Container YAML shall aggregate multiple test results with metadata, test execution
+summary, and detailed verification results.
+<<<
+
+[REQUIREMENT]
+UID: SYS-YAML-007
+TITLE: YAML Round-trip
+STATEMENT: >>>
+Test case YAML files shall be loadable and deserializable to in-memory structures
+without information loss.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Test Schema Requirements
+
+[REQUIREMENT]
+UID: SYS-SCHEMA-001
+TITLE: Test Case Schema Definition
+STATEMENT: >>>
+A JSON schema shall define the structure of test case YAML files including required
+properties, types, constraints, and relationships.
+<<<
+
+[REQUIREMENT]
+UID: SYS-SCHEMA-002
+TITLE: Schema Validation Rules
+STATEMENT: >>>
+Schema shall enforce required fields (test_case_id, title, sequences), type constraints,
+and value constraints (e.g., valid status values).
+<<<
+
+[REQUIREMENT]
+UID: SYS-SCHEMA-003
+TITLE: Nested Object Schemas
+STATEMENT: >>>
+Schema shall define nested structures for sequences, steps, verifications, prerequisites,
+and environment variables with appropriate constraints.
+<<<
+
+[REQUIREMENT]
+UID: SYS-SCHEMA-004
+TITLE: Regex Pattern Validation
+STATEMENT: >>>
+Schema shall validate regex patterns and variable names against defined patterns to
+catch syntax errors early.
+<<<
+
+[REQUIREMENT]
+UID: SYS-SCHEMA-005
+TITLE: Enum Value Validation
+STATEMENT: >>>
+Schema shall define allowed values for enumerated fields (status, match_type, hook_type,
+on_error behavior).
+<<<
+
+[REQUIREMENT]
+UID: SYS-SCHEMA-006
+TITLE: Execution Log Schema
+STATEMENT: >>>
+A JSON schema shall define execution log structure including test metadata, sequence
+results, step results, and exit codes.
+<<<
+
+[REQUIREMENT]
+UID: SYS-SCHEMA-007
+TITLE: Verification Result Schema
+STATEMENT: >>>
+A JSON schema shall define verification result container structure with test data,
+sequence results, and verification status.
+<<<
+
+[REQUIREMENT]
+UID: SYS-SCHEMA-008
+TITLE: Schema Validation Error Reporting
+STATEMENT: >>>
+Schema validation failures shall report specific field paths, constraint violations,
+and expected vs. actual values.
 <<<
 
 [[/SECTION]]
