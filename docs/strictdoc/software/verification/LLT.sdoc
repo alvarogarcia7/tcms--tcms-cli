@@ -1,367 +1,6 @@
 [DOCUMENT]
-TITLE: Low-Level Test Specifications & Source Code Traceability
-PREFIX: LLT-
-
-[[SECTION]]
-TITLE: JSON Escape Component Tests
-
-[REQUIREMENT]
-UID: LLT-JE-001
-TITLE: Test Character Escape Sequences
-STATEMENT: >>>
-Unit test verifying escape_json_string correctly escapes quotes, backslashes, newlines,
-tabs, and control codes with proper JSON encoding.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-JE-001
-
-[REQUIREMENT]
-UID: LLT-JE-002
-TITLE: Test Unicode Escape Handling
-STATEMENT: >>>
-Unit test verifying Unicode characters are escaped as \uXXXX sequences in JSON output.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-JE-001
-
-[REQUIREMENT]
-UID: LLT-JE-003
-TITLE: Test Empty String Handling
-STATEMENT: >>>
-Unit test verifying empty strings are handled correctly without errors or data loss.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-JE-001
-
-[REQUIREMENT]
-UID: LLT-JE-004
-TITLE: Test Large String Performance
-STATEMENT: >>>
-Performance test verifying escaping 10MB input completes in under 1 second.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-JE-002
-
-[REQUIREMENT]
-UID: LLT-JE-005
-TITLE: Test Mode Validation
-STATEMENT: >>>
-Unit test verifying test mode correctly validates escaped output by parsing as JSON.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-JE-002
-
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: JSON to YAML Component Tests
-
-[REQUIREMENT]
-UID: LLT-J2Y-001
-TITLE: Test Batch Format Conversion
-STATEMENT: >>>
-Unit test verifying batch format JSON arrays are correctly converted to individual YAML files.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-J2Y-001
-
-[REQUIREMENT]
-UID: LLT-J2Y-002
-TITLE: Test Container Format Conversion
-STATEMENT: >>>
-Unit test verifying container format JSON objects are correctly converted to YAML.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-J2Y-001
-
-[REQUIREMENT]
-UID: LLT-J2Y-003
-TITLE: Test Single Test Case Conversion
-STATEMENT: >>>
-Unit test verifying single test case JSON is converted to YAML format.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-J2Y-001
-
-[REQUIREMENT]
-UID: LLT-J2Y-004
-TITLE: Test Output Directory Creation
-STATEMENT: >>>
-Unit test verifying nested output directories are created if not existing.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-J2Y-002
-
-[REQUIREMENT]
-UID: LLT-J2Y-005
-TITLE: Test Malformed JSON Error
-STATEMENT: >>>
-Unit test verifying malformed JSON input reports specific parse error with line number.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-J2Y-001
-
-[REQUIREMENT]
-UID: LLT-J2Y-006
-TITLE: Test YAML Format Validity
-STATEMENT: >>>
-Integration test verifying generated YAML is parseable by YAML parser without errors.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-J2Y-002
-
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: JSON Validator Component Tests
-
-[REQUIREMENT]
-UID: LLT-VJ-001
-TITLE: Test Valid JSON Acceptance
-STATEMENT: >>>
-Unit test verifying valid JSON matching schema passes validation with exit code 0.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-SCHEMA-010
-
-[REQUIREMENT]
-UID: LLT-VJ-002
-TITLE: Test Schema Violation Detection
-STATEMENT: >>>
-Unit test verifying JSON with schema violations fails with detailed error message.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-SCHEMA-010
-
-[REQUIREMENT]
-UID: LLT-VJ-003
-TITLE: Test Missing Required Field
-STATEMENT: >>>
-Unit test verifying JSON missing required property reports violation for that field.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-SCHEMA-010
-
-[REQUIREMENT]
-UID: LLT-VJ-004
-TITLE: Test Type Mismatch Detection
-STATEMENT: >>>
-Unit test verifying JSON with wrong type (string vs number) reports type error.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-SCHEMA-010
-
-[REQUIREMENT]
-UID: LLT-VJ-005
-TITLE: Test Enum Validation
-STATEMENT: >>>
-Unit test verifying invalid enum value reports allowed values in error message.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-SCHEMA-013
-
-[REQUIREMENT]
-UID: LLT-VJ-006
-TITLE: Test Schema Auto-Resolution
-STATEMENT: >>>
-Unit test verifying schema field in JSON is auto-resolved without explicit flag.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-SCHEMA-009
-
-[REQUIREMENT]
-UID: LLT-VJ-007
-TITLE: Test Multiple Violations Reporting
-STATEMENT: >>>
-Unit test verifying JSON with multiple violations reports all violations.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-SCHEMA-010
-
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: Test Executor Component Tests
-
-[REQUIREMENT]
-UID: LLT-TEX-001
-TITLE: Test Script Generation
-STATEMENT: >>>
-Unit test verifying YAML test case generates valid bash script with proper syntax.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-TEX-001
-
-[REQUIREMENT]
-UID: LLT-TEX-002
-TITLE: Test Variable Substitution
-STATEMENT: >>>
-Unit test verifying variables in commands are substituted correctly.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-TEX-003
-
-[REQUIREMENT]
-UID: LLT-TEX-003
-TITLE: Test Script Execution
-STATEMENT: >>>
-Integration test verifying generated script executes and captures output with timestamps.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-TEX-005
-
-[REQUIREMENT]
-UID: LLT-TEX-004
-TITLE: Test Exit Code Capture
-STATEMENT: >>>
-Unit test verifying script exit code is captured and stored in JSON log.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-TEX-005
-
-[REQUIREMENT]
-UID: LLT-TEX-005
-TITLE: Test Output Escaping
-STATEMENT: >>>
-Unit test verifying script output with special chars is properly escaped in JSON.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-YAML-011
-
-[REQUIREMENT]
-UID: LLT-TEX-006
-TITLE: Test Variable Hydration
-STATEMENT: >>>
-Unit test verifying export file variables override defaults in test case.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-TEX-003
-
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: Test Orchestrator Component Tests
-
-[REQUIREMENT]
-UID: LLT-TO-001
-TITLE: Test Parallel Execution
-STATEMENT: >>>
-Integration test verifying multiple test cases execute in parallel with correct concurrency.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-TO-001
-
-[REQUIREMENT]
-UID: LLT-TO-002
-TITLE: Test Retry on Failure
-STATEMENT: >>>
-Integration test verifying failed tests retry with exponential backoff.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-TO-001
-
-[REQUIREMENT]
-UID: LLT-TO-003
-TITLE: Test Progress Reporting
-STATEMENT: >>>
-Unit test verifying progress is reported with execution rate and ETA.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-TO-003
-
-[REQUIREMENT]
-UID: LLT-TO-004
-TITLE: Test Test Case Filtering
-STATEMENT: >>>
-Unit test verifying filtered test cases include only matching criteria.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-TO-004
-
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: Verifier Component Tests
-
-[REQUIREMENT]
-UID: LLT-VER-001
-TITLE: Test Execution Log Loading
-STATEMENT: >>>
-Unit test verifying execution logs are loaded and parsed into structures.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-VER-001
-
-[REQUIREMENT]
-UID: LLT-VER-002
-TITLE: Test Output Pattern Matching
-STATEMENT: >>>
-Unit test verifying actual output matches against expected patterns correctly.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-VER-001
-
-[REQUIREMENT]
-UID: LLT-VER-003
-TITLE: Test Exit Code Verification
-STATEMENT: >>>
-Unit test verifying step exit codes match expected values.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-VER-001
-
-[REQUIREMENT]
-UID: LLT-VER-004
-TITLE: Test Mismatch Reporting
-STATEMENT: >>>
-Unit test verifying verification failures report expected vs actual with highlighting.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-VER-006
-
-[REQUIREMENT]
-UID: LLT-VER-005
-TITLE: Test Batch Verification
-STATEMENT: >>>
-Integration test verifying multiple execution logs are verified with aggregated results.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: LLR-VER-007
-
-[[/SECTION]]
+TITLE: Source Code Traceability
+PREFIX: SRC-
 
 [[SECTION]]
 TITLE: Source Code Traceability
@@ -371,132 +10,131 @@ UID: SRC-JE-001
 TITLE: json-escape Binary Implementation
 STATEMENT: >>>
 Source code location: crates/json-escape/src/main.rs
-Implements escape_json_string function with command-line interface.
+Implements JSON string escaping with command-line interface.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: LLR-JE-001
+  VALUE: HLR-JE-001
 
 [REQUIREMENT]
 UID: SRC-J2Y-001
 TITLE: json-to-yaml Binary Implementation
 STATEMENT: >>>
 Source code location: crates/json-to-yaml/src/main.rs
-Implements JSON parsing and YAML output with format detection.
+Implements JSON parsing and YAML output.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: LLR-J2Y-001
+  VALUE: HLR-J2Y-001
 
 [REQUIREMENT]
 UID: SRC-VJ-001
 TITLE: validate-json Binary Implementation
 STATEMENT: >>>
 Source code location: crates/validate-json/src/main.rs
-Implements JSON schema validation with error reporting.
+Implements JSON schema validation.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: LLR-SCHEMA-010
+  VALUE: HLR-VJ-001
 
 [REQUIREMENT]
 UID: SRC-TEX-001
 TITLE: test-executor Binary Implementation
 STATEMENT: >>>
 Source code location: crates/test-executor/src/main.rs
-Implements test case execution with script generation and result logging.
+Implements test execution and script generation.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: LLR-TEX-001
+  VALUE: HLR-TEX-001
 
 [REQUIREMENT]
 UID: SRC-TO-001
 TITLE: test-orchestrator Binary Implementation
 STATEMENT: >>>
 Source code location: crates/test-orchestrator/src/main.rs
-Implements parallel test execution coordination with retry and progress.
+Implements parallel test execution.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: LLR-TO-001
+  VALUE: HLR-TO-001
 
 [REQUIREMENT]
 UID: SRC-VER-001
 TITLE: verifier Binary Implementation
 STATEMENT: >>>
 Source code location: crates/verifier/src/main.rs
-Implements execution log verification against test case definitions.
+Implements execution log verification.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: LLR-VER-001
+  VALUE: HLR-VER-001
 
 [REQUIREMENT]
 UID: SRC-MOD-001
 TITLE: testcase-models Crate Implementation
 STATEMENT: >>>
 Source code location: crates/testcase-models/src/lib.rs
-Implements TestCase, TestSequence, TestStep data models with serialization.
+Implements TestCase data models.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: LLR-MOD-001
+  VALUE: HLR-INT-001
 
 [REQUIREMENT]
 UID: SRC-COM-001
 TITLE: testcase-common Crate Implementation
 STATEMENT: >>>
 Source code location: crates/testcase-common/src/lib.rs
-Implements shared utilities for YAML loading, configuration, and schema validation.
+Implements shared utilities for validation.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: LLR-COM-001
+  VALUE: HLR-INT-003
 
 [REQUIREMENT]
 UID: SRC-EXEC-001
 TITLE: testcase-execution Crate Implementation
 STATEMENT: >>>
 Source code location: crates/testcase-execution/src/lib.rs
-Implements script generation, variable capture, and execution logging.
+Implements script generation and execution.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: LLR-TEX-001
+  VALUE: HLR-TEX-001
 
 [REQUIREMENT]
 UID: SRC-VER-002
 TITLE: testcase-verification Crate Implementation
 STATEMENT: >>>
 Source code location: crates/testcase-verification/src/lib.rs
-Implements output matching and verification result generation.
+Implements output matching and verification.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: LLR-VER-001
+  VALUE: HLR-VER-001
 
 [REQUIREMENT]
 UID: SRC-VAL-001
 TITLE: testcase-validation Crate Implementation
 STATEMENT: >>>
 Source code location: crates/testcase-validation/src/lib.rs
-Implements schema validation and dependency checking.
+Implements schema validation.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: LLR-SCHEMA-010
+  VALUE: HLR-SCHEMA-009
 
 [REQUIREMENT]
 UID: SRC-ORCH-001
 TITLE: testcase-orchestration Crate Implementation
 STATEMENT: >>>
 Source code location: crates/testcase-orchestration/src/lib.rs
-Implements test execution orchestration and coordination.
+Implements test execution orchestration.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: LLR-TO-001
+  VALUE: HLR-TO-001
 
 [[/SECTION]]
-
