@@ -329,3 +329,128 @@ RELATIONS:
   VALUE: SYS-SCHEMA-008
 
 [[/SECTION]]
+
+[[SECTION]]
+TITLE: Executable Requirements
+
+[REQUIREMENT]
+UID: HLR-EXEC-VAL-001
+TITLE: YAML Validator CLI
+STATEMENT: >>>
+The validate-yaml executable shall provide command-line interface for YAML validation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-VAL-001
+
+[REQUIREMENT]
+UID: HLR-EXEC-VAL-002
+TITLE: JSON Validator CLI
+STATEMENT: >>>
+The validate-json executable shall provide command-line interface for JSON validation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-VAL-002
+
+[REQUIREMENT]
+UID: HLR-EXEC-GEN-001
+TITLE: Test Executor CLI
+STATEMENT: >>>
+The test-executor executable shall provide commands for script generation and execution.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-GEN-001
+
+[REQUIREMENT]
+UID: HLR-EXEC-GEN-002
+TITLE: JSON Escaper Utility
+STATEMENT: >>>
+The json-escape executable shall read from stdin and output JSON-escaped text.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-GEN-002
+
+[REQUIREMENT]
+UID: HLR-EXEC-GEN-003
+TITLE: JSON to YAML Converter CLI
+STATEMENT: >>>
+The json-to-yaml executable shall convert JSON input to YAML output format.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-GEN-003
+
+[REQUIREMENT]
+UID: HLR-EXEC-GEN-004
+TITLE: Script Cleanup Utility
+STATEMENT: >>>
+The script-cleanup executable shall remove generated test scripts and artifacts.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-GEN-004
+
+[REQUIREMENT]
+UID: HLR-EXEC-ORCH-001
+TITLE: Test Orchestrator CLI
+STATEMENT: >>>
+The test-orchestrator executable shall manage test execution and sequence coordination.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-ORCH-001
+
+[REQUIREMENT]
+UID: HLR-EXEC-ORCH-002
+TITLE: Testcase Manager CLI
+STATEMENT: >>>
+The testcase-manager executable shall provide test case lifecycle management commands.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-ORCH-002
+
+[REQUIREMENT]
+UID: HLR-EXEC-ORCH-003
+TITLE: Test Run Manager CLI
+STATEMENT: >>>
+The test-run-manager executable shall manage test run execution and status tracking.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-ORCH-003
+
+[REQUIREMENT]
+UID: HLR-EXEC-VER-001
+TITLE: Verifier CLI
+STATEMENT: >>>
+The verifier executable shall provide verification commands with result generation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-VER-001
+
+[REQUIREMENT]
+UID: HLR-EXEC-VER-002
+TITLE: TPDG Compatibility Tool CLI
+STATEMENT: >>>
+The tpdg-compat executable shall validate container YAML compatibility.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-VER-002
+
+[REQUIREMENT]
+UID: HLR-EXEC-EDT-001
+TITLE: Editor Terminal UI
+STATEMENT: >>>
+The editor executable shall provide interactive terminal UI for test case editing.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-EXEC-EDT-001
+
+[[/SECTION]]

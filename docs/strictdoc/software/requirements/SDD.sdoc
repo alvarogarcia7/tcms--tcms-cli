@@ -328,3 +328,128 @@ RELATIONS:
   VALUE: HLR-SCHEMA-008
 
 [[/SECTION]]
+
+[[SECTION]]
+TITLE: Executable Implementation Design
+
+[REQUIREMENT]
+UID: LLR-EXEC-VAL-001
+TITLE: Validate YAML Binary
+STATEMENT: >>>
+Implement validate-yaml binary in validate-yaml crate using schema validation library.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-EXEC-VAL-001
+
+[REQUIREMENT]
+UID: LLR-EXEC-VAL-002
+TITLE: Validate JSON Binary
+STATEMENT: >>>
+Implement validate-json binary in validate-json crate with JSON schema validation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-EXEC-VAL-002
+
+[REQUIREMENT]
+UID: LLR-EXEC-GEN-001
+TITLE: Test Executor Binary
+STATEMENT: >>>
+Implement test-executor binary in test-executor crate with generate and execute subcommands.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-EXEC-GEN-001
+
+[REQUIREMENT]
+UID: LLR-EXEC-GEN-002
+TITLE: JSON Escape Binary
+STATEMENT: >>>
+Implement json-escape binary in json-escape crate reading stdin and outputting escaped JSON.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-EXEC-GEN-002
+
+[REQUIREMENT]
+UID: LLR-EXEC-GEN-003
+TITLE: JSON to YAML Converter Binary
+STATEMENT: >>>
+Implement json-to-yaml binary in json-to-yaml crate with format conversion logic.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-EXEC-GEN-003
+
+[REQUIREMENT]
+UID: LLR-EXEC-GEN-004
+TITLE: Script Cleanup Binary
+STATEMENT: >>>
+Implement script-cleanup binary in script-cleanup crate with selective removal logic.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-EXEC-GEN-004
+
+[REQUIREMENT]
+UID: LLR-EXEC-ORCH-001
+TITLE: Test Orchestrator Binary
+STATEMENT: >>>
+Implement test-orchestrator binary in test-orchestrator crate with coordination logic.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-EXEC-ORCH-001
+
+[REQUIREMENT]
+UID: LLR-EXEC-ORCH-002
+TITLE: Testcase Manager Binary
+STATEMENT: >>>
+Implement testcase-manager binary in testcase-manager crate with lifecycle management.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-EXEC-ORCH-002
+
+[REQUIREMENT]
+UID: LLR-EXEC-ORCH-003
+TITLE: Test Run Manager Binary
+STATEMENT: >>>
+Implement test-run-manager binary (trm) in test-run-manager crate with tracking logic.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-EXEC-ORCH-003
+
+[REQUIREMENT]
+UID: LLR-EXEC-VER-001
+TITLE: Verifier Binary
+STATEMENT: >>>
+Implement verifier binary in verifier crate with verification and result generation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-EXEC-VER-001
+
+[REQUIREMENT]
+UID: LLR-EXEC-VER-002
+TITLE: TPDG Compat Binary
+STATEMENT: >>>
+Implement tpdg-compat binary in tpdg-compat crate with validation and reporting.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-EXEC-VER-002
+
+[REQUIREMENT]
+UID: LLR-EXEC-EDT-001
+TITLE: Editor Binary
+STATEMENT: >>>
+Implement editor binary in editor crate with terminal UI and validation integration.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-EXEC-EDT-001
+
+[[/SECTION]]

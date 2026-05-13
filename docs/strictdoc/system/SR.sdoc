@@ -258,3 +258,124 @@ and expected vs. actual values.
 <<<
 
 [[/SECTION]]
+
+[[SECTION]]
+TITLE: Validator Executables
+
+[REQUIREMENT]
+UID: SYS-EXEC-VAL-001
+TITLE: YAML Validator (validate-yaml)
+STATEMENT: >>>
+The validate-yaml executable shall validate YAML test case files against JSON schema,
+reporting detailed errors for schema violations.
+<<<
+
+[REQUIREMENT]
+UID: SYS-EXEC-VAL-002
+TITLE: JSON Validator (validate-json)
+STATEMENT: >>>
+The validate-json executable shall validate JSON output files against JSON schema with
+detailed constraint violation reporting.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Generator Executables
+
+[REQUIREMENT]
+UID: SYS-EXEC-GEN-001
+TITLE: Test Executor (test-executor)
+STATEMENT: >>>
+The test-executor executable shall generate bash scripts from YAML test cases and execute
+them, capturing output in JSON format.
+<<<
+
+[REQUIREMENT]
+UID: SYS-EXEC-GEN-002
+TITLE: JSON Escaper (json-escape)
+STATEMENT: >>>
+The json-escape executable shall read text from stdin and output JSON-escaped string suitable
+for inclusion in JSON documents.
+<<<
+
+[REQUIREMENT]
+UID: SYS-EXEC-GEN-003
+TITLE: JSON to YAML Converter (json-to-yaml)
+STATEMENT: >>>
+The json-to-yaml executable shall convert JSON input to YAML output with preserved structure
+and proper formatting.
+<<<
+
+[REQUIREMENT]
+UID: SYS-EXEC-GEN-004
+TITLE: Script Cleanup Tool (script-cleanup)
+STATEMENT: >>>
+The script-cleanup executable shall remove generated test scripts and intermediate files
+with optional preservation for debugging.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Orchestrator Executables
+
+[REQUIREMENT]
+UID: SYS-EXEC-ORCH-001
+TITLE: Test Orchestrator (test-orchestrator)
+STATEMENT: >>>
+The test-orchestrator executable shall orchestrate execution of multiple test cases,
+managing sequences and aggregating results.
+<<<
+
+[REQUIREMENT]
+UID: SYS-EXEC-ORCH-002
+TITLE: Testcase Manager (testcase-manager)
+STATEMENT: >>>
+The testcase-manager executable shall manage test case lifecycle including creation,
+validation, execution, and result reporting.
+<<<
+
+[REQUIREMENT]
+UID: SYS-EXEC-ORCH-003
+TITLE: Test Run Manager (test-run-manager / trm)
+STATEMENT: >>>
+The test-run-manager executable shall manage test run execution with tracking of test
+status and result aggregation.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Verification and Documentation Executables
+
+[REQUIREMENT]
+UID: SYS-EXEC-VER-001
+TITLE: Verifier (test-verify / verifier)
+STATEMENT: >>>
+The verifier executable shall verify execution logs against test cases and generate
+verification results in YAML/JSON format.
+<<<
+
+[REQUIREMENT]
+UID: SYS-EXEC-VER-002
+TITLE: TPDG Compatibility Tool (tpdg-compat)
+STATEMENT: >>>
+The tpdg-compat executable shall validate container YAML compatibility with test-plan-
+documentation-generator and generate reports.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Interactive Editor Executable
+
+[REQUIREMENT]
+UID: SYS-EXEC-EDT-001
+TITLE: Interactive Editor (editor)
+STATEMENT: >>>
+The editor executable shall provide an interactive terminal UI for creating and editing
+test case YAML files with real-time validation.
+<<<
+
+[[/SECTION]]
