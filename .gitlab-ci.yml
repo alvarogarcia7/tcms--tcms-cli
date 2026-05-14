@@ -296,6 +296,10 @@ rust:build-test-lint:
         touch clippy_output.txt
       fi
 
+    # Test - Python tests
+    - echo "===== Running Python Tests ====="
+    - uv run python3.14 -m pytest scripts/ -v 2>&1 | tee python_test_output.txt || true
+
     # Test - unit tests
     - echo "===== Running Unit Tests ====="
     - |

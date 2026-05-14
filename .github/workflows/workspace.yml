@@ -124,6 +124,11 @@ jobs:
             done
           fi
 
+      - name: Run Python tests
+        run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          uv run python3.14 -m pytest scripts/ -v
+
       - name: Run tests
         run: |
           if [[ "${{ env.BUILD_ALL }}" == "true" ]]; then
