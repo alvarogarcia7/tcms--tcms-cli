@@ -651,9 +651,9 @@ class TestCreateTpdgContainer(unittest.TestCase):
         ]
         
         container = create_tpdg_container(test_results)
-        
+
         self.assertEqual(container['type'], 'test_results_container')
-        self.assertEqual(container['schema'], 'tcms/testcase_results_container.schema.v1.json')
+        self.assertEqual(container['schema'], 'tcms/test-results-container.schema.v1.json')
         self.assertEqual(len(container['test_results']), 2)
         self.assertEqual(container['metadata']['total_test_cases'], 2)
         self.assertEqual(container['metadata']['passed_test_cases'], 1)
