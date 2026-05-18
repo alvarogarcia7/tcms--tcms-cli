@@ -1,3 +1,5 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
 requirement: REQ_BASH_CONDITIONALS_001
 item: 1
 tc: 7
@@ -25,8 +27,8 @@ test_sequences:
           result: "0"
           output: "equal"
         verification:
-          result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'equal' $COMMAND_OUTPUT"
+          result: "[[ $EXIT_CODE -eq 0 ]]"
+          output: "[[ \"$COMMAND_OUTPUT\" == *\"equal\"* ]]"
       - step: 2
         description: String comparison
         command: str="test"; if [ "$str" = "test" ]; then echo "match"; fi
@@ -35,8 +37,8 @@ test_sequences:
           result: "0"
           output: "match"
         verification:
-          result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'match' $COMMAND_OUTPUT"
+          result: "[[ $EXIT_CODE -eq 0 ]]"
+          output: "[[ \"$COMMAND_OUTPUT\" == *\"match\"* ]]"
       - step: 3
         description: Numeric comparison
         command: a=5; if [ $a -gt 3 ]; then echo "greater"; fi
@@ -45,8 +47,8 @@ test_sequences:
           result: "0"
           output: "greater"
         verification:
-          result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'greater' $COMMAND_OUTPUT"
+          result: "[[ $EXIT_CODE -eq 0 ]]"
+          output: "[[ \"$COMMAND_OUTPUT\" == *\"greater\"* ]]"
       - step: 4
         description: Double bracket test condition
         command: if [[ 1 -eq 1 ]]; then echo "equal"; fi
@@ -55,5 +57,5 @@ test_sequences:
           result: "0"
           output: "equal"
         verification:
-          result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'equal' $COMMAND_OUTPUT"
+          result: "[[ $EXIT_CODE -eq 0 ]]"
+          output: "[[ \"$COMMAND_OUTPUT\" == *\"equal\"* ]]"
