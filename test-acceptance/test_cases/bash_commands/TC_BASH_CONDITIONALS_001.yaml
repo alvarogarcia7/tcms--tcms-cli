@@ -47,3 +47,13 @@ test_sequences:
         verification:
           result: "[[ $? -eq 0 ]]"
           output: "grep -q 'greater' $COMMAND_OUTPUT"
+      - step: 4
+        description: Double bracket test condition
+        command: if [[ 1 -eq 1 ]]; then echo "equal"; fi
+        expected:
+          success: true
+          result: "0"
+          output: "equal"
+        verification:
+          result: "[[ $? -eq 0 ]]"
+          output: "grep -q 'equal' $COMMAND_OUTPUT"

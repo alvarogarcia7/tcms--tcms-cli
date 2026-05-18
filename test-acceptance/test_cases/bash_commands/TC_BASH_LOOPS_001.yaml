@@ -47,3 +47,43 @@ test_sequences:
         verification:
           result: "[[ $? -eq 0 ]]"
           output: "grep -q '2' $COMMAND_OUTPUT"
+      - step: 4
+        description: For loop with variable range
+        command: A=3; for i in $(seq 0 $A); do echo $i; done
+        expected:
+          success: true
+          result: "0"
+          output: "3"
+        verification:
+          result: "[[ $? -eq 0 ]]"
+          output: "grep -q '3' $COMMAND_OUTPUT"
+      - step: 5
+        description: For loop with arithmetic expression
+        command: A=3; for i in $(seq 0 $((A+1))); do echo $i; done
+        expected:
+          success: true
+          result: "0"
+          output: "4"
+        verification:
+          result: "[[ $? -eq 0 ]]"
+          output: "grep -q '4' $COMMAND_OUTPUT"
+      - step: 6
+        description: For loop with nested arithmetic
+        command: B=1; A=3; for i in $(seq 0 $((A+B))); do echo $i; done
+        expected:
+          success: true
+          result: "0"
+          output: "4"
+        verification:
+          result: "[[ $? -eq 0 ]]"
+          output: "grep -q '4' $COMMAND_OUTPUT"
+      - step: 7
+        description: For loop with complex arithmetic
+        command: B=1; A=3; for i in $(seq 0 $((A+((B+1))))); do echo $i; done
+        expected:
+          success: true
+          result: "0"
+          output: "5"
+        verification:
+          result: "[[ $? -eq 0 ]]"
+          output: "grep -q '5' $COMMAND_OUTPUT"
