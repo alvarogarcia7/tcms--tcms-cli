@@ -388,6 +388,7 @@ test-e2e-all: setup-python-for-test build-all
 test-e2e-all-no-build:
 	./crates/testcase-manager/tests/integration/check_environment.sh
 	./crates/testcase-manager/tests/integration/smoke_test.sh
+	./crates/testcase-manager/tests/integration/test_bash_commands_e2e.sh
 	./crates/testcase-manager/tests/integration/test_bdd_e2e.sh
 	./crates/testcase-manager/tests/integration/test_conditional_verification_e2e.sh
 	./crates/testcase-manager/tests/integration/test_executor_e2e.sh
