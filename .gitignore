@@ -136,6 +136,9 @@ dmypy.json
 output/
 docker-compose.override.yml
 
+# StrictDoc output
+output/strictdoc/
+
 *egg-info/
 
 src/testcase_generator.egg-info/

@@ -35,6 +35,7 @@
 # Include modular makefiles
 include mk/python.mk
 -include mk/incremental.mk
+include mk/strictdoc.mk
 -include mk/projector.mk
 -include mk/backlog.mk
 
@@ -190,6 +191,7 @@ test: setup-python-for-test
 	${MAKE} test-unit
 	${MAKE} test-e2e
 	${MAKE} verify-testcases
+	${MAKE} strictdoc-validate
 # 	${MAKE} generate-docs-coverage
 	${MAKE} coverage-clean
 .PHONY: test

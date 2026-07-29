@@ -1,0 +1,832 @@
+[DOCUMENT]
+TITLE: System Requirements
+
+[[SECTION]]
+TITLE: System Overview
+
+[TEXT]
+STATEMENT: >>>
+The Test Case Management System (TCMS) is a declarative test case framework that converts
+YAML test case definitions into executable bash scripts, captures execution results, and
+verifies outcomes against expected outputs. The system supports complex test sequences with
+variable capture, conditional verification, and comprehensive documentation generation for
+safety-critical applications.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Verifier Requirements
+
+[REQUIREMENT]
+UID: SYS-VER-001
+TITLE: Execution Log Verification
+STATEMENT: >>>
+The system shall verify execution logs against test case definitions by comparing actual
+output and exit codes with expected values.
+<<<
+
+[REQUIREMENT]
+UID: SYS-VER-002
+TITLE: Output Matching Strategies
+STATEMENT: >>>
+The system shall support exact string matching, regex pattern matching, and JSON schema
+validation for output verification.
+<<<
+
+[REQUIREMENT]
+UID: SYS-VER-003
+TITLE: Verification Result Generation
+STATEMENT: >>>
+The system shall generate verification results in YAML format containing pass/fail status,
+mismatch details, and step-by-step verification outcomes.
+<<<
+
+[REQUIREMENT]
+UID: SYS-VER-004
+TITLE: Batch Verification
+STATEMENT: >>>
+The system shall verify multiple test case execution logs in sequence and aggregate results
+with summary statistics.
+<<<
+
+[REQUIREMENT]
+UID: SYS-VER-005
+TITLE: Verification Metadata
+STATEMENT: >>>
+The system shall include verification metadata including test ID, execution timestamp,
+environment information, and detailed step results in verification output.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Test Case Content Requirements
+
+[REQUIREMENT]
+UID: SYS-TC-001
+TITLE: Test Case Metadata
+STATEMENT: >>>
+Test cases shall include test_case_id, title, description, and optional tags for
+organization and filtering.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TC-002
+TITLE: Test Sequences
+STATEMENT: >>>
+Test cases shall support multiple test sequences, each containing sequence_id, name,
+and an ordered list of test steps.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TC-003
+TITLE: Test Steps
+STATEMENT: >>>
+Test steps shall specify description, command to execute, expected exit code, expected
+output patterns, and variable capture specifications.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TC-004
+TITLE: Variable Capture
+STATEMENT: >>>
+Test steps shall support capturing output values using regex patterns and bash command
+execution for use in subsequent steps.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TC-005
+TITLE: Expected Output Specification
+STATEMENT: >>>
+Expected output shall support exact string values, regex patterns, and JSON schema
+validation with optional partial matching flags.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TC-006
+TITLE: Prerequisites
+STATEMENT: >>>
+Test cases shall support manual and automatic prerequisites with verification commands
+to confirm prerequisite completion.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TC-007
+TITLE: Environment Variables
+STATEMENT: >>>
+Test cases shall specify required and optional environment variables with defaults and
+provide substitution values in test steps.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TC-008
+TITLE: Lifecycle Hooks
+STATEMENT: >>>
+Test cases shall support optional hooks at script_start, setup_test, before_sequence,
+after_sequence, before_step, after_step, teardown_test, and script_end execution points.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: YAML Input/Output Requirements
+
+[REQUIREMENT]
+UID: SYS-YAML-001
+TITLE: YAML Schema Field
+STATEMENT: >>>
+All YAML test case files shall include a schema field at the root level identifying
+the schema URI for validation.
+<<<
+
+[REQUIREMENT]
+UID: SYS-YAML-002
+TITLE: YAML Type Field
+STATEMENT: >>>
+All YAML test case files shall include a type field identifying the content type
+(e.g., test-case, verification-result, container).
+<<<
+
+[REQUIREMENT]
+UID: SYS-YAML-003
+TITLE: Test Case YAML Structure
+STATEMENT: >>>
+Test case YAML files shall be valid YAML with structure conforming to test-case
+schema including sequences, steps, verifications, and metadata.
+<<<
+
+[REQUIREMENT]
+UID: SYS-YAML-004
+TITLE: Execution Log JSON Output
+STATEMENT: >>>
+Generated execution logs shall be in JSON format with proper escaping of special
+characters, newlines, and control codes.
+<<<
+
+[REQUIREMENT]
+UID: SYS-YAML-005
+TITLE: Verification Result YAML Output
+STATEMENT: >>>
+Verification results shall be output as YAML with structured results for each test
+sequence and step.
+<<<
+
+[REQUIREMENT]
+UID: SYS-YAML-006
+TITLE: Container YAML Format
+STATEMENT: >>>
+Container YAML shall aggregate multiple test results with metadata, test execution
+summary, and detailed verification results.
+<<<
+
+[REQUIREMENT]
+UID: SYS-YAML-007
+TITLE: YAML Round-trip
+STATEMENT: >>>
+Test case YAML files shall be loadable and deserializable to in-memory structures
+without information loss.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Test Schema Requirements
+
+[REQUIREMENT]
+UID: SYS-SCHEMA-001
+TITLE: Test Case Schema Definition
+STATEMENT: >>>
+A JSON schema shall define the structure of test case YAML files including required
+properties, types, constraints, and relationships.
+<<<
+
+[REQUIREMENT]
+UID: SYS-SCHEMA-002
+TITLE: Schema Validation Rules
+STATEMENT: >>>
+Schema shall enforce required fields (test_case_id, title, sequences), type constraints,
+and value constraints (e.g., valid status values).
+<<<
+
+[REQUIREMENT]
+UID: SYS-SCHEMA-003
+TITLE: Nested Object Schemas
+STATEMENT: >>>
+Schema shall define nested structures for sequences, steps, verifications, prerequisites,
+and environment variables with appropriate constraints.
+<<<
+
+[REQUIREMENT]
+UID: SYS-SCHEMA-004
+TITLE: Regex Pattern Validation
+STATEMENT: >>>
+Schema shall validate regex patterns and variable names against defined patterns to
+catch syntax errors early.
+<<<
+
+[REQUIREMENT]
+UID: SYS-SCHEMA-005
+TITLE: Enum Value Validation
+STATEMENT: >>>
+Schema shall define allowed values for enumerated fields (status, match_type, hook_type,
+on_error behavior).
+<<<
+
+[REQUIREMENT]
+UID: SYS-SCHEMA-006
+TITLE: Execution Log Schema
+STATEMENT: >>>
+A JSON schema shall define execution log structure including test metadata, sequence
+results, step results, and exit codes.
+<<<
+
+[REQUIREMENT]
+UID: SYS-SCHEMA-007
+TITLE: Verification Result Schema
+STATEMENT: >>>
+A JSON schema shall define verification result container structure with test data,
+sequence results, and verification status.
+<<<
+
+[REQUIREMENT]
+UID: SYS-SCHEMA-008
+TITLE: Schema Validation Error Reporting
+STATEMENT: >>>
+Schema validation failures shall report specific field paths, constraint violations,
+and expected vs. actual values.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Validator Executables
+
+[REQUIREMENT]
+UID: SYS-EXEC-VAL-001
+TITLE: YAML Validator (validate-yaml)
+STATEMENT: >>>
+The validate-yaml executable shall validate YAML test case files against JSON schema,
+reporting detailed errors for schema violations.
+<<<
+
+[REQUIREMENT]
+UID: SYS-EXEC-VAL-002
+TITLE: JSON Validator (validate-json)
+STATEMENT: >>>
+The validate-json executable shall validate JSON output files against JSON schema with
+detailed constraint violation reporting.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Generator Executables
+
+[REQUIREMENT]
+UID: SYS-EXEC-GEN-001
+TITLE: Test Executor (test-executor)
+STATEMENT: >>>
+The test-executor executable shall generate bash scripts from YAML test cases and execute
+them, capturing output in JSON format.
+<<<
+
+[REQUIREMENT]
+UID: SYS-EXEC-GEN-002
+TITLE: JSON Escaper (json-escape)
+STATEMENT: >>>
+The json-escape executable shall read text from stdin and output JSON-escaped string suitable
+for inclusion in JSON documents.
+<<<
+
+[REQUIREMENT]
+UID: SYS-EXEC-GEN-003
+TITLE: JSON to YAML Converter (json-to-yaml)
+STATEMENT: >>>
+The json-to-yaml executable shall convert JSON input to YAML output with preserved structure
+and proper formatting.
+<<<
+
+[REQUIREMENT]
+UID: SYS-EXEC-GEN-004
+TITLE: Script Cleanup Tool (script-cleanup)
+STATEMENT: >>>
+The script-cleanup executable shall remove generated test scripts and intermediate files
+with optional preservation for debugging.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Orchestrator Executables
+
+[REQUIREMENT]
+UID: SYS-EXEC-ORCH-001
+TITLE: Test Orchestrator (test-orchestrator)
+STATEMENT: >>>
+The test-orchestrator executable shall orchestrate execution of multiple test cases,
+managing sequences and aggregating results.
+<<<
+
+[REQUIREMENT]
+UID: SYS-EXEC-ORCH-002
+TITLE: Testcase Manager (testcase-manager)
+STATEMENT: >>>
+The testcase-manager executable shall manage test case lifecycle including creation,
+validation, execution, and result reporting.
+<<<
+
+[REQUIREMENT]
+UID: SYS-EXEC-ORCH-003
+TITLE: Test Run Manager (test-run-manager / trm)
+STATEMENT: >>>
+The test-run-manager executable shall manage test run execution with tracking of test
+status and result aggregation.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Verification and Documentation Executables
+
+[REQUIREMENT]
+UID: SYS-EXEC-VER-001
+TITLE: Verifier (test-verify / verifier)
+STATEMENT: >>>
+The verifier executable shall verify execution logs against test cases and generate
+verification results in YAML/JSON format.
+<<<
+
+[REQUIREMENT]
+UID: SYS-EXEC-VER-002
+TITLE: TPDG Compatibility Tool (tpdg-compat)
+STATEMENT: >>>
+The tpdg-compat executable shall validate container YAML compatibility with test-plan-
+documentation-generator and generate reports.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Interactive Editor Executable
+
+[REQUIREMENT]
+UID: SYS-EXEC-EDT-001
+TITLE: Interactive Editor (editor)
+STATEMENT: >>>
+The editor executable shall provide an interactive terminal UI for creating and editing
+test case YAML files with real-time validation.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: JSON Escape Executable Requirements
+
+[REQUIREMENT]
+UID: SYS-JE-001
+TITLE: JSON String Escaping
+STATEMENT: >>>
+The json-escape executable shall read unescaped text from stdin and output valid JSON-escaped
+string suitable for embedding in JSON documents.
+<<<
+
+[REQUIREMENT]
+UID: SYS-JE-002
+TITLE: Special Character Escaping
+STATEMENT: >>>
+The json-escape executable shall properly escape special characters including double quotes,
+backslashes, newlines, tabs, and control codes.
+<<<
+
+[REQUIREMENT]
+UID: SYS-JE-003
+TITLE: Unicode Handling
+STATEMENT: >>>
+The json-escape executable shall handle Unicode characters correctly, converting non-ASCII
+characters to Unicode escape sequences as needed.
+<<<
+
+[REQUIREMENT]
+UID: SYS-JE-004
+TITLE: Test Mode Validation
+STATEMENT: >>>
+The json-escape executable shall support test mode that validates escaped output is valid JSON
+when wrapped in quotes.
+<<<
+
+[REQUIREMENT]
+UID: SYS-JE-005
+TITLE: Stream Processing
+STATEMENT: >>>
+The json-escape executable shall process large inputs efficiently using streaming rather than
+loading entire content into memory.
+<<<
+
+[REQUIREMENT]
+UID: SYS-JE-006
+TITLE: Verbose Logging
+STATEMENT: >>>
+The json-escape executable shall support verbose logging mode showing JSON escaping operations
+and validation results.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: JSON to YAML Converter Requirements
+
+[REQUIREMENT]
+UID: SYS-J2Y-001
+TITLE: JSON to YAML Conversion
+STATEMENT: >>>
+The json-to-yaml executable shall read JSON input files and convert to YAML format preserving
+all data structures and values.
+<<<
+
+[REQUIREMENT]
+UID: SYS-J2Y-002
+TITLE: Test Case Array Handling
+STATEMENT: >>>
+The json-to-yaml executable shall handle multiple input formats: batch report (test_cases array),
+container report (test_results array), and single test case.
+<<<
+
+[REQUIREMENT]
+UID: SYS-J2Y-003
+TITLE: YAML Output File Generation
+STATEMENT: >>>
+The json-to-yaml executable shall generate individual YAML files for each test case with
+naming convention: {test_case_id}_result.yaml
+<<<
+
+[REQUIREMENT]
+UID: SYS-J2Y-004
+TITLE: Output Directory Creation
+STATEMENT: >>>
+The json-to-yaml executable shall create output directory if not present, handling nested
+directory structures.
+<<<
+
+[REQUIREMENT]
+UID: SYS-J2Y-005
+TITLE: JSON Parsing Error Handling
+STATEMENT: >>>
+The json-to-yaml executable shall validate input JSON syntax before conversion and report
+detailed parsing errors.
+<<<
+
+[REQUIREMENT]
+UID: SYS-J2Y-006
+TITLE: YAML Format Compliance
+STATEMENT: >>>
+The json-to-yaml executable shall output YAML that is compatible with YAML 1.2 specification
+and valid for schema validation.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: JSON Validator (validate-json) Requirements
+
+[REQUIREMENT]
+UID: SYS-VJ-001
+TITLE: JSON Payload Validation
+STATEMENT: >>>
+The validate-json executable shall validate JSON files against provided JSON schema,
+reporting schema constraint violations.
+<<<
+
+[REQUIREMENT]
+UID: SYS-VJ-002
+TITLE: Schema Auto-Resolution
+STATEMENT: >>>
+The validate-json executable shall auto-resolve schema path from 'schema' field in JSON payload
+when explicit schema path is not provided.
+<<<
+
+[REQUIREMENT]
+UID: SYS-VJ-003
+TITLE: Schemas Root Directory
+STATEMENT: >>>
+The validate-json executable shall support custom schemas root directory via --schemas-root flag
+with default value of 'schemas/'.
+<<<
+
+[REQUIREMENT]
+UID: SYS-VJ-004
+TITLE: Detailed Error Reporting
+STATEMENT: >>>
+The validate-json executable shall report JSON schema constraint violations with specific field
+paths, expected types, and actual values.
+<<<
+
+[REQUIREMENT]
+UID: SYS-VJ-005
+TITLE: Verbose Output Mode
+STATEMENT: >>>
+The validate-json executable shall support verbose mode providing additional details about
+validation process and resolved schemas.
+<<<
+
+[REQUIREMENT]
+UID: SYS-VJ-006
+TITLE: Exit Code Semantics
+STATEMENT: >>>
+The validate-json executable shall return exit code 0 for successful validation and non-zero
+exit code for validation failures.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: YAML Validator (validate-yaml) Advanced Requirements
+
+[REQUIREMENT]
+UID: SYS-VY-009
+TITLE: Multiple File Validation with Dependencies
+STATEMENT: >>>
+The validate-yaml executable shall validate multiple YAML files tracking dependencies and
+reporting cross-file constraint violations.
+<<<
+
+[REQUIREMENT]
+UID: SYS-VY-010
+TITLE: Incremental Validation
+STATEMENT: >>>
+The validate-yaml executable shall support incremental validation mode for large test case
+suites with change detection.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: TPDG Compatibility Checker Requirements
+
+[REQUIREMENT]
+UID: SYS-TP-011
+TITLE: Container Format Version Support
+STATEMENT: >>>
+The tpdg-compat executable shall support multiple container YAML format versions with backward
+compatibility checking.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TP-012
+TITLE: Schema Compliance Metrics
+STATEMENT: >>>
+The tpdg-compat executable shall compute and report schema compliance metrics and compatibility
+scores for container files.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Test Executor Advanced Requirements
+
+[REQUIREMENT]
+UID: SYS-TEX-011
+TITLE: Dry Run Mode
+STATEMENT: >>>
+The test-executor executable shall support dry-run mode that validates test cases without
+executing actual commands.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TEX-012
+TITLE: Parallel Test Generation
+STATEMENT: >>>
+The test-executor executable shall support parallel generation of multiple test scripts with
+configurable concurrency.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Test Orchestrator Advanced Requirements
+
+[REQUIREMENT]
+UID: SYS-TO-009
+TITLE: Load Balancing
+STATEMENT: >>>
+The test-orchestrator executable shall distribute test execution load evenly across worker
+threads considering test complexity.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TO-010
+TITLE: Failure Recovery
+STATEMENT: >>>
+The test-orchestrator executable shall support recovery from partial orchestration failures
+with resume capability.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Test Verifier Advanced Requirements
+
+[REQUIREMENT]
+UID: SYS-TVR-008
+TITLE: Partial Result Analysis
+STATEMENT: >>>
+The test-verify executable shall support analyzing partial verification results for interrupted
+or timeout tests.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TVR-009
+TITLE: Comparison Report Generation
+STATEMENT: >>>
+The test-verify executable shall generate detailed comparison reports showing execution
+timeline and step-by-step progress.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Verifier Binary Advanced Requirements
+
+[REQUIREMENT]
+UID: SYS-TRV-007
+TITLE: Custom Template Support
+STATEMENT: >>>
+The verifier executable shall support custom report templates in AsciiDoc and Markdown formats
+for documentation generation.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TRV-008
+TITLE: Report Aggregation
+STATEMENT: >>>
+The verifier executable shall aggregate reports from multiple test execution runs with
+consolidated statistics and trends.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Script Cleanup Advanced Requirements
+
+[REQUIREMENT]
+UID: SYS-SC-006
+TITLE: Multi-Format Support
+STATEMENT: >>>
+The script-cleanup executable shall support cleaning output from multiple shell types (bash,
+sh, zsh, fish) with format-specific handling.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Editor Advanced Requirements
+
+[REQUIREMENT]
+UID: SYS-ED-011
+TITLE: Syntax Highlighting
+STATEMENT: >>>
+The editor executable shall provide syntax highlighting for YAML test case files with
+context-aware suggestions.
+<<<
+
+[REQUIREMENT]
+UID: SYS-ED-012
+TITLE: Bulk Operations
+STATEMENT: >>>
+The editor executable shall support bulk operations including mass rename, tagging, and
+deletion with confirmation dialogs.
+<<<
+
+[REQUIREMENT]
+UID: SYS-ED-013
+TITLE: Template Management
+STATEMENT: >>>
+The editor executable shall manage test case templates with reusable sequences and steps
+for common testing patterns.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Audit Verifier Advanced Requirements
+
+[REQUIREMENT]
+UID: SYS-AV-009
+TITLE: Chain of Custody Logging
+STATEMENT: >>>
+The audit-verifier executable shall maintain chain of custody logs tracking all verification
+operations with audit trail.
+<<<
+
+[REQUIREMENT]
+UID: SYS-AV-010
+TITLE: Multi-Signature Support
+STATEMENT: >>>
+The audit-verifier executable shall support multiple signatures using different private keys
+for dual-verification scenarios.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Integration Requirements
+
+[REQUIREMENT]
+UID: SYS-INT-001
+TITLE: Cross-Executable Data Format Compatibility
+STATEMENT: >>>
+All executables shall use compatible data formats (YAML/JSON) enabling seamless data exchange
+between tools in the TCMS pipeline.
+<<<
+
+[REQUIREMENT]
+UID: SYS-INT-002
+TITLE: Error Message Consistency
+STATEMENT: >>>
+All executables shall use consistent error message formatting and exit codes for uniform
+error handling in scripts and automation.
+<<<
+
+[REQUIREMENT]
+UID: SYS-INT-003
+TITLE: Logging Framework Integration
+STATEMENT: >>>
+All executables shall integrate with standard logging framework supporting RUST_LOG
+environment variable and configurable log levels.
+<<<
+
+[REQUIREMENT]
+UID: SYS-INT-004
+TITLE: Configuration File Format Consistency
+STATEMENT: >>>
+All executables accepting configuration shall use TOML or YAML format with documented
+schema for consistency.
+<<<
+
+[REQUIREMENT]
+UID: SYS-INT-005
+TITLE: Help Text and Documentation
+STATEMENT: >>>
+All executables shall provide comprehensive help text via --help flag and support --version
+with semantic versioning.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Performance Requirements
+
+[REQUIREMENT]
+UID: SYS-PERF-001
+TITLE: Large File Handling
+STATEMENT: >>>
+All executables shall handle test files up to 100 MB without significant performance degradation
+or memory usage spikes.
+<<<
+
+[REQUIREMENT]
+UID: SYS-PERF-002
+TITLE: Parallel Execution Efficiency
+STATEMENT: >>>
+The test-orchestrator and batch validation executables shall achieve near-linear speedup with
+worker thread count up to 16 threads.
+<<<
+
+[REQUIREMENT]
+UID: SYS-PERF-003
+TITLE: Watch Mode Responsiveness
+STATEMENT: >>>
+The validate-yaml watch mode shall detect and re-validate file changes within 500ms of file
+write completion.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Reliability Requirements
+
+[REQUIREMENT]
+UID: SYS-REL-001
+TITLE: Error Recovery
+STATEMENT: >>>
+All executables shall gracefully handle unexpected input and corrupted files without crashing,
+providing clear error messages.
+<<<
+
+[REQUIREMENT]
+UID: SYS-REL-002
+TITLE: Atomic Operations
+STATEMENT: >>>
+Executables writing files shall use atomic write operations to prevent partial or corrupted
+output on process interruption.
+<<<
+
+[REQUIREMENT]
+UID: SYS-REL-003
+TITLE: Timeout Handling
+STATEMENT: >>>
+Long-running operations shall support configurable timeouts with graceful timeout handling
+and resource cleanup.
+<<<
+
+[[/SECTION]]
