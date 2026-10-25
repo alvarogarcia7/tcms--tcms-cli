@@ -105,6 +105,17 @@ build-release:
 	fi
 .PHONY: build-release
 
+# Publish macOS arm64 binaries, built locally, to a GitLab release.
+# Manual goal: run on a macOS machine (the CI runners are Linux-only and cannot
+# reliably cross-compile the macOS binaries). Builds the current local commit.
+# Usage:
+#   make publish-macos TAG=v0.0.1
+# Requires: GITLAB_TOKEN env var (personal access token with 'api' scope),
+#           plus cargo, jq, zip, curl.
+publish-macos:
+	@scripts/publish-macos-release.sh "$(TAG)"
+.PHONY: publish-macos
+
 # Per-crate build targets
 build-validate-yaml:
 	cargo build --package validate-yaml
