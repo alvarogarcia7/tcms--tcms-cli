@@ -1,5 +1,5 @@
 # Stage 1: builder - Build the actual application
-FROM rust:1.92-bookworm AS builder
+FROM rust:1.95-bookworm AS builder
 
 WORKDIR /app
 
@@ -127,8 +127,11 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Copy Python project files
 COPY pyproject.toml uv.lock ./
 
-# First, sync dependencies (this may use system Python initially)
-RUN uv sync
+# First, sync dependencies. Pin to Python 3.14: requires-python is ">=3.14",
+# so an unpinned sync downloads the latest CPython (3.15), which exceeds the
+# maximum version supported by PyO3 0.26 when building native deps such as
+# watchfiles (via strictdoc -> uvicorn[standard]).
+RUN uv sync --python 3.14
 
 # Then install Python 3.14 and set as default
 RUN uv python install --default 3.14
