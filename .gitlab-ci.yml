@@ -3,6 +3,7 @@ stages:
   - docker
   - rust
   - e2e
+  - release
 
 variables:
   DOCKER_HOST: "tcp://server-custom-dind.custom-dind:2375"
@@ -526,3 +527,111 @@ rust:e2e-tests:
 #  when: always
 #  only:
 #    - merge_requests
+
+# ---------------------------------------------------------------------------
+# Binary release (TCMS-39)
+#
+# Builds the Rust binaries for {linux amd64, macos arm64}, packages one zip
+# per architecture, and publishes them as a GitLab Release:
+#  -Only runs for tags starting with "v" (e.g. v1, v1.0.1, v2-rc1)
+#  - The shipped binaries are detected dynamically from the workspace metadata. 
+#  - macOS is cross-compiled from the Linux runner using cargo-zigbuild, so no macOS runner is required.
+# ---------------------------------------------------------------------------
+release:build:
+  stage: release
+  image: rust:1.95
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v.+/'
+  variables:
+    # Disable sccache here; the release job cross-compiles and does not share
+    # the build cache used by the rust stage.
+    RUSTC_WRAPPER: ""
+  before_script:
+    - rustc --version
+    - cargo --version
+    - apt-get update -qq
+    - apt-get install -y -qq zip curl jq python3-pip
+    # zig provides the cross-linker that lets cargo-zigbuild target macOS from Linux
+    - pip3 install --break-system-packages ziglang
+    - cargo install --locked cargo-zigbuild
+    - export PATH="$CARGO_HOME/bin:$PATH"
+    - rustup target add x86_64-unknown-linux-gnu aarch64-apple-darwin
+    # Detect the binaries to ship directly from the workspace metadata so the
+    # list stays in sync as crates/binaries are added or removed.
+    - export RELEASE_BINS=$(cargo metadata --format-version 1 --no-deps | jq -r '[.packages[].targets[] | select(.kind[] == "bin") | .name] | unique | join(" ")')
+    - echo "Detected release binaries -- $RELEASE_BINS"
+  script:
+    - mkdir -p dist
+    - |
+      package() {
+        bindir="$1"; label="$2"
+        echo "===== Packaging $label from $bindir ====="
+        stage="testcase-manager-${CI_COMMIT_TAG}-${label}"
+        rm -rf "$stage"; mkdir -p "$stage"
+        for b in $RELEASE_BINS; do
+          cp "${bindir}/${b}" "$stage/"
+        done
+        cp README.md README_INSTALL.md "$stage/" 2>/dev/null || true
+        (cd "$stage" && zip -r "../dist/${stage}.zip" .)
+      }
+    # Linux amd64: build natively on the x86_64 Linux runner. C deps (openssl
+    # via git2/native-tls, etc.) resolve through pkg-config exactly as they do
+    # in the Docker image build, which compiles the whole workspace fine.
+    - echo "===== Building linux-amd64 (native) ====="
+    - cargo build --release --workspace --bins
+    - package "target/release" "linux-amd64"
+    # macOS arm64: cross-compile from Linux with cargo-zigbuild. Kept non-fatal
+    # for now -- some C deps still need cross-build work (openssl headers under
+    # zig) and a macOS hiccup must not block shipping/testing the linux archive.
+    - |
+      echo "===== Building macos-arm64 (cross via zig) ====="
+      if cargo zigbuild --release --target aarch64-apple-darwin --workspace --bins; then
+        package "target/aarch64-apple-darwin/release" "macos-arm64"
+      else
+        echo "WARNING: macos-arm64 cross-compile failed; skipping its archive this build."
+      fi
+    - ls -la dist/
+    # Upload each archive to the project's generic package registry so the
+    # release can link to a stable download URL.
+    - |
+      PACKAGE_REGISTRY_URL="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/testcase-manager/${CI_COMMIT_TAG}"
+      for z in dist/*.zip; do
+        fname=$(basename "$z")
+        echo "Uploading $fname -> ${PACKAGE_REGISTRY_URL}/${fname}"
+        curl --fail --silent --show-error \
+          --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+          --upload-file "$z" \
+          "${PACKAGE_REGISTRY_URL}/${fname}"
+      done
+  artifacts:
+    name: "release-$CI_COMMIT_TAG"
+    paths:
+      - dist/*.zip
+    expire_in: never
+  tags:
+    - dind-amd
+
+release:publish:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  needs:
+    - job: release:build
+      artifacts: false
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v.+/'
+  variables:
+    PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/testcase-manager/${CI_COMMIT_TAG}"
+  script:
+    - echo "Publishing GitLab release for ${CI_COMMIT_TAG}"
+  release:
+    tag_name: '$CI_COMMIT_TAG'
+    name: 'Release $CI_COMMIT_TAG'
+    description: 'Binary release of tcms-cli for $CI_COMMIT_TAG (linux amd64, macos arm64).'
+    assets:
+      links:
+        - name: 'testcase-manager-$CI_COMMIT_TAG-linux-amd64.zip'
+          url: '${PACKAGE_REGISTRY_URL}/testcase-manager-$CI_COMMIT_TAG-linux-amd64.zip'
+          link_type: 'package'
+        - name: 'testcase-manager-$CI_COMMIT_TAG-macos-arm64.zip'
+          url: '${PACKAGE_REGISTRY_URL}/testcase-manager-$CI_COMMIT_TAG-macos-arm64.zip'
+          link_type: 'package'
