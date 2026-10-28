@@ -2023,6 +2023,394 @@ mod tests {
         assert_eq!(parsed.test_results.len(), 2);
     }
 
+    // ── verify_test_case unit tests ───────────────────────────────────────
+    //
+    // These tests exercise the core verification logic through four scenarios:
+    //   1. All execution log steps are present and every value matches.
+    //   2. Some steps have no log entry (NotExecuted).
+    //   3. Some steps have log entries whose values do not match (Fail).
+    //   4. The same step appears more than once in the log (repeated entries).
+    //
+    // All data is built in-memory — no files, no YAML fixtures.
+    // Each test uses `TestVerifier::with_exact_matching()` so the comparison
+    // rule is simple: expected string must equal actual string character-for-character.
+
+    /// Returns a Step whose expected result and output are `result` and `output`.
+    /// Uses `Exact` matching in all tests below (set on the verifier, not the step).
+    fn make_step(step_num: i64, result: &str, output: &str) -> Step {
+        Step::new(
+            step_num,
+            format!("Step {step_num}"),
+            "echo test".to_string(),
+            result.to_string(),
+            output.to_string(),
+        )
+    }
+
+    /// Returns a TestSequence containing `steps`.
+    fn make_sequence(id: i64, steps: Vec<Step>) -> TestSequence {
+        let mut seq =
+            TestSequence::new(id, format!("Sequence {id}"), format!("Test sequence {id}"));
+        seq.steps = steps;
+        seq
+    }
+
+    /// Returns a minimal TestCase with the given `id` and `sequences`.
+    fn make_test_case(id: &str, sequences: Vec<TestSequence>) -> TestCase {
+        let mut tc = TestCase::new(
+            "REQ-001".to_string(),
+            1,
+            1,
+            id.to_string(),
+            "Test case".to_string(),
+        );
+        tc.test_sequences = sequences;
+        tc
+    }
+
+    /// Returns a TestExecutionLog entry for a step that ran and produced
+    /// `actual_result` and `actual_output`.  The `success` flag is derived
+    /// from whether `actual_result` equals `"0"` (the conventional exit code
+    /// used in all tests below).
+    fn make_log(
+        test_case_id: &str,
+        sequence_id: i64,
+        step_number: i64,
+        actual_result: &str,
+        actual_output: &str,
+    ) -> TestExecutionLog {
+        TestExecutionLog {
+            test_case_id: test_case_id.to_string(),
+            sequence_id,
+            step_number,
+            success: Some(actual_result == "0"),
+            actual_result: actual_result.to_string(),
+            actual_output: actual_output.to_string(),
+            timestamp: None,
+            log_file_path: PathBuf::from("test_execution_log.json"),
+            result_verification_pass: None,
+            output_verification_pass: None,
+            source_yaml_sha256: None,
+        }
+    }
+
+    // ── Scenario 1: all steps present and passed ──────────────────────────
+
+    /// Three steps are defined in the test case.
+    /// The execution log contains matching entries for all three steps, and
+    /// every actual value is identical to the expected value.
+    ///
+    /// Verification outcome
+    ///   overall_pass        = true
+    ///   total / passed / failed / not_executed = 3 / 3 / 0 / 0
+    ///   step 1, 2, 3        → Pass
+    #[test]
+    fn test_verify_test_case_all_steps_present_and_passed() {
+        let tc = make_test_case(
+            "TC_ALL_PASS",
+            vec![make_sequence(
+                1,
+                vec![
+                    make_step(1, "0", "hello"),
+                    make_step(2, "0", "world"),
+                    make_step(3, "0", "done"),
+                ],
+            )],
+        );
+
+        let logs = vec![
+            make_log("TC_ALL_PASS", 1, 1, "0", "hello"),
+            make_log("TC_ALL_PASS", 1, 2, "0", "world"),
+            make_log("TC_ALL_PASS", 1, 3, "0", "done"),
+        ];
+
+        let verifier = TestVerifier::with_exact_matching();
+        let result = verifier.verify_test_case(&tc, &logs);
+
+        assert!(
+            result.overall_pass,
+            "all steps matched — should be an overall pass"
+        );
+        assert_eq!(result.total_steps, 3);
+        assert_eq!(result.passed_steps, 3);
+        assert_eq!(result.failed_steps, 0);
+        assert_eq!(result.not_executed_steps, 0);
+
+        let steps = &result.sequences[0].step_results;
+        assert!(
+            matches!(steps[0], StepVerificationResultEnum::Pass { .. }),
+            "step 1 should be Pass"
+        );
+        assert!(
+            matches!(steps[1], StepVerificationResultEnum::Pass { .. }),
+            "step 2 should be Pass"
+        );
+        assert!(
+            matches!(steps[2], StepVerificationResultEnum::Pass { .. }),
+            "step 3 should be Pass"
+        );
+    }
+
+    // ── Scenario 2: some steps have no log entry (NotExecuted) ───────────
+
+    /// Three steps are defined in the test case.
+    /// The execution log only contains entries for steps 1 and 3 — step 2
+    /// was never executed (e.g. the run was interrupted before reaching it).
+    ///
+    /// Because a missing step could hide a real failure, the verifier treats
+    /// it as a hard error: overall_pass = false even though no step *failed*.
+    ///
+    /// Verification outcome
+    ///   overall_pass        = false   (missing steps prevent a pass)
+    ///   total / passed / failed / not_executed = 3 / 2 / 0 / 1
+    ///   step 1 → Pass, step 2 → NotExecuted, step 3 → Pass
+    #[test]
+    fn test_verify_test_case_some_steps_missing() {
+        let tc = make_test_case(
+            "TC_MISSING",
+            vec![make_sequence(
+                1,
+                vec![
+                    make_step(1, "0", "first"),
+                    make_step(2, "0", "second"), // no log entry for this step
+                    make_step(3, "0", "third"),
+                ],
+            )],
+        );
+
+        // Deliberately omit the log entry for step 2.
+        let logs = vec![
+            make_log("TC_MISSING", 1, 1, "0", "first"),
+            // no entry for step 2
+            make_log("TC_MISSING", 1, 3, "0", "third"),
+        ];
+
+        let verifier = TestVerifier::with_exact_matching();
+        let result = verifier.verify_test_case(&tc, &logs);
+
+        assert!(
+            !result.overall_pass,
+            "a missing step must cause an overall failure"
+        );
+        assert_eq!(result.total_steps, 3);
+        assert_eq!(result.passed_steps, 2);
+        assert_eq!(result.failed_steps, 0);
+        assert_eq!(result.not_executed_steps, 1);
+
+        let steps = &result.sequences[0].step_results;
+        assert!(
+            matches!(steps[0], StepVerificationResultEnum::Pass { .. }),
+            "step 1 should be Pass"
+        );
+        assert!(
+            matches!(steps[1], StepVerificationResultEnum::NotExecuted { .. }),
+            "step 2 should be NotExecuted — it has no log entry"
+        );
+        assert!(
+            matches!(steps[2], StepVerificationResultEnum::Pass { .. }),
+            "step 3 should be Pass"
+        );
+    }
+
+    // ── Scenario 3: some steps failed ────────────────────────────────────
+
+    /// All 3 steps ran and have log entries, but step 2's actual_result is
+    /// "1" while the expected result is "0" — the exit codes disagree.
+    ///
+    /// Verification outcome
+    ///   overall_pass        = false
+    ///   total / passed / failed / not_executed = 3 / 2 / 1 / 0
+    ///   step 1 → Pass, step 2 → Fail (result mismatch), step 3 → Pass
+    #[test]
+    fn test_verify_test_case_some_steps_failed_result_mismatch() {
+        let tc = make_test_case(
+            "TC_FAIL_RESULT",
+            vec![make_sequence(
+                1,
+                vec![
+                    make_step(1, "0", "ok"),
+                    make_step(2, "0", "ok"), // expects result "0"
+                    make_step(3, "0", "ok"),
+                ],
+            )],
+        );
+
+        let logs = vec![
+            make_log("TC_FAIL_RESULT", 1, 1, "0", "ok"),
+            make_log("TC_FAIL_RESULT", 1, 2, "1", "ok"), // actual result "1" ≠ expected "0"
+            make_log("TC_FAIL_RESULT", 1, 3, "0", "ok"),
+        ];
+
+        let verifier = TestVerifier::with_exact_matching();
+        let result = verifier.verify_test_case(&tc, &logs);
+
+        assert!(
+            !result.overall_pass,
+            "a failing step must cause an overall failure"
+        );
+        assert_eq!(result.total_steps, 3);
+        assert_eq!(result.passed_steps, 2);
+        assert_eq!(result.failed_steps, 1);
+        assert_eq!(result.not_executed_steps, 0);
+
+        let steps = &result.sequences[0].step_results;
+        assert!(
+            matches!(steps[0], StepVerificationResultEnum::Pass { .. }),
+            "step 1 should be Pass"
+        );
+        assert!(
+            matches!(steps[1], StepVerificationResultEnum::Fail { .. }),
+            "step 2 should be Fail — actual result \"1\" does not match expected \"0\""
+        );
+        assert!(
+            matches!(steps[2], StepVerificationResultEnum::Pass { .. }),
+            "step 3 should be Pass"
+        );
+    }
+
+    /// All 3 steps ran and have log entries, but step 2's actual_output is
+    /// "unexpected" while the expected output is "expected output".
+    ///
+    /// Verification outcome
+    ///   overall_pass        = false
+    ///   total / passed / failed / not_executed = 3 / 2 / 1 / 0
+    ///   step 1 → Pass, step 2 → Fail (output mismatch), step 3 → Pass
+    #[test]
+    fn test_verify_test_case_some_steps_failed_output_mismatch() {
+        let tc = make_test_case(
+            "TC_FAIL_OUTPUT",
+            vec![make_sequence(
+                1,
+                vec![
+                    make_step(1, "0", "expected output"),
+                    make_step(2, "0", "expected output"), // expects this exact string
+                    make_step(3, "0", "expected output"),
+                ],
+            )],
+        );
+
+        let logs = vec![
+            make_log("TC_FAIL_OUTPUT", 1, 1, "0", "expected output"),
+            make_log("TC_FAIL_OUTPUT", 1, 2, "0", "unexpected"), // output differs
+            make_log("TC_FAIL_OUTPUT", 1, 3, "0", "expected output"),
+        ];
+
+        let verifier = TestVerifier::with_exact_matching();
+        let result = verifier.verify_test_case(&tc, &logs);
+
+        assert!(!result.overall_pass);
+        assert_eq!(result.total_steps, 3);
+        assert_eq!(result.passed_steps, 2);
+        assert_eq!(result.failed_steps, 1);
+        assert_eq!(result.not_executed_steps, 0);
+
+        let steps = &result.sequences[0].step_results;
+        assert!(
+            matches!(steps[0], StepVerificationResultEnum::Pass { .. }),
+            "step 1 should be Pass"
+        );
+        assert!(
+            matches!(steps[1], StepVerificationResultEnum::Fail { .. }),
+            "step 2 should be Fail — actual output does not match expected"
+        );
+        assert!(
+            matches!(steps[2], StepVerificationResultEnum::Pass { .. }),
+            "step 3 should be Pass"
+        );
+    }
+
+    // ── Scenario 4: repeated step entries ────────────────────────────────
+    //
+    // The verifier builds a HashMap keyed by (sequence_id, step_number).
+    // When the execution log contains multiple entries for the same step,
+    // each insertion overwrites the previous one, so the LAST entry wins.
+
+    /// The log has two entries for (sequence=1, step=1).
+    /// The first entry would pass; the second entry has wrong values and fails.
+    /// Because the second entry overwrites the first in the HashMap, step 1
+    /// ends up being evaluated against the failing values.
+    ///
+    /// Verification outcome
+    ///   overall_pass        = false
+    ///   total / passed / failed / not_executed = 2 / 1 / 1 / 0
+    ///   step 1 → Fail (second duplicate overwrote the first)
+    ///   step 2 → Pass
+    #[test]
+    fn test_verify_test_case_repeated_step_last_entry_wins_and_it_fails() {
+        let tc = make_test_case(
+            "TC_DUP_FAIL",
+            vec![make_sequence(
+                1,
+                vec![make_step(1, "0", "correct"), make_step(2, "0", "ok")],
+            )],
+        );
+
+        let logs = vec![
+            make_log("TC_DUP_FAIL", 1, 1, "0", "correct"), // first entry — would pass
+            make_log("TC_DUP_FAIL", 1, 1, "1", "wrong"),   // second entry — overwrites first
+            make_log("TC_DUP_FAIL", 1, 2, "0", "ok"),
+        ];
+
+        let verifier = TestVerifier::with_exact_matching();
+        let result = verifier.verify_test_case(&tc, &logs);
+
+        // Step 1 is verified against the LAST log entry: result="1", output="wrong".
+        // Both differ from expected ("0", "correct"), so it is a Fail.
+        assert!(!result.overall_pass);
+        assert_eq!(result.total_steps, 2);
+        assert_eq!(result.passed_steps, 1);
+        assert_eq!(result.failed_steps, 1);
+        assert_eq!(result.not_executed_steps, 0);
+
+        let steps = &result.sequences[0].step_results;
+        assert!(
+            matches!(steps[0], StepVerificationResultEnum::Fail { .. }),
+            "step 1 should be Fail — the second (failing) duplicate overwrote the first"
+        );
+        assert!(
+            matches!(steps[1], StepVerificationResultEnum::Pass { .. }),
+            "step 2 should be Pass"
+        );
+    }
+
+    /// The log has two entries for (sequence=1, step=1), and both have values
+    /// that match the expected outcome.  Even though one is redundant, the
+    /// last entry still wins — and since it also matches, the step passes.
+    ///
+    /// Verification outcome
+    ///   overall_pass        = true
+    ///   total / passed / failed / not_executed = 2 / 2 / 0 / 0
+    #[test]
+    fn test_verify_test_case_repeated_step_last_entry_wins_and_it_passes() {
+        let tc = make_test_case(
+            "TC_DUP_PASS",
+            vec![make_sequence(
+                1,
+                vec![make_step(1, "0", "correct"), make_step(2, "0", "ok")],
+            )],
+        );
+
+        let logs = vec![
+            make_log("TC_DUP_PASS", 1, 1, "0", "correct"), // first duplicate — passes
+            make_log("TC_DUP_PASS", 1, 1, "0", "correct"), // second duplicate — also passes
+            make_log("TC_DUP_PASS", 1, 2, "0", "ok"),
+        ];
+
+        let verifier = TestVerifier::with_exact_matching();
+        let result = verifier.verify_test_case(&tc, &logs);
+
+        assert!(
+            result.overall_pass,
+            "when both duplicates match the expected values the test should still pass"
+        );
+        assert_eq!(result.total_steps, 2);
+        assert_eq!(result.passed_steps, 2);
+        assert_eq!(result.failed_steps, 0);
+        assert_eq!(result.not_executed_steps, 0);
+    }
+
+    // ── end of verify_test_case unit tests ───────────────────────────────
+
     #[test]
     fn test_generate_report_json_format() {
         let verifier = TestVerifier::with_exact_matching();
