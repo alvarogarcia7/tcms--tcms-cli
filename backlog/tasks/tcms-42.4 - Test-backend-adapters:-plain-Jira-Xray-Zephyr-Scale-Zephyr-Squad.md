@@ -1,6 +1,6 @@
 ---
 id: TCMS-42.4
-title: Test backend adapters: plain Jira, Xray, Zephyr Scale, Zephyr Squad
+title: 'Test backend adapters: plain Jira, Xray, Zephyr Scale, Zephyr Squad'
 status: To Do
 assignee: []
 created_date: '2026-10-28T11:00:00Z'

@@ -1,6 +1,6 @@
 ---
 id: TCMS-42.5
-title: Write test case statuses: lifecycle and latest verdict
+title: 'Write test case statuses: lifecycle and latest verdict'
 status: To Do
 assignee: []
 created_date: '2026-10-28T11:00:00Z'

@@ -1,6 +1,6 @@
 ---
 id: TCMS-42.8
-title: Defects: create or link Jira issues from problem reports
+title: 'Defects: create or link Jira issues from problem reports'
 status: To Do
 assignee: []
 created_date: '2026-10-28T11:00:00Z'

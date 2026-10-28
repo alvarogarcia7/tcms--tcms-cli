@@ -1,6 +1,6 @@
 ---
 id: TCMS-42.1
-title: ID resolver: translate Jira and StrictDoc ids to URLs and back
+title: 'ID resolver: translate Jira and StrictDoc ids to URLs and back'
 status: To Do
 assignee: []
 created_date: '2026-10-28T11:00:00Z'

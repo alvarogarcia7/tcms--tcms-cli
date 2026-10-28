@@ -1,6 +1,6 @@
 ---
 id: TCMS-42
-title: Integrate with Jira: read features, write statuses, resolve IDs
+title: 'Integrate with Jira: read features, write statuses, resolve IDs'
 status: To Do
 assignee: []
 created_date: '2026-10-28T11:00:00Z'
