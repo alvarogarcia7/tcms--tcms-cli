@@ -61,7 +61,7 @@ impl LogCleaner {
                         .unwrap_or_else(|| "[PATH]".to_string())
                 };
 
-                format!("{}{}", &caps[0].chars().next().unwrap_or(' '), normalized)
+                format!("{}{}", caps[0].chars().next().unwrap_or(' '), normalized)
             })
             .to_string()
     }
