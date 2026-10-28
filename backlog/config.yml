@@ -1,10 +1,11 @@
-project_name: "TCMS Project"
+project_name: "TCMS CLI"
 default_status: "To Do"
 statuses: ["To Do", "In Progress", "In Review", "Done"]
 labels: []
-definition_of_done: ["All tests are passing. Run 'make test'"]
+definition_of_done: ["All tests are passing. Run make test"]
 date_format: yyyy-mm-dd
 max_column_width: 20
+default_editor: "nvim"
 auto_open_browser: true
 default_port: 9420
 remote_operations: true
