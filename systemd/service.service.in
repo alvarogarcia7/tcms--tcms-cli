@@ -1,0 +1,36 @@
+# Generic systemd unit for a service whose actions live in a Makefile.
+# Installed by `make service-install`, which substitutes the @PLACEHOLDERS@.
+# Do not edit the copy in /etc/systemd/system; edit this file and reinstall.
+#
+# This unit holds no knowledge of what the service is or how it starts: every
+# action is a make goal run in @WORKDIR@, so the Makefile stays the single
+# source of truth. Change how the service starts by changing that goal, not
+# this file.
+
+[Unit]
+Description=@DESCRIPTION@
+# Units that must be up first (empty resets the list).
+Requires=@REQUIRES@
+After=@AFTER@
+Wants=network-online.target
+
+[Service]
+# The start goal is expected to return once the service is up (the usual
+# `docker compose up -d` shape), so the unit is oneshot; RemainAfterExit keeps
+# it "active" afterwards so that `systemctl stop` has something to stop.
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=@WORKDIR@
+ExecStart=@MAKE@ -C @WORKDIR@ @START_GOAL@
+ExecStop=@MAKE@ -C @WORKDIR@ @STOP_GOAL@
+ExecReload=@MAKE@ -C @WORKDIR@ @RELOAD_GOAL@
+# Variables for the make goals. systemd starts units with a minimal PATH, so
+# put PATH= here (or in this file) if a goal needs tools outside /usr/bin.
+# The leading '-' makes a missing file non-fatal.
+EnvironmentFile=-@WORKDIR@/.env
+# The first start may build images or compile, so allow for a slow run.
+TimeoutStartSec=@TIMEOUT@
+
+[Install]
+# Start when the machine reaches normal multi-user mode (every normal boot).
+WantedBy=multi-user.target

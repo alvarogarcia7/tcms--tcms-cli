@@ -32,12 +32,18 @@
 # DEBUGGING:
 #   make list-affected-crates BASE_REF=main  # See which crates would be built
 #
+# Name of the systemd service installed by mk/service.mk (see SERVICE_INSTALL.md).
+# Must be set before the include: mk/service.mk uses ?= defaults.
+SERVICE := testcase-manager
+SERVICE_DESCRIPTION := $(SERVICE) (TCMS Docker Compose stack)
+
 # Include modular makefiles
 include mk/python.mk
 -include mk/incremental.mk
 include mk/strictdoc.mk
 -include mk/projector.mk
 -include mk/backlog.mk
+-include mk/service.mk
 
 pre-commit:
 	@${MAKE} build BASE_REF=$(or $(BASE_REF),main)
@@ -628,6 +634,21 @@ docker-build:
 docker-run:
 	docker run -v $(PWD)/testcases:/app/testcases testcase-manager:latest
 .PHONY: docker-run
+
+# Goals the systemd unit calls (mk/service.mk). Keep them here: the unit holds
+# no knowledge of docker, it only runs `make start` / `make stop` in this folder.
+start:
+	@mkdir -p output data
+	docker compose up -d --remove-orphans
+.PHONY: start
+
+stop:
+	docker compose down
+.PHONY: stop
+
+status:
+	docker compose ps
+.PHONY: status
 
 test-verify-sample:
 	@${MAKE} build BASE_REF=$(or $(BASE_REF),main)
