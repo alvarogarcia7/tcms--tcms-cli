@@ -1,0 +1,377 @@
+requirement: "VAR_CAPTURE_EXAMPLE"
+item: 1
+tc: 1
+id: 'TC_VAR_CAPTURE_EXAMPLE'
+description: 'Demonstration of variable capture and usage in test cases, including command-based captures, regex-based captures, and comprehensive verification using captured values'
+
+general_initial_conditions:
+  system:
+    - "Bash shell with standard Unix utilities is available"
+    - "jq command-line JSON processor is installed"
+
+initial_conditions:
+  environment:
+    - "Working directory has write permissions"
+    - "Temporary directory /tmp is available"
+
+test_sequences:
+  - id: 1
+    name: "Command-based Variable Captures"
+    description: |
+                  This test sequence demonstrates capturing variables from command output.
+                  Variables are extracted using shell commands and used in subsequent verifications.
+    initial_conditions:
+      system:
+        - "Test environment is clean"
+    steps:
+      - step: 1
+        description: "Create test data and capture file metrics"
+        command: |
+                  echo "Testing variable capture functionality" > /tmp/test_vars.txt
+                  cat /tmp/test_vars.txt
+        capture_vars:
+          - name: byte_count
+            command: "wc -c < /tmp/test_vars.txt"
+          - name: line_count
+            command: "wc -l < /tmp/test_vars.txt"
+          - name: first_word
+            command: "head -1 /tmp/test_vars.txt | awk '{print $1}'"
+        expected:
+          success: true
+          result: '0'
+          output: 'Testing'
+        verification:
+          result: "[[ $EXIT_CODE -eq 0 ]]"
+          output: "grep -q 'variable' <<< \"$COMMAND_OUTPUT\""
+          general:
+            - name: verify_byte_count_numeric
+              condition: "[[ $byte_count =~ ^[0-9]+$ ]]"
+            - name: verify_byte_count_positive
+              condition: "[[ $byte_count -gt 0 ]]"
+            - name: verify_line_count_is_one
+              condition: "[[ $line_count -eq 1 ]]"
+            - name: verify_first_word_is_testing
+              condition: "[[ \"$first_word\" = \"Testing\" ]]"
+
+      - step: 2
+        description: "Process JSON data and capture fields"
+        command: |
+                  cat > /tmp/config.json << 'EOF'
+                  {
+                    "application": "TestApp",
+                    "version": "1.2.3",
+                    "port": 8080,
+                    "environment": "staging",
+                    "debug_mode": true,
+                    "max_connections": 100
+                  }
+                  EOF
+                  cat /tmp/config.json
+        capture_vars:
+          - name: app_name
+            command: "jq -r '.application' /tmp/config.json"
+          - name: app_version
+            command: "jq -r '.version' /tmp/config.json"
+          - name: service_port
+            command: "jq -r '.port' /tmp/config.json"
+          - name: env_type
+            command: "jq -r '.environment' /tmp/config.json"
+          - name: max_conn
+            command: "jq -r '.max_connections' /tmp/config.json"
+        expected:
+          success: true
+          result: '0'
+          output: 'TestApp'
+        verification:
+          result: "[[ $EXIT_CODE -eq 0 ]]"
+          output: "grep -q 'version' <<< \"$COMMAND_OUTPUT\""
+          general:
+            - name: verify_app_name_is_testapp
+              condition: "[[ \"$app_name\" = \"TestApp\" ]]"
+            - name: verify_version_format
+              condition: "[[ $app_version =~ ^[0-9]+\\.[0-9]+\\.[0-9]+$ ]]"
+            - name: verify_version_is_1_2_3
+              condition: "[[ \"$app_version\" = \"1.2.3\" ]]"
+            - name: verify_port_is_8080
+              condition: "[[ $service_port -eq 8080 ]]"
+            - name: verify_port_in_valid_range
+              condition: "[[ $service_port -ge 1024 && $service_port -le 65535 ]]"
+            - name: verify_environment_is_staging
+              condition: "[[ \"$env_type\" = \"staging\" ]]"
+            - name: verify_max_connections_numeric
+              condition: "[[ $max_conn =~ ^[0-9]+$ ]]"
+            - name: verify_max_connections_reasonable
+              condition: "[[ $max_conn -ge 50 && $max_conn -le 1000 ]]"
+
+  - id: 2
+    name: "Regex-based Variable Captures"
+    description: |
+                  This test sequence demonstrates extracting variables using regex patterns.
+                  Multiple values are captured from structured text output and validated.
+    initial_conditions:
+      system:
+        - "Regex capture is supported"
+    steps:
+      - step: 1
+        description: "Extract API response data using regex patterns"
+        command: |
+                  cat << 'EOF'
+                  {
+                    "status": "success",
+                    "request_id": "req_abc123def456",
+                    "timestamp": "2024-01-15T10:30:45Z",
+                    "user_id": 98765,
+                    "data": {
+                      "items_processed": 42,
+                      "success_rate": 98.5
+                    }
+                  }
+                  EOF
+        capture_vars:
+          - name: status_value
+            capture: '"status": "([^"]+)"'
+          - name: request_id
+            capture: '"request_id": "([^"]+)"'
+          - name: timestamp
+            capture: '"timestamp": "([^"]+)"'
+          - name: user_id
+            capture: '"user_id": ([0-9]+)'
+          - name: items_count
+            capture: '"items_processed": ([0-9]+)'
+          - name: success_rate
+            capture: '"success_rate": ([0-9.]+)'
+        expected:
+          success: true
+          result: '0'
+          output: 'success'
+        verification:
+          result: "[[ $EXIT_CODE -eq 0 ]]"
+          output: "grep -q '\"status\"' <<< \"$COMMAND_OUTPUT\""
+          general:
+            - name: verify_status_is_success
+              condition: "[[ \"$status_value\" = \"success\" ]]"
+            - name: verify_request_id_format
+              condition: "[[ $request_id =~ ^req_[a-z0-9]+$ ]]"
+            - name: verify_request_id_length
+              condition: "[[ ${#request_id} -gt 10 ]]"
+            - name: verify_timestamp_iso8601
+              condition: "[[ $timestamp =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]]"
+            - name: verify_user_id_numeric
+              condition: "[[ $user_id =~ ^[0-9]+$ ]]"
+            - name: verify_user_id_range
+              condition: "[[ $user_id -gt 1000 && $user_id -lt 100000 ]]"
+            - name: verify_items_count_numeric
+              condition: "[[ $items_count -ge 0 ]]"
+            - name: verify_items_reasonable
+              condition: "[[ $items_count -eq 42 ]]"
+            - name: verify_success_rate_numeric
+              condition: "[[ $success_rate =~ ^[0-9]+\\.?[0-9]*$ ]]"
+            - name: verify_success_rate_high
+              condition: "[[ $(echo $success_rate | cut -d. -f1) -ge 90 ]]"
+
+      - step: 2
+        description: "Extract system metrics from log output"
+        command: |
+                  cat << 'EOF'
+                  [2024-01-15 10:30:00] SYSTEM_STATUS
+                  CPU_LOAD: 42.5%
+                  MEMORY_USED: 8192 MB
+                  DISK_USAGE: 156 GB / 500 GB
+                  NETWORK_LATENCY: 15 ms
+                  ERROR_COUNT: 3
+                  WARNING_COUNT: 7
+                  UPTIME: 45 days
+                  EOF
+        capture_vars:
+          - name: cpu_load
+            capture: 'CPU_LOAD: ([0-9.]+)%'
+          - name: memory_mb
+            capture: 'MEMORY_USED: ([0-9]+) MB'
+          - name: disk_used
+            capture: 'DISK_USAGE: ([0-9]+) GB'
+          - name: disk_total
+            capture: 'DISK_USAGE: [0-9]+ GB / ([0-9]+) GB'
+          - name: latency_ms
+            capture: 'NETWORK_LATENCY: ([0-9]+) ms'
+          - name: error_count
+            capture: 'ERROR_COUNT: ([0-9]+)'
+          - name: warning_count
+            capture: 'WARNING_COUNT: ([0-9]+)'
+          - name: uptime_days
+            capture: 'UPTIME: ([0-9]+) days'
+        expected:
+          success: true
+          result: '0'
+          output: 'SYSTEM_STATUS'
+        verification:
+          result: "[[ $EXIT_CODE -eq 0 ]]"
+          output: "grep -q 'CPU_LOAD' <<< \"$COMMAND_OUTPUT\""
+          general:
+            - name: verify_cpu_load_numeric
+              condition: "[[ $cpu_load =~ ^[0-9]+\\.?[0-9]*$ ]]"
+            - name: verify_cpu_load_reasonable
+              condition: "[[ $(echo $cpu_load | cut -d. -f1) -lt 100 ]]"
+            - name: verify_memory_numeric
+              condition: "[[ $memory_mb =~ ^[0-9]+$ ]]"
+            - name: verify_memory_positive
+              condition: "[[ $memory_mb -gt 0 ]]"
+            - name: verify_disk_used_numeric
+              condition: "[[ $disk_used =~ ^[0-9]+$ ]]"
+            - name: verify_disk_total_numeric
+              condition: "[[ $disk_total =~ ^[0-9]+$ ]]"
+            - name: verify_disk_usage_valid
+              condition: "[[ $disk_used -lt $disk_total ]]"
+            - name: verify_latency_numeric
+              condition: "[[ $latency_ms =~ ^[0-9]+$ ]]"
+            - name: verify_latency_acceptable
+              condition: "[[ $latency_ms -lt 100 ]]"
+            - name: verify_error_count_low
+              condition: "[[ $error_count -lt 10 ]]"
+            - name: verify_warning_count_manageable
+              condition: "[[ $warning_count -lt 20 ]]"
+            - name: verify_uptime_long
+              condition: "[[ $uptime_days -gt 30 ]]"
+
+  - id: 3
+    name: "Mixed Captures with Arithmetic"
+    description: |
+                  This test sequence combines command-based and regex-based captures
+                  with arithmetic operations and complex validation logic.
+    initial_conditions:
+      system:
+        - "Both capture methods available"
+    steps:
+      - step: 1
+        description: "Capture and calculate metrics from test results"
+        command: |
+                  cat << 'EOF'
+                  TEST_RESULTS_SUMMARY
+                  Total_Tests: 250
+                  Passed: 238
+                  Failed: 8
+                  Skipped: 4
+                  Duration_Seconds: 1250
+                  Average_Time_Per_Test: 5.0
+                  Success_Percentage: 95.2
+                  EOF
+        capture_vars:
+          - name: total_tests
+            capture: 'Total_Tests: ([0-9]+)'
+          - name: passed_count
+            capture: 'Passed: ([0-9]+)'
+          - name: failed_count
+            capture: 'Failed: ([0-9]+)'
+          - name: skipped_count
+            capture: 'Skipped: ([0-9]+)'
+          - name: duration_sec
+            capture: 'Duration_Seconds: ([0-9]+)'
+          - name: avg_time
+            capture: 'Average_Time_Per_Test: ([0-9.]+)'
+          - name: success_pct
+            capture: 'Success_Percentage: ([0-9.]+)'
+          - name: calc_executed
+            command: "echo $((250 - 4))"
+        expected:
+          success: true
+          result: '0'
+          output: 'TEST_RESULTS_SUMMARY'
+        verification:
+          result: "[[ $EXIT_CODE -eq 0 ]]"
+          output: "grep -q 'Passed' <<< \"$COMMAND_OUTPUT\""
+          general:
+            - name: verify_total_tests_correct
+              condition: "[[ $total_tests -eq 250 ]]"
+            - name: verify_passed_high
+              condition: "[[ $passed_count -ge 200 ]]"
+            - name: verify_passed_equals_238
+              condition: "[[ $passed_count -eq 238 ]]"
+            - name: verify_failed_low
+              condition: "[[ $failed_count -lt 20 ]]"
+            - name: verify_skipped_minimal
+              condition: "[[ $skipped_count -le 5 ]]"
+            - name: verify_totals_add_up
+              condition: "[[ $((passed_count + failed_count + skipped_count)) -eq $total_tests ]]"
+            - name: verify_duration_reasonable
+              condition: "[[ $duration_sec -lt 3600 ]]"
+            - name: verify_duration_positive
+              condition: "[[ $duration_sec -gt 0 ]]"
+            - name: verify_avg_time_numeric
+              condition: "[[ $avg_time =~ ^[0-9.]+$ ]]"
+            - name: verify_avg_time_reasonable
+              condition: "[[ $(echo $avg_time | cut -d. -f1) -lt 30 ]]"
+            - name: verify_success_percentage_high
+              condition: "[[ $(echo $success_pct | cut -d. -f1) -ge 90 ]]"
+            - name: verify_executed_matches_non_skipped
+              condition: "[[ $calc_executed -eq $((passed_count + failed_count)) ]]"
+
+      - step: 2
+        description: "Capture deployment information and validate configuration"
+        command: |
+                  cat << 'EOF'
+                  DEPLOYMENT_INFO
+                  Release_Version: v2.3.4
+                  Build_Number: 2024.001.5432
+                  Deployment_Date: 2024-01-15
+                  Deployment_Time: 14:30:45
+                  Environment: production
+                  Replicas: 3
+                  CPU_Limit: 2000m
+                  Memory_Limit: 4Gi
+                  Rollout_Status: Complete
+                  Previous_Version: v2.3.3
+                  EOF
+        capture_vars:
+          - name: release_ver
+            capture: 'Release_Version: ([a-z0-9.]+)'
+          - name: build_num
+            capture: 'Build_Number: ([0-9.]+)'
+          - name: deploy_date
+            capture: 'Deployment_Date: ([0-9-]+)'
+          - name: deploy_time
+            capture: 'Deployment_Time: ([0-9:]+)'
+          - name: environment
+            capture: 'Environment: ([a-z]+)'
+          - name: replicas
+            capture: 'Replicas: ([0-9]+)'
+          - name: cpu_limit
+            capture: 'CPU_Limit: ([0-9]+)'
+          - name: memory_limit
+            capture: 'Memory_Limit: ([0-9]+)Gi'
+          - name: rollout_status
+            capture: 'Rollout_Status: ([A-Z]+)'
+          - name: prev_version
+            capture: 'Previous_Version: ([a-z0-9.]+)'
+        expected:
+          success: true
+          result: '0'
+          output: 'DEPLOYMENT_INFO'
+        verification:
+          result: "[[ $EXIT_CODE -eq 0 ]]"
+          output: "grep -q 'Release_Version' <<< \"$COMMAND_OUTPUT\""
+          general:
+            - name: verify_version_format
+              condition: "[[ $release_ver =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+$ ]]"
+            - name: verify_version_incremented
+              condition: "[[ \"$release_ver\" > \"$prev_version\" ]]"
+            - name: verify_build_number_format
+              condition: "[[ $build_num =~ ^[0-9]+\\.[0-9]+\\.[0-9]+$ ]]"
+            - name: verify_deploy_date_format
+              condition: "[[ $deploy_date =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]"
+            - name: verify_deploy_time_format
+              condition: "[[ $deploy_time =~ ^[0-9]{2}:[0-9]{2}:[0-9]{2}$ ]]"
+            - name: verify_environment_is_production
+              condition: "[[ \"$environment\" = \"production\" ]]"
+            - name: verify_replicas_minimum
+              condition: "[[ $replicas -ge 2 ]]"
+            - name: verify_replicas_reasonable
+              condition: "[[ $replicas -le 10 ]]"
+            - name: verify_cpu_limit_numeric
+              condition: "[[ $cpu_limit =~ ^[0-9]+$ ]]"
+            - name: verify_cpu_limit_reasonable
+              condition: "[[ $cpu_limit -ge 500 && $cpu_limit -le 8000 ]]"
+            - name: verify_memory_limit_numeric
+              condition: "[[ $memory_limit =~ ^[0-9]+$ ]]"
+            - name: verify_memory_limit_reasonable
+              condition: "[[ $memory_limit -ge 1 && $memory_limit -le 32 ]]"
+            - name: verify_rollout_complete
+              condition: "[[ \"$rollout_status\" = \"Complete\" ]]"

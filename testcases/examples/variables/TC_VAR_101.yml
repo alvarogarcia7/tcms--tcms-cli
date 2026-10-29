@@ -1,0 +1,50 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: VAR_001
+item: 1
+tc: 1
+id: TC_VAR_101
+description: Test command-based and regex-based variable captures with general verification
+  conditions
+general_initial_conditions:
+  system:
+  - Bash shell is available
+  - Common Unix utilities (wc, cat, echo) are installed
+initial_conditions:
+  filesystem:
+  - Temporary directory /tmp is writable
+test_sequences:
+- id: 1
+  name: Variable Capture Test
+  description: 'Test both command-based and regex-based variable capture
+
+    methods with general verification conditions
+
+    '
+  initial_conditions:
+    system:
+    - Test environment is ready
+  steps:
+  - step: 1
+    description: Create test file and capture byte count with command
+    command: echo "HELLO WORLD" > /tmp/hello.txt; cat /tmp/hello.txt
+    capture_vars:
+    - name: output_len
+      command: cat /tmp/hello.txt | wc -c | awk '{print $1}'
+    - name: content
+      command: cat /tmp/hello.txt
+    - name: outp
+      capture: '"outp":"(.+)"'
+    expected:
+      success: true
+      result: '0'
+      output: HELLO WORLD
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: '[[ $output_len -gt 11 ]] && [[ $(grep -c "HELLO" <<< "$COMMAND_OUTPUT")
+        -eq 1 ]]'
+      general:
+      - name: verify output_len is numeric
+        condition: '[[ $output_len =~ ^[0-9]+$ ]]'
+      - name: verify output_len value
+        condition: '[[ $output_len -ge 5 ]]'

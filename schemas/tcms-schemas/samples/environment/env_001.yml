@@ -1,0 +1,13 @@
+id: ENV-SIM-23
+name: eUICC simulator v2.3
+rig: bench-3
+simulator: eUICC simulator 2.3
+tools:
+  - tool: wcet-tool
+    version: '4.1'
+    qualification_status: qualified
+    qualification_ref: TQR-007
+  - tool: gcov
+    version: '13'
+    qualification_status: pending
+qualification_status: pending

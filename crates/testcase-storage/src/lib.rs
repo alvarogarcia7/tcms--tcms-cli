@@ -249,6 +249,10 @@ impl TestCaseStorage {
             }
         };
 
+        test_case
+            .validate_classification()
+            .map_err(|e| anyhow::anyhow!("{}: {}", full_path.display(), e))?;
+
         Ok(test_case)
     }
 
@@ -1305,5 +1309,50 @@ mod tests {
         let test_cases: Vec<TestCase> = Vec::new();
         let filtered = filterer.filter_test_cases(test_cases, TestCaseFilter::All);
         assert_eq!(filtered.len(), 0);
+    }
+
+    #[test]
+    fn test_classification_fields_survive_save_and_load() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = TestCaseStorage::new(temp_dir.path()).unwrap();
+
+        let mut test_case = TestCase::new(
+            "REQ".to_string(),
+            1,
+            1,
+            "TC_CLASS_RT".to_string(),
+            "round trip".to_string(),
+        );
+        test_case.requirements = vec!["HLR-1".to_string(), "LLR-2".to_string()];
+        test_case.test_type = Some(testcase_models::TestType::NormalRange);
+        test_case.test_category = Some(testcase_models::TestCategory::BoundaryValue);
+        test_case.level = Some(testcase_models::TestLevel::LowLevel);
+        test_case.objective = Some("objective".to_string());
+        test_case.environment = Some("simulator".to_string());
+        test_case.pass_fail_criteria = Some("no error".to_string());
+        test_case.author = Some("alice".to_string());
+        test_case.independence_required = Some(true);
+
+        let path = storage.save_test_case(&test_case).unwrap();
+        let loaded = storage.load_test_case(&path).unwrap();
+        assert_eq!(loaded, test_case);
+    }
+
+    #[test]
+    fn test_load_rejects_category_that_does_not_belong_to_type() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = TestCaseStorage::new(temp_dir.path()).unwrap();
+        let path = temp_dir.path().join("bad.yaml");
+        std::fs::write(
+            &path,
+            "requirement: R\nitem: 1\ntc: 1\nid: TC_BAD\ndescription: d\n\
+             general_initial_conditions: {}\ninitial_conditions: {}\ntest_sequences: []\n\
+             test_type: robustness\ntest_category: boundary_value\n",
+        )
+        .unwrap();
+
+        let err = storage.load_test_case(&path).unwrap_err().to_string();
+        assert!(err.contains("test_category 'boundary_value'"), "{err}");
+        assert!(err.contains("test_type 'robustness'"), "{err}");
     }
 }

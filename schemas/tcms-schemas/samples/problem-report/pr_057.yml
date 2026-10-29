@@ -1,0 +1,18 @@
+id: PR-57
+title: ES6.UpdateMetadata step 3 returns SW=0x6A88
+description: Referenced data not found when the profile has no ICCID metadata.
+severity: major
+category: code
+status: analysed
+raised_by: alvaro.garcia
+date: '2026-10-27'
+affected_items:
+  - entity_type: code-unit
+    entity_id: CU-ES6-UPDATE
+    version: a1b2c3d
+run_id: RUN-001
+test_case_id: '4.2.2.3 ANOTHER ONE'
+change_request_ids: [CR-12]
+external_refs:
+  - system: jira
+    key: PAY-2291

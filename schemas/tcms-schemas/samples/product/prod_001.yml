@@ -1,0 +1,9 @@
+id: PROD-001
+name: eUICC ES6 profile management
+description: Remote profile metadata management over SMS for the eUICC.
+dal: B
+target_eal: EAL4
+applicable_standards: [DO-178C, DO-330, ISO/IEC 15408]
+plan_document_ids: [SVP-001]
+baseline_ids: [BL-000, BL-001]
+configuration_items: [src/es6.c, docs/srs.sdoc]

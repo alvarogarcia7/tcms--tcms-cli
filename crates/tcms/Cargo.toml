@@ -1,0 +1,28 @@
+[package]
+name = "tcms"
+version = "0.1.0"
+edition = "2021"
+description = "TCMS command line: external references, Jira integration, requirement import"
+
+[[bin]]
+name = "tcms"
+path = "src/main.rs"
+
+[dependencies]
+id-resolver = { path = "../id-resolver" }
+testcase-common = { path = "../testcase-common" }
+testcase-models = { path = "../testcase-models" }
+clap = { workspace = true }
+anyhow = { workspace = true }
+serde_yaml = { workspace = true }
+jira-client = { path = "../jira-client" }
+requirement-import = { path = "../requirement-import" }
+test-backends = { path = "../test-backends" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+testcase-verification = { path = "../testcase-verification" }
+chrono = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+jira-client = { path = "../jira-client", features = ["mock"] }

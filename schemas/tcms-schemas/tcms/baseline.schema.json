@@ -1,0 +1,132 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Baseline",
+  "description": "A frozen configuration of items under verification, plus change impact analysis used to scope regression testing",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Baseline identifier"
+    },
+    "name": {
+      "type": "string",
+      "description": "Baseline name"
+    },
+    "build_id": {
+      "type": "string",
+      "description": "Build identifier"
+    },
+    "sci_reference": {
+      "type": "string",
+      "description": "Software Configuration Index reference"
+    },
+    "hash": {
+      "type": "string",
+      "description": "Hash identifying the baseline content (e.g. VCS commit or archive digest)"
+    },
+    "frozen": {
+      "type": "boolean",
+      "description": "True once the baseline is frozen; a frozen baseline is never modified, only superseded"
+    },
+    "created": {
+      "type": "string",
+      "description": "Creation time",
+      "format": "date-time"
+    },
+    "previous_baseline_id": {
+      "type": "string",
+      "description": "Baseline this one follows"
+    },
+    "items": {
+      "type": "array",
+      "description": "Configuration items at their versions",
+      "items": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Item as 'path@version'"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "item": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "item",
+              "version"
+            ]
+          }
+        ]
+      }
+    },
+    "product_id": {
+      "type": "string",
+      "description": "Product (product.id)"
+    },
+    "change_request_ids": {
+      "type": "array",
+      "description": "Change requests implemented in this baseline",
+      "items": {
+        "type": "string"
+      }
+    },
+    "change_impact": {
+      "type": "object",
+      "description": "Change impact analysis against previous_baseline_id (required when change_impact is present)",
+      "properties": {
+        "changed_items": {
+          "type": "array",
+          "description": "Items changed",
+          "items": {
+            "type": "string"
+          }
+        },
+        "change_request_id": {
+          "type": "string",
+          "description": "Change request whose impact analysis this is"
+        },
+        "impacted_requirements": {
+          "type": "array",
+          "description": "Requirements affected",
+          "items": {
+            "type": "string"
+          }
+        },
+        "problem_report_ids": {
+          "type": "array",
+          "description": "Problem reports (owned by the issue tracker) addressed by the changes",
+          "items": {
+            "type": "string"
+          }
+        },
+        "regression_test_cases": {
+          "type": "array",
+          "description": "Test cases to re-run",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rationale": {
+          "type": "string",
+          "description": "Why this scope is sufficient"
+        }
+      }
+    }
+  },
+  "required": [
+    "id",
+    "build_id",
+    "created",
+    "items"
+  ],
+  "dependencies": {
+    "change_impact": [
+      "previous_baseline_id"
+    ]
+  }
+}

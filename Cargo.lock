@@ -1263,6 +1263,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d3067d79b975e8844ca9eb072e16b31c3c1c36928edf9c6789548c524d0d954"
 
 [[package]]
+name = "id-resolver"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "regex",
+ "regex-syntax",
+ "serde",
+ "serde_yaml",
+ "tempfile",
+ "testcase-common",
+ "testcase-models",
+]
+
+[[package]]
 name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1380,6 +1394,23 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "jira-client"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "id-resolver",
+ "jira-client",
+ "log",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "testcase-common",
 ]
 
 [[package]]
@@ -2093,6 +2124,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 
 [[package]]
+name = "requirement-import"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "id-resolver",
+ "jira-client",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "testcase-common",
+]
+
+[[package]]
 name = "reqwest"
 version = "0.11.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2559,6 +2604,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "tcms"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap 4.6.0",
+ "id-resolver",
+ "jira-client",
+ "requirement-import",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "test-backends",
+ "testcase-common",
+ "testcase-models",
+ "testcase-verification",
+]
+
+[[package]]
 name = "tempfile"
 version = "3.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2592,15 +2657,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "test-backends"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "id-resolver",
+ "jira-client",
+ "log",
+ "reqwest",
+ "serde_json",
+ "tempfile",
+ "test-backends",
+ "testcase-common",
+ "testcase-models",
+]
+
+[[package]]
 name = "test-executor"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "audit-traceability",
  "audit-verifier",
+ "chrono",
  "clap 4.6.0",
  "env_logger 0.11.10",
+ "requirement-import",
  "serde",
+ "serde_json",
  "serde_yaml",
  "tempfile",
  "testcase-common",
@@ -2608,6 +2693,7 @@ dependencies = [
  "testcase-models",
  "testcase-storage",
  "testcase-validation",
+ "testcase-verification",
 ]
 
 [[package]]
@@ -2670,6 +2756,7 @@ dependencies = [
  "dotenvy",
  "jsonschema",
  "log",
+ "regex",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -3200,6 +3287,7 @@ name = "verifier"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "clap 4.6.0",
  "env_logger 0.11.10",
  "jsonschema",

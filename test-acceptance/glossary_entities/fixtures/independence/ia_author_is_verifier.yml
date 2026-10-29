@@ -1,0 +1,7 @@
+id: IA-002
+objective: Test results reviewed by someone other than the test author
+artifact: RUN-002
+author: alice
+verifier: alice
+verifier_is_independent: true
+date: '2026-10-28'

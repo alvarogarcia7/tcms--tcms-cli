@@ -8,7 +8,8 @@ This document summarizes the complete GitLab CI/CD implementation for the testca
 - **`.gitlab-ci.yml`** - Main GitLab CI/CD pipeline configuration with 7 stages
 
 ### Python Automation Scripts (in `scripts/`)
-1. **`ci_parse_test_results.py`** - Parse cargo test output, generate JSON and JUnit XML
+1. **`ci_parse_test_results.py`** - Parse cargo test output, generate JSON
+   - **`ci_junit_report.py`** - Convert cargo test output to JUnit XML (`rust-junit.xml`) for the GitLab test report; pytest writes `python-junit.xml` directly via `--junitxml`
 2. **`ci_post_mr_comment.py`** - Post test results to merge requests
 3. **`ci_post_clippy_comment.py`** - Post Clippy lint warnings to MR
 4. **`ci_compare_coverage.py`** - Compare coverage with master baseline

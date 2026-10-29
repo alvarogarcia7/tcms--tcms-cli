@@ -4,7 +4,10 @@ members = [
     "crates/audit-verifier",
     "crates/bash-eval",
     "crates/editor",
+    "crates/id-resolver",
+    "crates/jira-client",
     "crates/json-escape",
+    "crates/requirement-import",
     "crates/json-to-yaml",
     "crates/script-cleanup",
     "crates/testcase-models",
@@ -22,6 +25,8 @@ members = [
     "crates/test-orchestrator",
     "crates/test-run-manager",
     "crates/test-verify",
+    "crates/tcms",
+    "crates/test-backends",
     "crates/tpdg-compat",
     "crates/validate-json",
     "crates/validate-yaml",
@@ -63,6 +68,7 @@ anyhow = "=1.0.99"
 log = "0.4"
 env_logger = "0.11"
 regex = "1.10"
+regex-syntax = "0.8"
 
 # Date and time
 chrono = { version = "0.4", features = ["serde"] }

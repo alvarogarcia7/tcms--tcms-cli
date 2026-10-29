@@ -455,7 +455,8 @@ The validation scripts (`validate_stage*.sh`) serve as **orchestrators** that co
 
 The `run_acceptance_suite.sh` script is the **master orchestrator** that:
 
-- Runs all validation stages (1-7) sequentially
+- Runs all validation stages (1-7) sequentially, then stage 8 (glossary entities) and stage 9
+  (Jira integration: `validate_jira_integration.sh`, real `tcms` against a mock Jira, TCMS-42)
 - Tracks statistics across stages
 - Generates comprehensive summary report
 - Supports skip flags for debugging
@@ -471,6 +472,8 @@ OPTIONS:
     --skip-generation    Skip stage 2 (script generation)
     --skip-execution     Skip stage 3 (test execution)
     --skip-verification  Skip stages 4-5 (verification + validation)
+    --skip-glossary      Skip stage 8 (glossary entities, see docs/GLOSSARY_ENTITIES.md)
+    --skip-jira          Skip stage 9 (Jira integration, see docs/JIRA_INTEGRATION.md)
     --skip-documentation Skip stage 6 (documentation generation)
     -h, --help          Show help message
 ```

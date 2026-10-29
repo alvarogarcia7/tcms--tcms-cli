@@ -1,0 +1,244 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Coverage Report",
+  "description": "Requirements-based and structural coverage (statement, decision, MC/DC) with analysed gaps",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Report identifier"
+    },
+    "run_id": {
+      "type": "string",
+      "description": "Test run the coverage was measured on (one run per report)"
+    },
+    "baseline_id": {
+      "type": "string",
+      "description": "Baseline measured"
+    },
+    "tool": {
+      "type": "string",
+      "description": "Coverage tool"
+    },
+    "tool_version": {
+      "type": "string",
+      "description": "Coverage tool version (DO-330 qualification applies)"
+    },
+    "requirements_based": {
+      "type": "object",
+      "properties": {
+        "total_requirements": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of HLR/LLR in scope"
+        },
+        "covered_normal_range": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Requirements with at least one normal-range test"
+        },
+        "covered_robustness": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Requirements with at least one robustness test"
+        },
+        "uncovered": {
+          "type": "array",
+          "description": "Requirement IDs lacking a normal-range test, a robustness test, or both (requirements-based coverage needs both)",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "structural": {
+      "type": "object",
+      "properties": {
+        "statement_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "decision_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "mcdc_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "coupling": {
+      "type": "object",
+      "description": "Data and control coupling coverage",
+      "properties": {
+        "data_coupling_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "control_coupling_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "analysis_report_id": {
+          "type": "string",
+          "description": "Coupling analysis report backing the figures"
+        }
+      }
+    },
+    "per_code_unit": {
+      "type": "array",
+      "description": "Structural coverage per code unit",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code_unit_id": {
+            "type": "string"
+          },
+          "statement_percent": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "decision_percent": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "mcdc_percent": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "code_unit_id"
+        ]
+      }
+    },
+    "per_requirement": {
+      "type": "array",
+      "description": "Requirements-based coverage per requirement",
+      "items": {
+        "type": "object",
+        "properties": {
+          "requirement_id": {
+            "type": "string"
+          },
+          "normal_range_covered": {
+            "type": "boolean"
+          },
+          "robustness_covered": {
+            "type": "boolean"
+          },
+          "test_case_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "requirement_id"
+        ]
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "description": "Each gap carries a disposition: category, rationale, approver and the record (test, requirement, problem report) it led to",
+      "items": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "description": "File and line or function"
+          },
+          "coverage_type": {
+            "type": "string",
+            "description": "Missed coverage",
+            "enum": [
+              "requirements",
+              "statement",
+              "decision",
+              "mcdc",
+              "data_coupling",
+              "control_coupling"
+            ]
+          },
+          "classification": {
+            "type": "string",
+            "description": "Disposition category",
+            "enum": [
+              "missing_test",
+              "missing_requirement",
+              "dead_code",
+              "deactivated_code",
+              "justified",
+              "tool_limitation"
+            ]
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Why it is classified this way. Dead code must be removed; deactivated code must be shown unable to activate inadvertently; justified gaps need the approver."
+          },
+          "approver": {
+            "type": "string",
+            "description": "Who approved the disposition"
+          },
+          "code_unit_id": {
+            "type": "string",
+            "description": "Code unit the gap is in"
+          },
+          "requirement_id": {
+            "type": "string",
+            "description": "Requirement the gap concerns, or the one added for missing_requirement"
+          },
+          "test_case_id": {
+            "type": "string",
+            "description": "Test case added for missing_test"
+          },
+          "problem_report_id": {
+            "type": "string",
+            "description": "Problem report raised (e.g. dead code to remove)"
+          },
+          "action_item_id": {
+            "type": "string",
+            "description": "Follow-up action item"
+          }
+        },
+        "required": [
+          "location",
+          "coverage_type",
+          "classification",
+          "rationale"
+        ]
+      }
+    }
+  },
+  "required": [
+    "id",
+    "baseline_id"
+  ],
+  "anyOf": [
+    {
+      "required": [
+        "requirements_based"
+      ]
+    },
+    {
+      "required": [
+        "structural"
+      ]
+    },
+    {
+      "required": [
+        "coupling"
+      ]
+    }
+  ]
+}

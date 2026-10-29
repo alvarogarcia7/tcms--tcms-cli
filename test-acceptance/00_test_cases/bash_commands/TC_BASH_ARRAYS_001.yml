@@ -1,0 +1,51 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: REQ_BASH_ARRAYS_001
+item: 1
+tc: 5
+id: TC_BASH_ARRAYS_001
+description: Bash array operations and manipulation
+general_initial_conditions:
+  system:
+    - Shell environment is available
+initial_conditions:
+  system:
+    - All commands can be executed
+test_sequences:
+  - id: 1
+    name: Array Operations
+    description: Test array creation, access, and manipulation
+    initial_conditions:
+      system:
+        - Shell is ready
+    steps:
+      - step: 1
+        description: Create and access array
+        command: arr=(one two three); echo ${arr[0]}
+        expected:
+          success: true
+          result: "0"
+          output: "one"
+        verification:
+          result: "[[ $? -eq 0 ]]"
+          output: "grep -q 'one' $COMMAND_OUTPUT"
+      - step: 2
+        description: Get array length
+        command: arr=(a b c d); echo ${#arr[@]}
+        expected:
+          success: true
+          result: "0"
+          output: "4"
+        verification:
+          result: "[[ $? -eq 0 ]]"
+          output: "grep -q '4' $COMMAND_OUTPUT"
+      - step: 3
+        description: Iterate array elements
+        command: arr=(x y z); for i in ${arr[@]}; do echo $i; done
+        expected:
+          success: true
+          result: "0"
+          output: "z"
+        verification:
+          result: "[[ $? -eq 0 ]]"
+          output: "grep -q 'z' $COMMAND_OUTPUT"

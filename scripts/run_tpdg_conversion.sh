@@ -15,7 +15,7 @@ source "$SCRIPT_DIR/lib/logger.sh" || {
 }
 
 # Paths
-TEST_CASE_DIR="$PROJECT_ROOT/test-acceptance/test_cases"
+TEST_CASE_DIR="$PROJECT_ROOT/test-acceptance/00_test_cases"
 LOGS_DIR="$PROJECT_ROOT/test-acceptance/execution_logs"
 SCRIPTS_DIR="$PROJECT_ROOT/test-acceptance/scripts"
 OUTPUT_DIR="$PROJECT_ROOT/test-acceptance/results"
@@ -344,7 +344,7 @@ echo ""
 echo_section "Stage 3: Running TPDG Conversion"
 
 echo_info "Command: python3 scripts/convert_verification_to_tpdg.py \\"
-echo_info "    --test-case-dir test-acceptance/test_cases \\"
+echo_info "    --test-case-dir test-acceptance/00_test_cases \\"
 echo_info "    --logs-dir test-acceptance/execution_logs \\"
 echo_info "    --recursive \\"
 echo_info "    --output test-acceptance/results/acceptance_test_results_container.yaml \\"

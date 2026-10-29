@@ -1,0 +1,149 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "QA Record",
+  "description": "A quality assurance record (audit, witness, gate check, deviation, conformity review) about any entity",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "audit",
+        "witness",
+        "gate_check",
+        "deviation",
+        "conformity_review"
+      ]
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "performed_by": {
+      "type": "string"
+    },
+    "subject": {
+      "type": "object",
+      "description": "Entity the record is about",
+      "properties": {
+        "entity_type": {
+          "type": "string",
+          "description": "Schema name of the referenced record",
+          "enum": [
+            "product",
+            "plan-document",
+            "requirement",
+            "design-element",
+            "code-unit",
+            "test-case",
+            "test-plan",
+            "baseline",
+            "environment",
+            "test-run",
+            "verification-result",
+            "execution-log",
+            "coverage-report",
+            "review",
+            "action-item",
+            "problem-report",
+            "change-request",
+            "qa-record",
+            "objective",
+            "independence-assignment",
+            "analysis-report",
+            "trace-matrix"
+          ]
+        },
+        "entity_id": {
+          "type": "string",
+          "description": "ID of the referenced record"
+        },
+        "version": {
+          "type": "string",
+          "description": "Version of the referenced record, when versioned"
+        }
+      },
+      "required": [
+        "entity_type",
+        "entity_id"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "findings": {
+      "type": "array",
+      "description": "Findings",
+      "items": {
+        "type": "object",
+        "properties": {
+          "finding": {
+            "type": "string",
+            "description": "What was found"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "major",
+              "minor",
+              "observation"
+            ]
+          },
+          "action_item_id": {
+            "type": "string",
+            "description": "Action item raised"
+          }
+        },
+        "required": [
+          "finding"
+        ]
+      }
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "conformant",
+        "nonconformant",
+        "deviation_approved",
+        "pending"
+      ]
+    },
+    "signature": {
+      "type": "object",
+      "description": "Electronic signature of the record",
+      "properties": {
+        "signer": {
+          "type": "string",
+          "description": "Person signing"
+        },
+        "signed_at": {
+          "type": "string",
+          "description": "When signed",
+          "format": "date-time"
+        },
+        "method": {
+          "type": "string",
+          "description": "How the signature was produced (e.g. git-commit, pgp, tool login)"
+        },
+        "value": {
+          "type": "string",
+          "description": "Signature value or hash"
+        }
+      },
+      "required": [
+        "signer",
+        "signed_at"
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "type",
+    "date",
+    "performed_by",
+    "subject",
+    "outcome"
+  ]
+}

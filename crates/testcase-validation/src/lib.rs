@@ -829,6 +829,57 @@ item: 1
     }
 
     #[test]
+    fn test_classification_fields_are_schema_checked() {
+        let validator = SchemaValidator::new().unwrap();
+        let base = r#"
+requirement: XXX100
+item: 1
+tc: 4
+id: TC_CLASS_001
+description: 'Test description'
+general_initial_conditions:
+  eUICC:
+    - "Some condition"
+initial_conditions:
+  eUICC:
+    - "Condition 1"
+test_sequences:
+  - id: 1
+    name: "Test Sequence"
+    description: "Test description"
+    initial_conditions:
+      eUICC:
+        - "Condition"
+    steps:
+      - step: 1
+        description: "Step description"
+        command: "ssh"
+        expected:
+          result: "SW=0x9000"
+          output: "Success"
+"#;
+        let with = |extra: &str| format!("{base}{extra}");
+
+        let ok = with("test_type: robustness\ntest_category: out_of_range\nlevel: low_level\nrequirements: [LLR-1]\n");
+        validator
+            .validate_complete(&ok)
+            .expect("valid classification");
+
+        let bad_type = validator.validate_complete(&with("test_type: smoke\n"));
+        assert!(bad_type.unwrap_err().to_string().contains("test_type"));
+
+        let bad_level = validator.validate_complete(&with("level: integration\n"));
+        assert!(bad_level.unwrap_err().to_string().contains("level"));
+
+        let bad_pair =
+            validator.validate_complete(&with("test_type: robustness\ntest_category: fuzzing\n"));
+        assert!(
+            bad_pair.is_err(),
+            "category outside its test_type must be refused"
+        );
+    }
+
+    #[test]
     fn test_validate_chunk_metadata_only() {
         let validator = SchemaValidator::new().unwrap();
 

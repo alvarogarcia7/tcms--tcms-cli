@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Traceability Matrix",
+  "description": "Trace links between requirements, test cases and results; supports requirements-based coverage",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Matrix identifier"
+    },
+    "baseline_id": {
+      "type": "string",
+      "description": "Baseline the matrix describes"
+    },
+    "links": {
+      "type": "array",
+      "description": "Trace links",
+      "items": {
+        "type": "object",
+        "properties": {
+          "requirement_id": {
+            "type": "string",
+            "description": "HLR/LLR identifier (owned by the requirements tool)"
+          },
+          "level": {
+            "type": "string",
+            "description": "Requirement level (requirements are HLR or LLR; 'integration' is a test level, not a requirement level)",
+            "enum": [
+              "HLR",
+              "LLR"
+            ]
+          },
+          "test_case_ids": {
+            "type": "array",
+            "description": "Test cases tracing to the requirement",
+            "items": {
+              "type": "string"
+            }
+          },
+          "normal_range_covered": {
+            "type": "boolean",
+            "description": "True if at least one linked test case has test_type normal_range"
+          },
+          "robustness_covered": {
+            "type": "boolean",
+            "description": "True if at least one linked test case has test_type robustness"
+          },
+          "run_ids": {
+            "type": "array",
+            "description": "IDs of test runs (test-run.run_id) whose results exercised the linked test cases. Individual verification results have no ID of their own.",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "requirement_id",
+          "level",
+          "test_case_ids"
+        ]
+      }
+    }
+  },
+  "required": [
+    "id",
+    "links"
+  ]
+}

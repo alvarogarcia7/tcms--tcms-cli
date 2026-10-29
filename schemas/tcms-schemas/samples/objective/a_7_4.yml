@@ -1,0 +1,12 @@
+id: A-7.4
+standard: DO-178C
+description: Test results are correct and discrepancies explained.
+applicability:
+  dal: [A, B, C, D]
+independence_required: true
+evidence:
+  - entity_type: test-run
+    entity_id: RUN-001
+  - entity_type: independence-assignment
+    entity_id: IA-001
+status: in_progress

@@ -445,6 +445,7 @@ fn test_container_report_with_step_verification_enum_validates() -> Result<()> {
             requirement: Some("REQ-TC".to_string()),
             item: Some(20),
             tc: Some(2000),
+            run: Default::default(),
         }],
         metadata: ContainerReportMetadata {
             environment: Some("Test Environment".to_string()),
@@ -545,5 +546,264 @@ fn test_container_report_with_step_verification_enum_validates() -> Result<()> {
         "NotExecuted variant should have 'NotExecuted' key"
     );
 
+    Ok(())
+}
+
+/// TCMS-40.3: a stamped report validates against the verifier's container schema and each
+/// result against the verification-result schema of tcms-schemas
+#[test]
+fn test_stamped_results_validate_against_container_and_tcms_schemas() -> Result<()> {
+    use testcase_verification::{
+        BatchVerificationReport, ContainerReportConfig, RunInfo, TestCaseVerificationResult,
+        TestVerifier,
+    };
+
+    let mut report = BatchVerificationReport::new();
+    for id in ["TC_A", "TC_B"] {
+        report.add_test_case_result(TestCaseVerificationResult {
+            test_case_id: id.to_string(),
+            description: "stamped".to_string(),
+            sequences: vec![],
+            total_steps: 0,
+            passed_steps: 0,
+            failed_steps: 0,
+            not_executed_steps: 0,
+            overall_pass: true,
+            requirement: None,
+            item: None,
+            tc: None,
+            source_yaml_sha256: None,
+            run: RunInfo::default(),
+        });
+    }
+    let yaml = TestVerifier::with_exact_matching().generate_report(
+        &[report],
+        "yaml",
+        ContainerReportConfig {
+            title: "T".to_string(),
+            project: "P".to_string(),
+            environment: Some("Staging".to_string()),
+            platform: None,
+            executor: None,
+            run: RunInfo {
+                run_id: Some("RUN-1".to_string()),
+                build_id: Some("build-7".to_string()),
+                tester: Some("alice".to_string()),
+                ..Default::default()
+            },
+        },
+    )?;
+    let container: Value = serde_yaml::from_str(&yaml)?;
+
+    // the verifier's own container schema
+    let (_, container_schema) = load_schema()?;
+    if let Err(errors) = container_schema.validate(&container) {
+        let messages: Vec<String> = errors
+            .map(|e| format!("{} at {}", e, e.instance_path))
+            .collect();
+        panic!("container schema: {}", messages.join("; "));
+    }
+
+    // every result against the extended verification-result schema
+    let schema_json: Value = serde_json::from_str(&fs::read_to_string(
+        "../../schemas/tcms-schemas/tcms/verification-result.schema.json",
+    )?)?;
+    let schema = JSONSchema::options()
+        .compile(&schema_json)
+        .map_err(|e| anyhow::anyhow!("compile: {}", e))?;
+    for result in container["test_results"].as_array().unwrap() {
+        assert_eq!(result["run_id"], "RUN-1");
+        assert_eq!(result["build_id"], "build-7");
+        assert_eq!(result["tester"], "alice");
+        assert_eq!(result["environment"], "Staging");
+        assert!(result["date"].is_string());
+        if let Err(errors) = schema.validate(result) {
+            let messages: Vec<String> = errors.map(|e| e.to_string()).collect();
+            panic!("verification-result schema: {}", messages.join("; "));
+        }
+    }
+    Ok(())
+}
+
+/// TCMS-40.4: the test run record validates against the tcms-schemas test-run schema, with
+/// every verdict, a reviewer and a problem report
+#[test]
+fn test_run_record_validates_against_tcms_test_run_schema() -> Result<()> {
+    use std::collections::{BTreeMap, BTreeSet};
+    use testcase_verification::{
+        BatchVerificationReport, RunInfo, TestCaseVerificationResult, TestRunInput, TestRunRecord,
+    };
+
+    let mut report = BatchVerificationReport::new();
+    for (id, passed, failed, not_executed) in [
+        ("TC_PASS", 2, 0, 0),
+        ("TC_FAIL", 1, 1, 0),
+        ("TC_SKIP", 0, 0, 2),
+        ("TC_ERR", 0, 0, 2),
+    ] {
+        report.add_test_case_result(TestCaseVerificationResult {
+            test_case_id: id.to_string(),
+            description: "d".to_string(),
+            sequences: vec![],
+            total_steps: passed + failed + not_executed,
+            passed_steps: passed,
+            failed_steps: failed,
+            not_executed_steps: not_executed,
+            overall_pass: failed == 0 && not_executed == 0,
+            requirement: None,
+            item: None,
+            tc: None,
+            source_yaml_sha256: None,
+            run: RunInfo::default(),
+        });
+    }
+    let record = TestRunRecord::build(
+        &report,
+        &TestRunInput {
+            run: RunInfo {
+                run_id: Some("RUN-1".to_string()),
+                build_id: Some("build-7".to_string()),
+                environment: Some("Staging".to_string()),
+                tester: Some("alice".to_string()),
+                date: None,
+            },
+            reviewer: Some("bob"),
+            problem_reports: BTreeMap::from([("TC_FAIL".to_string(), "PR-057".to_string())]),
+            errored: BTreeSet::from(["TC_ERR".to_string()]),
+            result_ref: Some("results.yaml"),
+            ..Default::default()
+        },
+    )
+    .map_err(|e| anyhow::anyhow!(e))?;
+
+    // as read by PyYAML-style loaders: plain YAML, no tags
+    let value: Value = serde_yaml::from_str(&record.to_yaml()?)?;
+    let schema_json: Value = serde_json::from_str(&fs::read_to_string(
+        "../../schemas/tcms-schemas/tcms/test-run.schema.json",
+    )?)?;
+    let schema = JSONSchema::options()
+        .compile(&schema_json)
+        .map_err(|e| anyhow::anyhow!("compile: {}", e))?;
+    if let Err(errors) = schema.validate(&value) {
+        let messages: Vec<String> = errors
+            .map(|e| format!("{} at {}", e, e.instance_path))
+            .collect();
+        panic!("test-run schema: {}", messages.join("; "));
+    }
+
+    let verdicts: Vec<&str> = value["results"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r["verdict"].as_str().unwrap())
+        .collect();
+    assert_eq!(verdicts, ["pass", "fail", "not_executed", "error"]);
+    assert_eq!(value["reviewer"], "bob");
+    assert_eq!(value["results"][1]["problem_report_id"], "PR-057");
+    Ok(())
+}
+
+/// TCMS-40.5: the traceability matrix validates against the tcms-schemas trace-matrix schema
+#[test]
+fn test_trace_matrix_validates_against_tcms_trace_matrix_schema() -> Result<()> {
+    use testcase_models::{TestCase, TestType};
+    use testcase_verification::{build_matrix, Requirement, RequirementLevel};
+
+    let mut normal = TestCase::new("L".into(), 1, 1, "N1".into(), "d".into());
+    normal.requirements = vec!["HLR-1".to_string()];
+    normal.test_type = Some(TestType::NormalRange);
+    let requirements = vec![
+        Requirement {
+            id: "HLR-1".to_string(),
+            level: RequirementLevel::Hlr,
+        },
+        Requirement {
+            id: "LLR-2".to_string(),
+            level: RequirementLevel::Llr,
+        },
+    ];
+    let (matrix, findings) = build_matrix("TM-1", Some("BL-1"), &requirements, &[normal], &[]);
+    assert!(!findings.complete());
+
+    let value: Value = serde_yaml::from_str(&testcase_common::to_yaml_string(&matrix)?)?;
+    let schema_json: Value = serde_json::from_str(&fs::read_to_string(
+        "../../schemas/tcms-schemas/tcms/trace-matrix.schema.json",
+    )?)?;
+    let schema = JSONSchema::options()
+        .compile(&schema_json)
+        .map_err(|e| anyhow::anyhow!("compile: {}", e))?;
+    if let Err(errors) = schema.validate(&value) {
+        let messages: Vec<String> = errors
+            .map(|e| format!("{} at {}", e, e.instance_path))
+            .collect();
+        panic!("trace-matrix schema: {}", messages.join("; "));
+    }
+    assert_eq!(value["links"][1]["level"], "LLR");
+    Ok(())
+}
+
+/// TCMS-40.10: an imported coverage report validates against the tcms-schemas coverage-report
+/// schema, for LCOV only, MC/DC only and requirements-based inputs
+#[test]
+fn test_coverage_report_validates_against_tcms_coverage_report_schema() -> Result<()> {
+    use testcase_verification::{
+        build_coverage_report, CoverageInput, GapAnnotation, Lcov, McdcInput,
+    };
+
+    let schema_json: Value = serde_json::from_str(&fs::read_to_string(
+        "../../schemas/tcms-schemas/tcms/coverage-report.schema.json",
+    )?)?;
+    let schema = JSONSchema::options()
+        .compile(&schema_json)
+        .map_err(|e| anyhow::anyhow!("compile: {}", e))?;
+    let check = |input: CoverageInput| -> Result<Value> {
+        let (report, _) = build_coverage_report(input)?;
+        let value: Value = serde_yaml::from_str(&testcase_common::to_yaml_string(&report)?)?;
+        if let Err(errors) = schema.validate(&value) {
+            let messages: Vec<String> = errors
+                .map(|e| format!("{} at {}", e, e.instance_path))
+                .collect();
+            panic!("coverage-report schema: {}", messages.join("; "));
+        }
+        Ok(value)
+    };
+    let annotation = |location: &str, classification: &str, approver: Option<&str>| GapAnnotation {
+        location: location.to_string(),
+        coverage_type: None,
+        classification: classification.to_string(),
+        rationale: "because".to_string(),
+        approver: approver.map(str::to_string),
+        code_unit_id: None,
+        requirement_id: None,
+        test_case_id: None,
+        problem_report_id: None,
+        action_item_id: None,
+    };
+
+    let lcov = "SF:src/a.c\nDA:1,1\nDA:2,0\nBRDA:1,0,0,1\nBRDA:1,0,1,-\nend_of_record\n";
+    let value = check(CoverageInput {
+        id: "COV-1".into(),
+        baseline_id: "BL-1".into(),
+        run_id: Some("RUN-1".into()),
+        tool: Some("gcov".into()),
+        tool_version: Some("13".into()),
+        lcov: Some(Lcov::parse(lcov)?),
+        annotations: vec![
+            annotation("src/a.c:2", "dead_code", None),
+            annotation("src/a.c:1", "justified", Some("qa.lead")),
+        ],
+        ..Default::default()
+    })?;
+    assert_eq!(value["gaps"][0]["classification"], "dead_code");
+    assert_eq!(value["structural"]["decision_percent"], 50.0);
+
+    let mcdc: McdcInput = serde_yaml::from_str("mcdc_percent: 88.5\n")?;
+    let value = check(CoverageInput {
+        id: "COV-2".into(),
+        baseline_id: "BL-1".into(),
+        mcdc: Some(mcdc),
+        ..Default::default()
+    })?;
+    assert_eq!(value["structural"]["mcdc_percent"], 88.5);
     Ok(())
 }

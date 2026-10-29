@@ -1,0 +1,51 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: REQ_BASH_VERIFICATION_001
+item: 1
+tc: 4
+id: TC_BASH_VERIFICATION_001
+description: Verification patterns and strategies for bash commands
+general_initial_conditions:
+  system:
+    - Shell environment is available
+initial_conditions:
+  system:
+    - All commands can be executed
+test_sequences:
+  - id: 1
+    name: Verification Patterns
+    description: Test various verification patterns and strategies
+    initial_conditions:
+      system:
+        - Shell is ready
+    steps:
+      - step: 1
+        description: Verify command success
+        command: echo "success test"
+        expected:
+          success: true
+          result: "0"
+          output: "success test"
+        verification:
+          result: "[[ $? -eq 0 ]]"
+          output: "grep -q 'success' $COMMAND_OUTPUT"
+      - step: 2
+        description: Verify with regex pattern
+        command: echo "test123"
+        expected:
+          success: true
+          result: "0"
+          output: "test123"
+        verification:
+          result: "[[ $? -eq 0 ]]"
+          output: "grep -E '^test[0-9]+$' $COMMAND_OUTPUT"
+      - step: 3
+        description: Verify multiple conditions
+        command: echo "multi line" && echo "verification"
+        expected:
+          success: true
+          result: "0"
+          output: "verification"
+        verification:
+          result: "[[ $? -eq 0 ]]"
+          output: "grep -q 'verification' $COMMAND_OUTPUT"

@@ -1,0 +1,20 @@
+# Acceptance product 2: StrictDoc is the requirement source; no Jira system (TCMS-42.9).
+type: integration_config
+schema: tcms/integration-config.schema.json
+product_id: PROD-SDOC-ACC
+requirement_source: strictdoc
+systems:
+  - name: strictdoc
+    type: strictdoc_html
+    base_url: https://pages.example.com/srs
+    id_pattern: '^(SYS|HLR|LLR)-[0-9.]+$'
+    url_template: '{base_url}/{doc}.html#{id}'
+    url_pattern: '#(?P<id>(SYS|HLR|LLR)-[0-9.]+)$'
+    document_map:
+      SYS: system-requirements
+      HLR: software-requirements
+      LLR: software-design
+sync:
+  trigger: cli
+  identity: tcms-bot
+  record_actor: true

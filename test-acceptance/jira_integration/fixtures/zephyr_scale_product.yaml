@@ -1,0 +1,40 @@
+# Acceptance product 4: Jira is the requirement source; zephyr_scale test entities (TCMS-42.4).
+# The zephyr_scale API is ASSUMED from public documentation; the jira-client mock models it.
+type: integration_config
+schema: tcms/integration-config.schema.json
+product_id: PROD-ZSCALE-ACC
+requirement_source: jira
+systems:
+  - name: jira
+    type: jira_cloud
+    base_url: __MOCK_JIRA_URL__
+    auth:
+      method: service_account_token
+      secret_ref: TCMS_JIRA_TOKEN
+    id_pattern: '^(PAY|AUTH)-[0-9]+$'
+    url_template: '{base_url}/browse/{id}'
+    project_keys: [PAY]
+    feature_issue_types: [Story]
+    defect_issue_type: Bug
+    severity_to_priority:
+      critical: Highest
+      major: High
+    test_backend: zephyr_scale
+    tcms_issue_types:
+      test: Test
+      link_type: Relates
+    fields:
+      tcms_id: customfield_10001
+      test_lifecycle_status: customfield_10002
+      latest_verdict: customfield_10003
+      baseline: customfield_10004
+      verification_status: customfield_10005
+    write_policy:
+      feature_fields: true
+      dedicated_issues: true
+      defects: true
+      comments: false
+sync:
+  trigger: cli
+  identity: tcms-bot
+  record_actor: true

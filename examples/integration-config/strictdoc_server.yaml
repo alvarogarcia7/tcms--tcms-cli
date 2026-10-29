@@ -1,0 +1,20 @@
+# Integration config: StrictDoc server (strictdoc server). ASSUMPTION: page layout equals the HTML export; adjust url_template if your server differs
+type: integration_config
+schema: tcms/integration-config.schema.json
+product_id: PROD-002
+requirement_source: strictdoc
+systems:
+  - name: strictdoc
+    type: strictdoc_server
+    base_url: http://localhost:5111/srs
+    id_pattern: '^(SYS|HLR|LLR)-[0-9.]+$'
+    url_template: '{base_url}/{doc}.html#{id}'
+    url_pattern: '#(?P<id>(SYS|HLR|LLR)-[0-9.]+)$'
+    document_map:
+      SYS: system-requirements
+      HLR: software-requirements
+      LLR: software-design
+sync:
+  trigger: cli
+  identity: tcms-bot
+  record_actor: true

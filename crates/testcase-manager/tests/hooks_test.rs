@@ -38,21 +38,16 @@ fn create_test_case_with_hooks(hooks: Option<Hooks>) -> TestCase {
         reference: None,
     };
 
-    TestCase {
-        doc_type: None,
-        schema: None,
-        requirement: "REQ001".to_string(),
-        item: 1,
-        tc: 1,
-        id: "TC001".to_string(),
-        description: "Test case with hooks".to_string(),
-        prerequisites: None,
-        general_initial_conditions: InitialConditions::default(),
-        initial_conditions: InitialConditions::default(),
-        test_sequences: vec![sequence],
-        hydration_vars: None,
-        hooks,
-    }
+    let mut test_case = TestCase::new(
+        "REQ001".to_string(),
+        1,
+        1,
+        "TC001".to_string(),
+        "Test case with hooks".to_string(),
+    );
+    test_case.test_sequences = vec![sequence];
+    test_case.hooks = hooks;
+    test_case
 }
 
 // ============================================================================
@@ -652,6 +647,8 @@ fn test_hook_execution_entry_with_hook_type() {
         hook_path: Some("scripts/hook.sh".to_string()),
         result_verification_pass: false,
         output_verification_pass: false,
+        run_id: None,
+        test_case_id: None,
     };
 
     let json = serde_json::to_string(&entry).unwrap();
@@ -679,6 +676,8 @@ fn test_hook_execution_entry_display_with_hook() {
         hook_path: Some("scripts/after.sh".to_string()),
         result_verification_pass: false,
         output_verification_pass: false,
+        run_id: None,
+        test_case_id: None,
     };
 
     let display = format!("{}", entry);
@@ -701,6 +700,8 @@ fn test_hook_execution_entry_yaml_roundtrip() {
         hook_path: Some("scripts/setup.sh".to_string()),
         result_verification_pass: false,
         output_verification_pass: false,
+        run_id: None,
+        test_case_id: None,
     };
 
     let yaml = serde_yaml::to_string(&entry).unwrap();
@@ -999,6 +1000,8 @@ fn test_hook_execution_entry_without_hook_type() {
         hook_path: None,
         result_verification_pass: true,
         output_verification_pass: true,
+        run_id: None,
+        test_case_id: None,
     };
 
     let json = serde_json::to_string(&entry).unwrap();

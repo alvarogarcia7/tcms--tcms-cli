@@ -1,0 +1,11 @@
+id: BL-2
+name: Glossary acceptance regression baseline
+build_id: build-2
+created: '2026-10-28T08:00:00Z'
+previous_baseline_id: BL-1
+items: [src/es6.c@b2]
+change_impact:
+  changed_items: [src/es6.c]
+  impacted_requirements: [HLR-1]
+  regression_test_cases: [TC_REG_003]
+  rationale: Fixture for the acceptance scenario; HLR-1 changed and TC_REG_003 is listed.

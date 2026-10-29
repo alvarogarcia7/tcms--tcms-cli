@@ -168,11 +168,11 @@ Quick validation commands to verify state:
 
 ```bash
 # Verify test case count
-find test-acceptance/test_cases -name "*.yaml" | wc -l
+find test-acceptance/00_test_cases -name "*.yaml" | wc -l
 # Expected: 13
 
 # Verify all are success tests
-find test-acceptance/test_cases -name "*.yaml" -exec basename {} \; | grep -v SUCCESS | wc -l
+find test-acceptance/00_test_cases -name "*.yaml" -exec basename {} \; | grep -v SUCCESS | wc -l
 # Expected: 0
 
 # Verify scripts directory is empty
@@ -190,13 +190,13 @@ To restore all test cases after validation:
 
 ```bash
 # Move backed up directories back
-cd test-acceptance/test_cases
+cd test-acceptance/00_test_cases
 mv ../.backup_test_cases/* .
 
 # Note: dependencies/ and variables/ were removed, not backed up
 # If needed, restore from git:
-# git checkout HEAD -- test-acceptance/test_cases/dependencies
-# git checkout HEAD -- test-acceptance/test_cases/variables
+# git checkout HEAD -- test-acceptance/00_test_cases/dependencies
+# git checkout HEAD -- test-acceptance/00_test_cases/variables
 
 # Clean up backup directory
 rm -rf ../.backup_test_cases

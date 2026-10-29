@@ -187,3 +187,6 @@ private*.pem
 .test-failing
 .test-failing-tmp
 .projector.db
+
+# TPDG binary downloaded by make download-tpdg
+tools/tpdg/

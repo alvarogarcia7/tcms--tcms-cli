@@ -696,7 +696,8 @@ fn test_multi_step_empty_sequence() {
 
     let result = verifier.verify_test_case(&test_case, &logs);
 
-    assert!(result.overall_pass);
+    // A test case without steps proves nothing: it is not a pass (TCMS-41, no silent passes)
+    assert!(!result.overall_pass);
     assert_eq!(result.total_steps, 0);
 }
 
@@ -1182,6 +1183,7 @@ fn test_generate_report_yaml_basic() {
         requirement: Some("REQ001".to_string()),
         item: Some(1),
         tc: Some(1),
+        run: Default::default(),
     };
 
     let yaml = verifier.generate_report_yaml(&result).unwrap();
@@ -1251,6 +1253,7 @@ fn test_generate_report_yaml_with_sequences() {
         requirement: Some("REQ001".to_string()),
         item: Some(1),
         tc: Some(1),
+        run: Default::default(),
     };
 
     let yaml = verifier.generate_report_yaml(&result).unwrap();
@@ -1260,8 +1263,12 @@ fn test_generate_report_yaml_with_sequences() {
     assert!(yaml.contains("Test Sequence 1"));
     assert!(yaml.contains("Step 1 description"));
     assert!(yaml.contains("Step 2 description"));
-    assert!(yaml.contains("!Pass"));
-    assert!(yaml.contains("!Fail"));
+    // Written as `Pass:` maps, the form the JSON schemas describe, not as `!Pass` tags
+    assert!(yaml.contains("Pass:"));
+    assert!(!yaml.contains("!Pass"));
+    // Written as `Fail:` maps, the form the JSON schemas describe, not as `!Fail` tags
+    assert!(yaml.contains("Fail:"));
+    assert!(!yaml.contains("!Fail"));
     assert!(yaml.contains("expected_result"));
     assert!(yaml.contains("actual_result"));
 }
@@ -1313,11 +1320,14 @@ fn test_generate_report_yaml_not_executed_steps() {
         requirement: None,
         item: None,
         tc: None,
+        run: Default::default(),
     };
 
     let yaml = verifier.generate_report_yaml(&result).unwrap();
 
-    assert!(yaml.contains("!NotExecuted"));
+    // Written as `NotExecuted:` maps, the form the JSON schemas describe, not as `!NotExecuted` tags
+    assert!(yaml.contains("NotExecuted:"));
+    assert!(!yaml.contains("!NotExecuted"));
     assert!(yaml.contains("Not executed step"));
     assert!(yaml.contains("not_executed_steps: 1"));
 }
@@ -1341,6 +1351,7 @@ fn test_generate_report_json_basic() {
         requirement: Some("REQ003".to_string()),
         item: Some(3),
         tc: Some(3),
+        run: Default::default(),
     };
 
     let json = verifier.generate_report_json(&result).unwrap();
@@ -1407,6 +1418,7 @@ fn test_generate_report_json_with_sequences() {
         requirement: None,
         item: None,
         tc: None,
+        run: Default::default(),
     };
 
     let json = verifier.generate_report_json(&result).unwrap();
@@ -1441,6 +1453,7 @@ fn test_generate_report_yaml_roundtrip() {
         requirement: Some("REQ005".to_string()),
         item: Some(5),
         tc: Some(5),
+        run: Default::default(),
     };
 
     let yaml = verifier.generate_report_yaml(&original).unwrap();
@@ -1474,6 +1487,7 @@ fn test_generate_report_json_roundtrip() {
         requirement: None,
         item: None,
         tc: None,
+        run: Default::default(),
     };
 
     let json = verifier.generate_report_json(&original).unwrap();
@@ -1506,6 +1520,7 @@ fn test_report_generation_special_characters() {
         requirement: None,
         item: None,
         tc: None,
+        run: Default::default(),
     };
 
     // YAML generation should handle special characters
@@ -1543,6 +1558,7 @@ fn test_report_generation_unicode() {
         requirement: None,
         item: None,
         tc: None,
+        run: Default::default(),
     };
 
     let yaml = verifier.generate_report_yaml(&result).unwrap();
@@ -1575,6 +1591,7 @@ fn test_report_generation_empty_sequences() {
         requirement: None,
         item: None,
         tc: None,
+        run: Default::default(),
     };
 
     let yaml = verifier.generate_report_yaml(&result).unwrap();
@@ -1604,6 +1621,7 @@ fn test_report_generation_optional_fields() {
         requirement: Some("REQ010".to_string()),
         item: Some(10),
         tc: Some(10),
+        run: Default::default(),
     };
 
     let yaml_with = verifier.generate_report_yaml(&with_fields).unwrap();
@@ -1625,6 +1643,7 @@ fn test_report_generation_optional_fields() {
         requirement: None,
         item: None,
         tc: None,
+        run: Default::default(),
     };
 
     let yaml_without = verifier.generate_report_yaml(&without_fields).unwrap();
@@ -1727,6 +1746,7 @@ fn test_generate_report_yaml_complex_sequences() {
         requirement: Some("REQ-COMPLEX".to_string()),
         item: Some(99),
         tc: Some(99),
+        run: Default::default(),
     };
 
     let yaml = verifier.generate_report_yaml(&result).unwrap();
@@ -1739,9 +1759,15 @@ fn test_generate_report_yaml_complex_sequences() {
     assert!(yaml.contains("Initialize system"));
     assert!(yaml.contains("Validate output"));
     assert!(yaml.contains("Cleanup resources"));
-    assert!(yaml.contains("!Pass"));
-    assert!(yaml.contains("!Fail"));
-    assert!(yaml.contains("!NotExecuted"));
+    // Written as `Pass:` maps, the form the JSON schemas describe, not as `!Pass` tags
+    assert!(yaml.contains("Pass:"));
+    assert!(!yaml.contains("!Pass"));
+    // Written as `Fail:` maps, the form the JSON schemas describe, not as `!Fail` tags
+    assert!(yaml.contains("Fail:"));
+    assert!(!yaml.contains("!Fail"));
+    // Written as `NotExecuted:` maps, the form the JSON schemas describe, not as `!NotExecuted` tags
+    assert!(yaml.contains("NotExecuted:"));
+    assert!(!yaml.contains("!NotExecuted"));
 }
 
 #[test]
@@ -1800,6 +1826,7 @@ fn test_generate_report_json_complex_sequences() {
         requirement: None,
         item: None,
         tc: None,
+        run: Default::default(),
     };
 
     let json = verifier.generate_report_json(&result).unwrap();
@@ -1859,6 +1886,7 @@ fn test_generate_report_multiline_descriptions() {
         requirement: None,
         item: None,
         tc: None,
+        run: Default::default(),
     };
 
     let yaml = verifier.generate_report_yaml(&result).unwrap();
@@ -1891,6 +1919,7 @@ fn test_generate_report_large_numbers() {
         requirement: None,
         item: Some(999999),
         tc: Some(888888),
+        run: Default::default(),
     };
 
     let yaml = verifier.generate_report_yaml(&result).unwrap();
@@ -1929,6 +1958,7 @@ fn test_report_generation_error_handling() {
         requirement: None,
         item: None,
         tc: None,
+        run: Default::default(),
     };
 
     let yaml = verifier.generate_report_yaml(&empty_result);
@@ -2014,6 +2044,7 @@ fn test_container_report_from_batch_report_constructor() {
         requirement: Some("REQ001".to_string()),
         item: Some(1),
         tc: Some(1),
+        run: Default::default(),
     });
 
     batch_report.add_test_case_result(TestCaseVerificationResult {
@@ -2029,6 +2060,7 @@ fn test_container_report_from_batch_report_constructor() {
         requirement: Some("REQ002".to_string()),
         item: Some(2),
         tc: Some(2),
+        run: Default::default(),
     });
 
     let container_report = ContainerReport::from_batch_report(
@@ -2092,6 +2124,7 @@ fn test_container_report_yaml_serialization_structure() {
         requirement: Some("REQ001".to_string()),
         item: Some(1),
         tc: Some(1),
+        run: Default::default(),
     });
 
     let container_report = ContainerReport::from_batch_report(
@@ -2156,6 +2189,7 @@ fn test_container_report_metadata_aggregation() {
         requirement: None,
         item: None,
         tc: None,
+        run: Default::default(),
     });
 
     batch_report.add_test_case_result(TestCaseVerificationResult {
@@ -2171,6 +2205,7 @@ fn test_container_report_metadata_aggregation() {
         requirement: None,
         item: None,
         tc: None,
+        run: Default::default(),
     });
 
     batch_report.add_test_case_result(TestCaseVerificationResult {
@@ -2186,6 +2221,7 @@ fn test_container_report_metadata_aggregation() {
         requirement: None,
         item: None,
         tc: None,
+        run: Default::default(),
     });
 
     batch_report.add_test_case_result(TestCaseVerificationResult {
@@ -2201,6 +2237,7 @@ fn test_container_report_metadata_aggregation() {
         requirement: None,
         item: None,
         tc: None,
+        run: Default::default(),
     });
 
     let container_report = ContainerReport::from_batch_report(
@@ -2301,6 +2338,7 @@ fn test_container_report_roundtrip_serialization() {
         requirement: Some("REQ_RT".to_string()),
         item: Some(99),
         tc: Some(88),
+        run: Default::default(),
     });
 
     let original = ContainerReport::from_batch_report(
@@ -2419,6 +2457,7 @@ fn test_container_report_with_sequences_yaml_structure() {
         requirement: Some("REQ001".to_string()),
         item: Some(1),
         tc: Some(1),
+        run: Default::default(),
     });
 
     let container_report = ContainerReport::from_batch_report(
@@ -2438,9 +2477,15 @@ fn test_container_report_with_sequences_yaml_structure() {
     assert!(yaml.contains("sequence_id: 1"));
     assert!(yaml.contains("Test Sequence 1"));
     assert!(yaml.contains("step_results:"));
-    assert!(yaml.contains("!Pass"));
-    assert!(yaml.contains("!Fail"));
-    assert!(yaml.contains("!NotExecuted"));
+    // Written as `Pass:` maps, the form the JSON schemas describe, not as `!Pass` tags
+    assert!(yaml.contains("Pass:"));
+    assert!(!yaml.contains("!Pass"));
+    // Written as `Fail:` maps, the form the JSON schemas describe, not as `!Fail` tags
+    assert!(yaml.contains("Fail:"));
+    assert!(!yaml.contains("!Fail"));
+    // Written as `NotExecuted:` maps, the form the JSON schemas describe, not as `!NotExecuted` tags
+    assert!(yaml.contains("NotExecuted:"));
+    assert!(!yaml.contains("!NotExecuted"));
     assert!(yaml.contains("Step 1 description"));
     assert!(yaml.contains("Step 2 description"));
     assert!(yaml.contains("Step 3 description"));
@@ -2895,6 +2940,7 @@ fn test_container_report_config_defaults_only() {
         not_executed_steps: 0,
         overall_pass: true,
         source_yaml_sha256: None,
+        run: Default::default(),
     });
 
     // Test with only required fields (fallback defaults)
@@ -2904,6 +2950,7 @@ fn test_container_report_config_defaults_only() {
         environment: None,
         platform: None,
         executor: None,
+        run: Default::default(),
     };
 
     let yaml = verifier
@@ -2960,6 +3007,7 @@ fn test_container_report_config_cli_flags_only() {
         not_executed_steps: 0,
         overall_pass: true,
         source_yaml_sha256: None,
+        run: Default::default(),
     });
 
     // Simulate CLI flags being used (all fields provided)
@@ -2969,6 +3017,7 @@ fn test_container_report_config_cli_flags_only() {
         environment: Some("CLI Environment".to_string()),
         platform: Some("CLI Platform".to_string()),
         executor: Some("CLI Executor".to_string()),
+        run: Default::default(),
     };
 
     let yaml = verifier.generate_report(&[report], "yaml", config).unwrap();
@@ -3017,6 +3066,7 @@ fn test_container_report_config_file_only() {
         not_executed_steps: 0,
         overall_pass: true,
         source_yaml_sha256: None,
+        run: Default::default(),
     });
 
     // Simulate values loaded from config file
@@ -3026,6 +3076,7 @@ fn test_container_report_config_file_only() {
         environment: Some("Development".to_string()),
         platform: Some("Linux x86_64".to_string()),
         executor: Some("CI Pipeline v1.0".to_string()),
+        run: Default::default(),
     };
 
     let yaml = verifier.generate_report(&[report], "yaml", config).unwrap();
@@ -3074,6 +3125,7 @@ fn test_container_report_config_file_with_cli_overrides() {
         not_executed_steps: 0,
         overall_pass: true,
         source_yaml_sha256: None,
+        run: Default::default(),
     });
 
     // Simulate config file values being overridden by CLI flags
@@ -3084,7 +3136,8 @@ fn test_container_report_config_file_with_cli_overrides() {
         project: "Container Config Test Project".to_string(), // From config file
         environment: Some("Production".to_string()), // CLI override
         platform: Some("Linux x86_64".to_string()), // From config file
-        executor: Some("CI Pipeline v1.0".to_string()), // From config file
+        executor: Some("CI Pipeline v1.0".to_string()), // From config file,
+        run: Default::default(),
     };
 
     let yaml = verifier.generate_report(&[report], "yaml", config).unwrap();
@@ -3135,6 +3188,7 @@ fn test_container_report_partial_config_with_defaults() {
         not_executed_steps: 0,
         overall_pass: true,
         source_yaml_sha256: None,
+        run: Default::default(),
     });
 
     // Simulate config file with only some optional fields
@@ -3143,7 +3197,8 @@ fn test_container_report_partial_config_with_defaults() {
         project: "Minimal Test Project".to_string(),
         environment: None,                         // Not provided in config
         platform: Some("macOS ARM64".to_string()), // Provided in config
-        executor: None,                            // Not provided in config
+        executor: None,                            // Not provided in config,
+        run: Default::default(),
     };
 
     let yaml = verifier.generate_report(&[report], "yaml", config).unwrap();
@@ -3517,6 +3572,7 @@ fn test_container_report_config_json_format() {
         not_executed_steps: 0,
         overall_pass: true,
         source_yaml_sha256: None,
+        run: Default::default(),
     });
 
     let config = ContainerReportConfig {
@@ -3525,6 +3581,7 @@ fn test_container_report_config_json_format() {
         environment: Some("Test Environment".to_string()),
         platform: Some("Test Platform".to_string()),
         executor: Some("Test Executor".to_string()),
+        run: Default::default(),
     };
 
     let json = verifier.generate_report(&[report], "json", config).unwrap();

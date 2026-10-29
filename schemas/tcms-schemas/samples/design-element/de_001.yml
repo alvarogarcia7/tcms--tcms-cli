@@ -1,0 +1,7 @@
+id: DE-ES6
+type: component
+name: ES6 command handler
+version: '1.4'
+parent_id: DE-OTA
+implements_requirement_ids: [HLR-12]
+code_unit_ids: [CU-ES6-UPDATE]

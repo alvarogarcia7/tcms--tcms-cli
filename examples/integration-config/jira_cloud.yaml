@@ -1,0 +1,55 @@
+# Integration config: Jira Cloud (REST v3, site on atlassian.net)
+# The secret is never stored here: auth.secret_ref names an environment variable.
+type: integration_config
+schema: tcms/integration-config.schema.json
+product_id: PROD-001
+requirement_source: jira
+systems:
+  - name: jira
+    type: jira_cloud
+    base_url: https://example.atlassian.net
+    auth:
+      method: service_account_token
+      secret_ref: TCMS_JIRA_TOKEN
+    id_pattern: '^(PAY|AUTH)-[0-9]+$'
+    url_template: '{base_url}/browse/{id}'
+    url_pattern: '/browse/(?P<id>[A-Z][A-Z0-9]*-[0-9]+)$'
+    project_keys: [PAY, AUTH]
+    feature_issue_types: [Epic, Story]
+    defect_issue_type: Bug
+    severity_to_priority:
+      critical: Highest
+      major: High
+      minor: Medium
+      cosmetic: Low
+    test_backend: none
+    tcms_issue_types:
+      test: Test
+      link_type: tests
+    fields:
+      verification_status: customfield_10101
+      validation_status: customfield_10102
+      coverage: customfield_10103
+      test_lifecycle_status: customfield_10104
+      latest_verdict: customfield_10105
+      baseline: customfield_10106
+      tcms_id: customfield_10107
+    status_values:
+      not_started: Not started
+      in_progress: In progress
+      passed: Passed
+      failed: Failed
+      blocked: Blocked
+    milestone:
+      target: fix_version
+      release_on_plan_complete: true
+    write_policy:
+      feature_fields: true
+      feature_transitions: false
+      dedicated_issues: true
+      comments: true
+      defects: true
+sync:
+  trigger: cli
+  identity: tcms-bot
+  record_actor: true

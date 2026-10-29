@@ -1,0 +1,84 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: MANUAL_SSH
+item: 1
+tc: 1
+id: TC_MANUAL_SSH_001
+description: Test case for SSH device access verification with manual steps
+general_initial_conditions:
+  device:
+  - Device is powered on and connected to network
+  - SSH service is running on device
+  system:
+  - SSH client is available on test system
+initial_conditions:
+  device:
+  - Device IP address is known and reachable
+  network:
+  - Network connectivity is established
+test_sequences:
+- id: 1
+  name: SSH Connection and Authentication
+  description: 'This test sequence verifies SSH connectivity to a remote device
+
+    with manual authentication and automated verification steps.
+
+    '
+  initial_conditions:
+    device:
+    - SSH server is accessible
+  steps:
+  - step: 1
+    description: Check device network connectivity
+    command: ping -c 3 192.168.1.100
+    expected:
+      success: true
+      result: 0
+      output: 3 packets transmitted, 3 received
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'packets transmitted' <<< "$COMMAND_OUTPUT"
+      output_file: grep -q 'packets transmitted' "$LOG_FILE"
+  - step: 2
+    manual: true
+    description: Manually SSH into device and verify login
+    command: ssh admin@192.168.1.100
+    expected:
+      success: true
+      result: 0
+      output: Successfully authenticated
+    verification:
+      result: 'true'
+      output: Verify that SSH login prompt appears and authentication succeeds
+  - step: 3
+    manual: true
+    description: Execute uptime command on remote device
+    command: uptime
+    expected:
+      success: true
+      result: 0
+      output: load average
+    verification:
+      result: 'true'
+      output: Confirm uptime shows system has been running and displays load average
+  - step: 4
+    description: Check SSH service status locally
+    command: systemctl status ssh | grep -i active || echo "SSH service check"
+    expected:
+      success: true
+      result: 0
+      output: active
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'
+  - step: 5
+    manual: true
+    description: Manually log out from SSH session
+    command: exit
+    expected:
+      success: true
+      result: 0
+      output: Connection closed
+    verification:
+      result: 'true'
+      output: Verify SSH session terminates cleanly and returns to local prompt

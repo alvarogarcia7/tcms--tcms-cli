@@ -1,0 +1,179 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Test Run",
+  "description": "A single execution of test procedures against a build in an environment; groups execution logs and results",
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "description": "Unique run identifier"
+    },
+    "plan_id": {
+      "type": "string",
+      "description": "Test plan being executed"
+    },
+    "baseline_id": {
+      "type": "string",
+      "description": "Baseline under test"
+    },
+    "build_id": {
+      "type": "string",
+      "description": "Build identifier"
+    },
+    "environment": {
+      "type": "string",
+      "description": "Environment description"
+    },
+    "environment_id": {
+      "type": "string",
+      "description": "Environment record (environment.id)"
+    },
+    "tester": {
+      "type": "string",
+      "description": "Who executed the run"
+    },
+    "testers": {
+      "type": "array",
+      "description": "Additional testers",
+      "items": {
+        "type": "string"
+      }
+    },
+    "reviewer": {
+      "type": "string",
+      "description": "Who checked the results. Must differ from the author of any test case with independence_required."
+    },
+    "witness": {
+      "type": "string",
+      "description": "Witness of the run (QA or customer), if any"
+    },
+    "started_at": {
+      "type": "string",
+      "description": "Start time",
+      "format": "date-time"
+    },
+    "finished_at": {
+      "type": "string",
+      "description": "End time",
+      "format": "date-time"
+    },
+    "results": {
+      "type": "array",
+      "description": "Outcome per test case",
+      "items": {
+        "type": "object",
+        "properties": {
+          "test_case_id": {
+            "type": "string",
+            "description": "Test case executed"
+          },
+          "test_case_version": {
+            "type": "string",
+            "description": "Version of the test case executed"
+          },
+          "verdict": {
+            "type": "string",
+            "description": "Outcome",
+            "enum": [
+              "pass",
+              "fail",
+              "not_executed",
+              "error"
+            ]
+          },
+          "verification_result_ref": {
+            "type": "string",
+            "description": "Path or ID of the verification-result record with actual values and logs"
+          },
+          "problem_report_id": {
+            "type": "string",
+            "description": "Problem report (owned by the issue tracker) raised for a fail or error verdict"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Free text"
+          }
+        },
+        "required": [
+          "test_case_id",
+          "verdict"
+        ]
+      }
+    },
+    "signature": {
+      "type": "object",
+      "description": "Signature of the tester over the run record",
+      "properties": {
+        "signer": {
+          "type": "string",
+          "description": "Person signing"
+        },
+        "signed_at": {
+          "type": "string",
+          "description": "When signed",
+          "format": "date-time"
+        },
+        "method": {
+          "type": "string",
+          "description": "How the signature was produced (e.g. git-commit, pgp, tool login)"
+        },
+        "value": {
+          "type": "string",
+          "description": "Signature value or hash"
+        }
+      },
+      "required": [
+        "signer",
+        "signed_at"
+      ]
+    },
+    "external_refs": {
+      "type": "array",
+      "description": "Xray Test Execution or Zephyr test cycle/execution written for this run",
+      "items": {
+        "type": "object",
+        "properties": {
+          "system": {
+            "type": "string",
+            "description": "External system",
+            "enum": [
+              "jira",
+              "xray",
+              "zephyr_scale",
+              "zephyr_squad",
+              "strictdoc",
+              "gitlab",
+              "other"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "description": "Identifier in that system (Jira issue key, Xray test key, Zephyr key, StrictDoc UID, Fix Version id)"
+          },
+          "url": {
+            "type": "string",
+            "description": "Resolved URL; the resolver derives it from integration-config when absent",
+            "format": "uri"
+          },
+          "synced_at": {
+            "type": "string",
+            "description": "Last successful sync of this record to that system",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "system",
+          "key"
+        ]
+      }
+    }
+  },
+  "required": [
+    "run_id",
+    "build_id",
+    "environment",
+    "tester",
+    "started_at",
+    "results"
+  ]
+}

@@ -1,0 +1,8 @@
+test_sequence: 1
+step: 1
+command: ssh euicc-sim "es6-update-metadata --unset-ppr1"
+exit_code: 0
+output: OK SW=0x9000
+timestamp: '2026-10-27T09:03:12Z'
+run_id: RUN-001
+test_case_id: '4.2.2.2.1 TC_eUICC_ES6.UpdateMetadata'

@@ -1,0 +1,167 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Review",
+  "description": "A person inspects an artifact against a checklist; qualitative, records findings",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Review identifier"
+    },
+    "artifact": {
+      "type": "string",
+      "description": "Artifact reviewed (path, ID or baseline reference)"
+    },
+    "artifact_version": {
+      "type": "string",
+      "description": "Version of the artifact reviewed"
+    },
+    "activity": {
+      "type": "string",
+      "description": "Verification or validation",
+      "enum": [
+        "verification",
+        "validation"
+      ]
+    },
+    "author": {
+      "type": "string",
+      "description": "Author of the artifact"
+    },
+    "reviewer": {
+      "type": "string",
+      "description": "Person who reviewed it"
+    },
+    "independent": {
+      "type": "boolean",
+      "description": "True if the reviewer is not the author (author is then required)"
+    },
+    "date": {
+      "type": "string",
+      "description": "Review date",
+      "format": "date"
+    },
+    "outcome": {
+      "type": "string",
+      "description": "Verdict; an approved verdict gates the artifact's status change to approved",
+      "enum": [
+        "approved",
+        "approved_with_actions",
+        "rejected"
+      ]
+    },
+    "checklist": {
+      "type": "array",
+      "description": "Review checklist items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "type": "string",
+            "description": "Checklist question"
+          },
+          "result": {
+            "type": "string",
+            "description": "Answer",
+            "enum": [
+              "satisfied",
+              "not_satisfied",
+              "not_applicable"
+            ]
+          },
+          "comment": {
+            "type": "string",
+            "description": "Finding or note"
+          }
+        },
+        "required": [
+          "item",
+          "result"
+        ]
+      }
+    },
+    "checklist_id": {
+      "type": "string",
+      "description": "Checklist identifier"
+    },
+    "checklist_version": {
+      "type": "string",
+      "description": "Checklist version"
+    },
+    "findings": {
+      "type": "array",
+      "description": "Findings",
+      "items": {
+        "type": "object",
+        "properties": {
+          "finding": {
+            "type": "string",
+            "description": "What was found"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "major",
+              "minor",
+              "observation"
+            ]
+          },
+          "action_item_id": {
+            "type": "string",
+            "description": "Action item raised"
+          }
+        },
+        "required": [
+          "finding"
+        ]
+      }
+    },
+    "action_item_ids": {
+      "type": "array",
+      "description": "Action items raised by this review",
+      "items": {
+        "type": "string"
+      }
+    },
+    "signature": {
+      "type": "object",
+      "description": "Signature of the reviewer",
+      "properties": {
+        "signer": {
+          "type": "string",
+          "description": "Person signing"
+        },
+        "signed_at": {
+          "type": "string",
+          "description": "When signed",
+          "format": "date-time"
+        },
+        "method": {
+          "type": "string",
+          "description": "How the signature was produced (e.g. git-commit, pgp, tool login)"
+        },
+        "value": {
+          "type": "string",
+          "description": "Signature value or hash"
+        }
+      },
+      "required": [
+        "signer",
+        "signed_at"
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "artifact",
+    "reviewer",
+    "date",
+    "outcome",
+    "checklist"
+  ],
+  "dependencies": {
+    "independent": [
+      "author"
+    ]
+  }
+}

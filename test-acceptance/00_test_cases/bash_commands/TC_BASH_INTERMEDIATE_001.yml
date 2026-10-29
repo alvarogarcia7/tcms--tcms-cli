@@ -1,0 +1,51 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: REQ_BASH_INTERMEDIATE_001
+item: 1
+tc: 2
+id: TC_BASH_INTERMEDIATE_001
+description: Intermediate bash commands - pipes and command chaining
+general_initial_conditions:
+  system:
+    - Shell environment is available
+initial_conditions:
+  system:
+    - All commands can be executed
+test_sequences:
+  - id: 1
+    name: Command Chaining and Pipes
+    description: Test command chaining, pipes, and command substitution
+    initial_conditions:
+      system:
+        - Shell is ready
+    steps:
+      - step: 1
+        description: Pipe echo to grep
+        command: echo "test line" | grep "test"
+        expected:
+          success: true
+          result: "0"
+          output: "test line"
+        verification:
+          result: "[[ $? -eq 0 ]]"
+          output: "grep -q 'test line' $COMMAND_OUTPUT"
+      - step: 2
+        description: Multiple commands with &&
+        command: echo "first" && echo "second"
+        expected:
+          success: true
+          result: "0"
+          output: "second"
+        verification:
+          result: "[[ $? -eq 0 ]]"
+          output: "grep -q 'second' $COMMAND_OUTPUT"
+      - step: 3
+        description: Command substitution
+        command: echo "Current dir is $(pwd)"
+        expected:
+          success: true
+          result: "0"
+          output: "Current dir is"
+        verification:
+          result: "[[ $? -eq 0 ]]"
+          output: "grep -q 'Current dir is' $COMMAND_OUTPUT"

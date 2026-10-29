@@ -1,0 +1,18 @@
+id: REV-001
+artifact: samples/test-case/gsma_4.4.2.2_TC.yml
+artifact_version: '2'
+activity: verification
+author: alvaro.garcia
+reviewer: second.engineer
+independent: true
+date: '2026-10-27'
+outcome: approved_with_actions
+checklist_id: CL-TC
+checklist_version: '1.0'
+checklist:
+  - item: Every step has an expected result
+    result: satisfied
+  - item: Robustness cases exist for each requirement
+    result: not_satisfied
+    comment: Missing out-of-range input case
+action_item_ids: [AI-001]

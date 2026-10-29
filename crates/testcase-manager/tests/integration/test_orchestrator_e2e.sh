@@ -66,7 +66,7 @@ fi
 pass "test-orchestrator binary found"
 
 # Check test case file exists
-TEST_CASE_FILE="$PROJECT_ROOT/testcases/self_validated_example.yml"
+TEST_CASE_FILE="$PROJECT_ROOT/testcases/SELF_VALIDATED_EXAMPLE_002.yml"
 if [[ ! -f "$TEST_CASE_FILE" ]]; then
     fail "Test case file not found at $TEST_CASE_FILE"
     exit 1

@@ -602,6 +602,191 @@ impl fmt::Display for TestSequence {
     }
 }
 
+/// Kind of test: which inputs and conditions the test case exercises
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
+pub enum TestType {
+    /// Inputs the software should handle
+    NormalRange,
+    /// Abnormal inputs and conditions
+    Robustness,
+    /// Attacks and misuse
+    Security,
+}
+
+impl TestType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            TestType::NormalRange => "normal_range",
+            TestType::Robustness => "robustness",
+            TestType::Security => "security",
+        }
+    }
+
+    /// The categories that belong to this test type
+    pub fn categories(&self) -> &'static [TestCategory] {
+        match self {
+            TestType::NormalRange => &[
+                TestCategory::EquivalenceClass,
+                TestCategory::BoundaryValue,
+                TestCategory::StateTransition,
+            ],
+            TestType::Robustness => &[
+                TestCategory::InvalidValue,
+                TestCategory::OutOfRange,
+                TestCategory::FailureMode,
+                TestCategory::Overflow,
+                TestCategory::TimingFault,
+            ],
+            TestType::Security => &[
+                TestCategory::Fuzzing,
+                TestCategory::Penetration,
+                TestCategory::MisuseCase,
+                TestCategory::VulnerabilityScan,
+            ],
+        }
+    }
+}
+
+impl fmt::Display for TestType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+/// Technique used to select the inputs of a test case; belongs to exactly one [`TestType`]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
+pub enum TestCategory {
+    EquivalenceClass,
+    BoundaryValue,
+    StateTransition,
+    InvalidValue,
+    OutOfRange,
+    FailureMode,
+    Overflow,
+    TimingFault,
+    Fuzzing,
+    Penetration,
+    MisuseCase,
+    VulnerabilityScan,
+}
+
+impl TestCategory {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            TestCategory::EquivalenceClass => "equivalence_class",
+            TestCategory::BoundaryValue => "boundary_value",
+            TestCategory::StateTransition => "state_transition",
+            TestCategory::InvalidValue => "invalid_value",
+            TestCategory::OutOfRange => "out_of_range",
+            TestCategory::FailureMode => "failure_mode",
+            TestCategory::Overflow => "overflow",
+            TestCategory::TimingFault => "timing_fault",
+            TestCategory::Fuzzing => "fuzzing",
+            TestCategory::Penetration => "penetration",
+            TestCategory::MisuseCase => "misuse_case",
+            TestCategory::VulnerabilityScan => "vulnerability_scan",
+        }
+    }
+
+    /// The test type this category belongs to
+    pub fn test_type(&self) -> TestType {
+        match self {
+            TestCategory::EquivalenceClass
+            | TestCategory::BoundaryValue
+            | TestCategory::StateTransition => TestType::NormalRange,
+            TestCategory::InvalidValue
+            | TestCategory::OutOfRange
+            | TestCategory::FailureMode
+            | TestCategory::Overflow
+            | TestCategory::TimingFault => TestType::Robustness,
+            TestCategory::Fuzzing
+            | TestCategory::Penetration
+            | TestCategory::MisuseCase
+            | TestCategory::VulnerabilityScan => TestType::Security,
+        }
+    }
+}
+
+impl fmt::Display for TestCategory {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+/// Test level
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
+pub enum TestLevel {
+    /// Hardware/software integration (high-level requirements, on target)
+    HwSwIntegration,
+    /// Software integration (requirement interaction, data and control coupling)
+    SwIntegration,
+    /// Low-level requirements
+    LowLevel,
+    /// System-level validation
+    Validation,
+}
+
+impl TestLevel {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            TestLevel::HwSwIntegration => "hw_sw_integration",
+            TestLevel::SwIntegration => "sw_integration",
+            TestLevel::LowLevel => "low_level",
+            TestLevel::Validation => "validation",
+        }
+    }
+}
+
+impl fmt::Display for TestLevel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+/// Life-cycle status of a test case; changes are gated by reviews
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
+pub enum TestCaseStatus {
+    Draft,
+    InReview,
+    Approved,
+    Obsolete,
+}
+
+/// External system a record is linked to
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
+pub enum ExternalSystem {
+    Jira,
+    Xray,
+    ZephyrScale,
+    ZephyrSquad,
+    Strictdoc,
+    Gitlab,
+    Other,
+}
+
+/// Link from a record to an entity in an external system (Jira issue, Xray test, ...)
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ExternalRef {
+    /// External system
+    pub system: ExternalSystem,
+
+    /// Identifier in that system (issue key, test key, UID)
+    pub key: String,
+
+    /// Resolved URL; derived by the resolver when absent
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+
+    /// Last successful sync of this record to that system (RFC 3339)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub synced_at: Option<String>,
+}
+
 /// A complete test case following the GSMA schema
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct TestCase {
@@ -648,6 +833,55 @@ pub struct TestCase {
     /// Hooks configuration for test execution lifecycle
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hooks: Option<Hooks>,
+
+    /// Requirement IDs (HLR/LLR, owned by the requirements tool) this test case verifies.
+    /// Traceability and coverage use this list only, not the legacy `requirement` string.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub requirements: Vec<String>,
+
+    /// Kind of test (normal range, robustness, security)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub test_type: Option<TestType>,
+
+    /// Technique used to select inputs; must belong to `test_type`
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub test_category: Option<TestCategory>,
+
+    /// Test level
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub level: Option<TestLevel>,
+
+    /// The single objective this test case demonstrates
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub objective: Option<String>,
+
+    /// Test environment required to run the procedure
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub environment: Option<String>,
+
+    /// Procedure-level pass/fail criteria, in addition to per-step `expected`
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pass_fail_criteria: Option<String>,
+
+    /// Person who wrote the test case (independence checks)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub author: Option<String>,
+
+    /// True if the review of this test case and its results must not be done by `author`
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub independence_required: Option<bool>,
+
+    /// Test case version; runs and results record which version they executed
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+
+    /// Life-cycle status
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<TestCaseStatus>,
+
+    /// Entities in external systems created for this test case
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub external_refs: Vec<ExternalRef>,
 }
 
 /// Collection of test cases
@@ -685,7 +919,39 @@ impl TestCase {
             test_sequences: Vec::new(),
             hydration_vars: None,
             hooks: None,
+            requirements: Vec::new(),
+            test_type: None,
+            test_category: None,
+            level: None,
+            objective: None,
+            environment: None,
+            pass_fail_criteria: None,
+            author: None,
+            independence_required: None,
+            version: None,
+            status: None,
+            external_refs: Vec::new(),
         }
+    }
+
+    /// Check that `test_category` belongs to `test_type` when both are set.
+    ///
+    /// The error names the offending field and lists the categories the type allows.
+    pub fn validate_classification(&self) -> Result<(), String> {
+        if let (Some(test_type), Some(category)) = (self.test_type, self.test_category) {
+            if category.test_type() != test_type {
+                let allowed: Vec<&str> =
+                    test_type.categories().iter().map(|c| c.as_str()).collect();
+                return Err(format!(
+                    "test_category '{}' does not belong to test_type '{}' in test case '{}' (allowed: {})",
+                    category,
+                    test_type,
+                    self.id,
+                    allowed.join(", ")
+                ));
+            }
+        }
+        Ok(())
     }
 
     /// Check if the test case has any manual steps
@@ -1045,6 +1311,14 @@ pub struct TestStepExecutionEntry {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schema: Option<String>,
 
+    /// ID of the test run this entry belongs to (optional)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_id: Option<String>,
+
+    /// ID of the test case being executed (optional)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub test_case_id: Option<String>,
+
     /// Sequence number of the test
     pub test_sequence: i64,
 
@@ -1094,6 +1368,8 @@ impl TestStepExecutionEntry {
         Self {
             doc_type: None,
             schema: None,
+            run_id: None,
+            test_case_id: None,
             test_sequence,
             step,
             command,
@@ -1122,6 +1398,8 @@ impl TestStepExecutionEntry {
         Self {
             doc_type: None,
             schema: None,
+            run_id: None,
+            test_case_id: None,
             test_sequence,
             step,
             command,
@@ -2694,5 +2972,147 @@ output: "cat $COMMAND_OUTPUT | grep -q \"${OUTPUT}\""
         let deserialized: TestReportResults = serde_json::from_str(&json).unwrap();
 
         assert!(matches!(deserialized, TestReportResults::Multiple(_)));
+    }
+
+    const MINIMAL_TEST_CASE: &str = "\
+requirement: REQ1
+item: 1
+tc: 1
+id: TC_CLASS_001
+description: classification
+general_initial_conditions: {}
+initial_conditions: {}
+test_sequences: []
+";
+
+    fn test_case_with(extra: &str) -> Result<TestCase, serde_yaml::Error> {
+        serde_yaml::from_str(&format!("{MINIMAL_TEST_CASE}{extra}"))
+    }
+
+    #[test]
+    fn test_classification_fields_absent_behave_as_before() {
+        let test_case = test_case_with("").unwrap();
+        assert!(test_case.requirements.is_empty());
+        assert!(test_case.test_type.is_none() && test_case.test_category.is_none());
+        assert!(test_case.level.is_none() && test_case.author.is_none());
+        assert!(test_case.validate_classification().is_ok());
+
+        // nothing new is written for a test case that does not use the fields
+        let yaml = serde_yaml::to_string(&test_case).unwrap();
+        for key in [
+            "requirements",
+            "test_type",
+            "test_category",
+            "level",
+            "objective",
+            "environment",
+            "pass_fail_criteria",
+            "author",
+            "independence_required",
+            "version",
+            "status",
+            "external_refs",
+        ] {
+            assert!(!yaml.contains(&format!("{key}:")), "{key} written: {yaml}");
+        }
+    }
+
+    #[test]
+    fn test_classification_fields_round_trip() {
+        let test_case = test_case_with(
+            "\
+requirements: [HLR-12, LLR-7]
+test_type: robustness
+test_category: out_of_range
+level: sw_integration
+objective: Reject out-of-range metadata
+environment: simulator v2
+pass_fail_criteria: No crash and error 6A80
+author: alvaro
+independence_required: true
+version: '3'
+status: in_review
+external_refs:
+  - system: zephyr_scale
+    key: PRJ-T42
+    synced_at: '2026-10-28T12:00:00Z'
+",
+        )
+        .unwrap();
+
+        assert_eq!(test_case.requirements, vec!["HLR-12", "LLR-7"]);
+        assert_eq!(test_case.test_type, Some(TestType::Robustness));
+        assert_eq!(test_case.test_category, Some(TestCategory::OutOfRange));
+        assert_eq!(test_case.level, Some(TestLevel::SwIntegration));
+        assert_eq!(test_case.independence_required, Some(true));
+        assert_eq!(test_case.status, Some(TestCaseStatus::InReview));
+        assert_eq!(
+            test_case.external_refs[0].system,
+            ExternalSystem::ZephyrScale
+        );
+        assert!(test_case.validate_classification().is_ok());
+
+        let yaml = serde_yaml::to_string(&test_case).unwrap();
+        let back: TestCase = serde_yaml::from_str(&yaml).unwrap();
+        assert_eq!(back, test_case, "lost data on save and load: {yaml}");
+    }
+
+    #[test]
+    fn test_invalid_classification_values_name_the_field() {
+        for (extra, field) in [
+            ("test_type: smoke\n", "test_type"),
+            ("test_category: sampling\n", "test_category"),
+            ("level: unit\n", "level"),
+            ("status: done\n", "status"),
+        ] {
+            let err = test_case_with(extra).unwrap_err().to_string();
+            assert!(err.contains(field), "{field} not named in: {err}");
+            assert!(err.contains("unknown variant"), "{err}");
+        }
+    }
+
+    #[test]
+    fn test_category_must_belong_to_test_type() {
+        let test_case =
+            test_case_with("test_type: normal_range\ntest_category: fuzzing\n").unwrap();
+        let err = test_case.validate_classification().unwrap_err();
+        assert!(err.contains("test_category 'fuzzing'"), "{err}");
+        assert!(err.contains("test_type 'normal_range'"), "{err}");
+        assert!(
+            err.contains("equivalence_class"),
+            "lists the allowed ones: {err}"
+        );
+
+        // a category alone, or a type alone, is not a conflict
+        assert!(test_case_with("test_category: fuzzing\n")
+            .unwrap()
+            .validate_classification()
+            .is_ok());
+        assert!(test_case_with("test_type: security\n")
+            .unwrap()
+            .validate_classification()
+            .is_ok());
+    }
+
+    #[test]
+    fn test_every_category_belongs_to_exactly_the_type_that_lists_it() {
+        for test_type in [
+            TestType::NormalRange,
+            TestType::Robustness,
+            TestType::Security,
+        ] {
+            for category in test_type.categories() {
+                assert_eq!(category.test_type(), test_type);
+            }
+        }
+        let listed: usize = [
+            TestType::NormalRange,
+            TestType::Robustness,
+            TestType::Security,
+        ]
+        .iter()
+        .map(|t| t.categories().len())
+        .sum();
+        assert_eq!(listed, 12);
     }
 }

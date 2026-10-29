@@ -10,8 +10,9 @@ use testcase_common::load_and_validate_yaml;
 use testcase_models::TestCase;
 use testcase_storage::TestCaseStorage;
 use testcase_verification::{
-    BatchVerificationReport, ContainerReport, ContainerReportConfig, MatchStrategy,
-    StepVerificationResultEnum, TestCaseVerificationResult, TestExecutionLog, TestVerifier,
+    check_run_independence, BatchVerificationReport, CaseIndependence, ContainerReportConfig,
+    MatchStrategy, RunInfo, StepVerificationResultEnum, TestCaseVerificationResult,
+    TestExecutionLog, TestRunInput, TestRunRecord, TestVerifier,
 };
 
 /// Default schemas root directory
@@ -99,6 +100,15 @@ struct VerifierConfig {
 
     /// Executor information
     executor: Option<String>,
+
+    /// Test run the results belong to
+    run_id: Option<String>,
+
+    /// Build/software identifier under test
+    build_id: Option<String>,
+
+    /// Person or tool that executed the tests
+    tester: Option<String>,
 }
 
 impl Default for VerifierConfig {
@@ -110,6 +120,9 @@ impl Default for VerifierConfig {
             environment: None,
             platform: None,
             executor: None,
+            run_id: None,
+            build_id: None,
+            tester: None,
         }
     }
 }
@@ -136,15 +149,40 @@ impl VerifierConfig {
         if let Some(p) = project {
             self.project = p;
         }
-        if environment.is_some() {
-            self.environment = environment;
+        // Empty and blank values count as absent (TCMS-40.3): a blank flag keeps the config
+        // value, and a blank config value is dropped rather than written empty.
+        if let Some(e) = environment
+            .map(|v| v.trim().to_string())
+            .filter(|v| !v.is_empty())
+        {
+            self.environment = Some(e);
         }
+        self.environment = self.environment.take().filter(|v| !v.trim().is_empty());
         if platform.is_some() {
             self.platform = platform;
         }
         if executor.is_some() {
             self.executor = executor;
         }
+    }
+
+    /// Apply the run metadata. Precedence: flag, then `TCMS_*` environment variable, then the
+    /// configuration file. Empty values count as absent.
+    fn apply_run_metadata(
+        &mut self,
+        run_id: Option<String>,
+        build_id: Option<String>,
+        tester: Option<String>,
+    ) {
+        fn pick(flag: Option<String>, env_name: &str, config: &Option<String>) -> Option<String> {
+            let non_empty = |v: String| Some(v.trim().to_string()).filter(|v| !v.is_empty());
+            flag.and_then(non_empty)
+                .or_else(|| std::env::var(env_name).ok().and_then(non_empty))
+                .or_else(|| config.clone().and_then(non_empty))
+        }
+        self.run_id = pick(run_id, "TCMS_RUN_ID", &self.run_id);
+        self.build_id = pick(build_id, "TCMS_BUILD_ID", &self.build_id);
+        self.tester = pick(tester, "TCMS_TESTER", &self.tester);
     }
 }
 
@@ -212,6 +250,38 @@ struct Cli {
     #[arg(long)]
     executor: Option<String>,
 
+    /// Test run ID stamped on every result (overrides TCMS_RUN_ID and the config file)
+    #[arg(long, value_name = "ID")]
+    run_id: Option<String>,
+
+    /// Build identifier stamped on every result (overrides TCMS_BUILD_ID and the config file)
+    #[arg(long, value_name = "ID")]
+    build_id: Option<String>,
+
+    /// Tester stamped on every result (overrides TCMS_TESTER and the config file)
+    #[arg(long, value_name = "NAME")]
+    tester: Option<String>,
+
+    /// Write the test run record (tcms-schemas test-run) to PATH. By default it is written
+    /// whenever the run ID, build ID, environment and tester are known, next to --output as
+    /// <name>.test-run.yaml (test-run.yaml in the current directory without --output); giving
+    /// PATH makes those four required
+    #[arg(long, value_name = "PATH")]
+    test_run: Option<PathBuf>,
+
+    /// Do not write the test run record
+    #[arg(long, conflicts_with = "test_run")]
+    no_test_run: bool,
+
+    /// Who checked the results, recorded in the test run (overrides TCMS_REVIEWER)
+    #[arg(long, value_name = "NAME")]
+    reviewer: Option<String>,
+
+    /// Attach a problem report to a failed or errored test case of the test run, as
+    /// TEST_CASE_ID=PROBLEM_REPORT_ID (repeatable)
+    #[arg(long, value_name = "TC=PR")]
+    problem_report: Vec<String>,
+
     /// Match strategy for verification (exact, regex, contains, or precomputed)
     #[arg(
         short = 'm',
@@ -258,13 +328,32 @@ fn main() -> Result<()> {
         .context("Failed to initialize test case storage")?;
     let verifier = StorageTestVerifier::with_strategies(storage, match_strategy, match_strategy);
 
+    // The logs behind the report, for the test run record
+    let log_sources: Vec<(String, PathBuf)> = match (&mode, &log_path, &test_case_id, &folder_path)
+    {
+        (Mode::SingleFile, Some(log), Some(id), _) => vec![(id.clone(), log.clone())],
+        (Mode::FolderDiscovery, _, _, Some(folder)) => discover_log_files(folder)?
+            .into_iter()
+            .map(|log| (extract_test_case_id_from_filename(&log), log))
+            .collect(),
+        _ => Vec::new(),
+    };
+
     // Execute appropriate mode
-    let report = match mode {
+    let (report, skipped_logs) = match mode {
         Mode::SingleFile => {
             // Safe unwraps: validate_args guarantees these are Some when mode is SingleFile
             let log_path = log_path.expect("log_path must be Some for SingleFile mode");
             let test_case_id = test_case_id.expect("test_case_id must be Some for SingleFile mode");
-            handle_single_file_mode(&verifier, &log_path, &test_case_id, cli.verify_source_hash)?
+            (
+                handle_single_file_mode(
+                    &verifier,
+                    &log_path,
+                    &test_case_id,
+                    cli.verify_source_hash,
+                )?,
+                0,
+            )
         }
         Mode::FolderDiscovery => {
             // Safe unwrap: validate_args guarantees this is Some when mode is FolderDiscovery
@@ -284,8 +373,46 @@ fn main() -> Result<()> {
     // Write to file or stdout
     write_output(&output_content, cli.output.as_ref())?;
 
-    // Exit with non-zero code if any tests failed (unless --success-on-completion is set)
-    if !cli.success_on_completion && report.failed_test_cases > 0 {
+    // The test run record is written by default; --test-run, --reviewer and --problem-report
+    // ask for it, so for them missing run metadata is an error and not a reason to skip
+    if !cli.no_test_run {
+        let requested =
+            cli.test_run.is_some() || cli.reviewer.is_some() || !cli.problem_report.is_empty();
+        let test_run_path = cli
+            .test_run
+            .clone()
+            .unwrap_or_else(|| default_test_run_path(cli.output.as_deref()));
+        write_test_run(
+            &cli,
+            &config,
+            &verifier,
+            &report,
+            &log_sources,
+            &test_run_path,
+            requested,
+        )?;
+    }
+
+    // A log that could not be verified is an error, whatever --success-on-completion says: the
+    // report does not contain its test case, so a clean exit would hide it
+    if skipped_logs > 0 {
+        anyhow::bail!(
+            "{skipped_logs} execution log(s) could not be verified and are missing from the report"
+        );
+    }
+
+    // A case whose hook failed errored: its steps may all have passed, but the run did not finish
+    // cleanly, so it is a failure of the run (decision D-41e)
+    let errored = collect_log_facts(&log_sources).errored;
+    if !errored.is_empty() {
+        log::error!(
+            "Test case(s) errored, a hook failed: {}",
+            errored.iter().cloned().collect::<Vec<_>>().join(", ")
+        );
+    }
+
+    // Exit with non-zero code if any tests failed or errored (unless --success-on-completion is set)
+    if !cli.success_on_completion && (report.failed_test_cases > 0 || !errored.is_empty()) {
         std::process::exit(1);
     }
 
@@ -404,6 +531,7 @@ fn handle_single_file_mode(
     log::debug!("Verifying test case '{}' against logs", test_case_id);
     let mut result = verifier.verify_test_case(&test_case, &logs);
     result.source_yaml_sha256 = Some(source_hash);
+    result.run.run_id = run_id_from_log(log_path);
 
     log::debug!(
         "Verification result: pass={}, steps={}/{}",
@@ -431,7 +559,7 @@ fn handle_folder_mode(
     verifier: &StorageTestVerifier,
     folder_path: &PathBuf,
     verify_source_hash: bool,
-) -> Result<BatchVerificationReport> {
+) -> Result<(BatchVerificationReport, usize)> {
     log::debug!(
         "Starting folder discovery mode for: {}",
         folder_path.display()
@@ -441,12 +569,11 @@ fn handle_folder_mode(
     let log_files = discover_log_files(folder_path)?;
 
     if log_files.is_empty() {
-        log::warn!(
+        // Nothing was verified, so there is no verdict: an exit code of 0 would read as a pass
+        anyhow::bail!(
             "No execution log files (*_execution_log.json) found in folder: {}",
             folder_path.display()
         );
-        log::debug!("Folder discovery completed with no files found");
-        return Ok(BatchVerificationReport::new());
     }
 
     log::info!(
@@ -461,6 +588,8 @@ fn handle_folder_mode(
     }
 
     // Process each log file individually for better logging
+    // Logs that could not be verified at all (unreadable, unknown test case, wrong source hash)
+    let mut skipped = 0usize;
     let mut report = BatchVerificationReport::new();
     log::debug!("Initialized empty batch verification report");
 
@@ -508,6 +637,7 @@ fn handle_folder_mode(
                                             test_case_id,
                                             e
                                         );
+                                        skipped += 1;
                                         continue;
                                     }
                                 }
@@ -527,6 +657,9 @@ fn handle_folder_mode(
 
                         let mut result = verifier.verify_test_case(&test_case, &logs);
                         result.source_yaml_sha256 = source_hash;
+                        result.run.run_id = logs
+                            .first()
+                            .and_then(|log| run_id_from_log(&log.log_file_path));
 
                         log::debug!(
                             "Verification result for '{}': pass={}, steps={}/{}",
@@ -547,6 +680,7 @@ fn handle_folder_mode(
                             log_file.display(),
                             e
                         );
+                        skipped += 1;
                         log::debug!(
                             "Test case loading failed, skipping verification for this log file"
                         );
@@ -555,6 +689,7 @@ fn handle_folder_mode(
             }
             Err(e) => {
                 log::error!("Failed to parse log file '{}': {}", log_file.display(), e);
+                skipped += 1;
                 log::debug!("Log file parsing failed, skipping this file");
             }
         }
@@ -568,7 +703,7 @@ fn handle_folder_mode(
     log::debug!("  Passed steps: {}", report.passed_steps);
     log::debug!("  Failed steps: {}", report.failed_steps);
 
-    Ok(report)
+    Ok((report, skipped))
 }
 
 fn discover_log_files(folder_path: &PathBuf) -> Result<Vec<PathBuf>> {
@@ -717,6 +852,164 @@ fn log_verification_errors(report: &BatchVerificationReport) {
     }
 }
 
+/// What the execution logs say about a run: when it started and which cases were aborted
+#[derive(Debug, Default)]
+struct LogFacts {
+    earliest: Option<chrono::DateTime<chrono::Utc>>,
+    latest: Option<chrono::DateTime<chrono::Utc>>,
+    run_id: Option<String>,
+    errored: std::collections::BTreeSet<String>,
+}
+
+fn collect_log_facts(sources: &[(String, PathBuf)]) -> LogFacts {
+    use chrono::TimeZone;
+    let mut facts = LogFacts::default();
+    for (test_case_id, path) in sources {
+        let entries: Vec<serde_json::Value> = std::fs::read_to_string(path)
+            .ok()
+            .and_then(|content| serde_json::from_str(&content).ok())
+            .unwrap_or_default();
+        for entry in &entries {
+            // test-executor writes local time without an offset
+            let timestamp = entry
+                .get("timestamp")
+                .and_then(|t| t.as_str())
+                .and_then(|t| chrono::NaiveDateTime::parse_from_str(t, "%Y-%m-%dT%H:%M:%S").ok())
+                .and_then(|naive| chrono::Local.from_local_datetime(&naive).earliest())
+                .map(|local| local.with_timezone(&chrono::Utc));
+            if let Some(timestamp) = timestamp {
+                facts.earliest = Some(facts.earliest.map_or(timestamp, |e| e.min(timestamp)));
+                facts.latest = Some(facts.latest.map_or(timestamp, |l| l.max(timestamp)));
+            }
+            // a failed hook ends the script: the case has no result, it errored
+            let hook_failed = entry.get("hook_type").is_some_and(|h| !h.is_null())
+                && entry.get("exit_code").and_then(|c| c.as_i64()) != Some(0);
+            if hook_failed {
+                facts.errored.insert(test_case_id.clone());
+            }
+        }
+        if facts.run_id.is_none() {
+            facts.run_id = run_id_from_log(path);
+        }
+    }
+    facts
+}
+
+/// Where the test run record goes when --test-run is not given: next to the report as
+/// `<name>.test-run.yaml`, else `test-run.yaml` in the current directory
+fn default_test_run_path(output: Option<&Path>) -> PathBuf {
+    match output {
+        Some(output) => {
+            let stem = output
+                .file_stem()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_else(|| "report".to_string());
+            output.with_file_name(format!("{stem}.test-run.yaml"))
+        }
+        None => PathBuf::from("test-run.yaml"),
+    }
+}
+
+fn write_test_run(
+    cli: &Cli,
+    config: &VerifierConfig,
+    verifier: &StorageTestVerifier,
+    report: &BatchVerificationReport,
+    log_sources: &[(String, PathBuf)],
+    path: &PathBuf,
+    requested: bool,
+) -> Result<()> {
+    let facts = collect_log_facts(log_sources);
+
+    // By default a run without the metadata a test run needs simply has no record
+    if !requested {
+        let known = [
+            ("run_id", config.run_id.is_some() || facts.run_id.is_some()),
+            ("build_id", config.build_id.is_some()),
+            ("environment", config.environment.is_some()),
+            ("tester", config.tester.is_some()),
+        ];
+        let missing: Vec<&str> = known
+            .iter()
+            .filter(|(_, present)| !present)
+            .map(|(name, _)| *name)
+            .collect();
+        if !missing.is_empty() {
+            log::warn!(
+                "No test run record written: missing {} (set them with --run-id, --build-id, \
+                 --environment, --tester or the TCMS_* variables; --no-test-run silences this)",
+                missing.join(", ")
+            );
+            return Ok(());
+        }
+    }
+
+    let mut problem_reports = std::collections::BTreeMap::new();
+    for assignment in &cli.problem_report {
+        let (test_case_id, problem_report) = assignment.split_once('=').with_context(|| {
+            format!("--problem-report expects TEST_CASE_ID=PROBLEM_REPORT_ID, got '{assignment}'")
+        })?;
+        problem_reports.insert(test_case_id.trim().to_string(), problem_report.to_string());
+    }
+
+    let reviewer = cli
+        .reviewer
+        .clone()
+        .or_else(|| std::env::var("TCMS_REVIEWER").ok());
+    let result_ref = cli.output.as_ref().map(|p| p.display().to_string());
+    let input = TestRunInput {
+        run: RunInfo {
+            run_id: config.run_id.clone().or(facts.run_id),
+            build_id: config.build_id.clone(),
+            environment: config.environment.clone(),
+            tester: config.tester.clone(),
+            date: None,
+        },
+        reviewer: reviewer.as_deref(),
+        started_at: facts.earliest,
+        finished_at: facts.latest,
+        problem_reports,
+        errored: facts.errored,
+        result_ref: result_ref.as_deref(),
+    };
+
+    let record = TestRunRecord::build(report, &input).map_err(|e| anyhow::anyhow!(e))?;
+
+    // Independence: the reviewer of a test case that requires it must not be its author
+    let mut cases = std::collections::BTreeMap::new();
+    for result in &report.test_cases {
+        if let Ok(test_case) = verifier
+            .storage()
+            .load_test_case_by_id(&result.test_case_id)
+        {
+            cases.insert(
+                result.test_case_id.clone(),
+                CaseIndependence {
+                    required: test_case.independence_required == Some(true),
+                    author: test_case.author.clone(),
+                },
+            );
+        }
+    }
+    check_run_independence(&record, &cases)
+        .map_err(|violations| anyhow::anyhow!("independence check failed:\n{violations}"))?;
+
+    write_output(&record.to_yaml()?, Some(path))?;
+    log::info!("Test run record written to {}", path.display());
+    Ok(())
+}
+
+/// The run ID test-executor recorded in an execution log (first entry that has one)
+fn run_id_from_log(path: &Path) -> Option<String> {
+    let content = std::fs::read_to_string(path).ok()?;
+    let entries: Vec<serde_json::Value> = serde_json::from_str(&content).ok()?;
+    entries
+        .iter()
+        .find_map(|entry| entry.get("run_id")?.as_str())
+        .map(|run_id| run_id.trim().to_string())
+        .filter(|run_id| !run_id.is_empty())
+}
+
 fn load_configuration(cli: &Cli) -> Result<VerifierConfig> {
     // Start with defaults or load from config file if specified
     let mut config = if let Some(config_path) = &cli.config {
@@ -734,6 +1027,7 @@ fn load_configuration(cli: &Cli) -> Result<VerifierConfig> {
         cli.platform.clone(),
         cli.executor.clone(),
     );
+    config.apply_run_metadata(cli.run_id.clone(), cli.build_id.clone(), cli.tester.clone());
 
     log::debug!(
         "Final configuration: title='{}', project='{}'",
@@ -758,6 +1052,12 @@ fn generate_output(
         environment: config.environment.clone(),
         platform: config.platform.clone(),
         executor: config.executor.clone(),
+        run: RunInfo {
+            run_id: config.run_id.clone(),
+            build_id: config.build_id.clone(),
+            tester: config.tester.clone(),
+            ..Default::default()
+        },
     };
     let output = verifier
         .generate_report(std::slice::from_ref(report), format, container_config)
@@ -797,12 +1097,9 @@ fn validate_output_against_schema(output: &str, format: &str, schema_path: &Path
     log::debug!("Validating {} output against schema", format);
     let output_json: serde_json::Value = match format.to_lowercase().as_str() {
         "yaml" => {
-            // Parse YAML into ContainerReport, then serialize to JSON for validation
-            // This ensures proper handling of externally tagged enums
-            let container: ContainerReport = serde_yaml::from_str(output)
-                .context("Failed to parse YAML output for validation")?;
-            serde_json::to_value(&container)
-                .context("Failed to convert YAML to JSON for validation")?
+            // The YAML output writes enum variants as single-key maps (not YAML tags),
+            // so it converts to the JSON the schema describes without a typed round trip
+            serde_yaml::from_str(output).context("Failed to parse YAML output for validation")?
         }
         "json" => {
             // Parse JSON directly
@@ -848,7 +1145,14 @@ fn write_output(content: &str, output_path: Option<&PathBuf>) -> Result<()> {
             .context(format!("Failed to write output to {}", path.display()))?;
         log::info!("Report written to {}", path.display());
     } else {
-        log::info!("{}", content);
+        // The report is the program's output, not a log message: it must reach stdout whatever
+        // the log level is
+        use std::io::Write;
+        let mut stdout = std::io::stdout().lock();
+        stdout.write_all(content.as_bytes())?;
+        if !content.ends_with('\n') {
+            stdout.write_all(b"\n")?;
+        }
     }
 
     Ok(())
@@ -1002,4 +1306,140 @@ fn verify_hash_against_logs(
     );
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// One test owns the TCMS_* variables: the environment is process-wide, and tests run in
+    /// parallel threads.
+    #[test]
+    fn test_run_metadata_precedence_flag_then_env_then_config() {
+        for name in ["TCMS_RUN_ID", "TCMS_BUILD_ID", "TCMS_TESTER"] {
+            std::env::remove_var(name);
+        }
+        let config_with = |run: &str, build: &str, tester: &str| VerifierConfig {
+            run_id: Some(run.to_string()),
+            build_id: Some(build.to_string()),
+            tester: Some(tester.to_string()),
+            ..Default::default()
+        };
+
+        // config only
+        let mut config = config_with("cfg-run", "cfg-build", "cfg-tester");
+        config.apply_run_metadata(None, None, None);
+        assert_eq!(config.run_id.as_deref(), Some("cfg-run"));
+        assert_eq!(config.build_id.as_deref(), Some("cfg-build"));
+
+        // environment beats config
+        std::env::set_var("TCMS_RUN_ID", "env-run");
+        std::env::set_var("TCMS_TESTER", "env-tester");
+        let mut config = config_with("cfg-run", "cfg-build", "cfg-tester");
+        config.apply_run_metadata(None, None, None);
+        assert_eq!(config.run_id.as_deref(), Some("env-run"));
+        assert_eq!(config.build_id.as_deref(), Some("cfg-build"));
+        assert_eq!(config.tester.as_deref(), Some("env-tester"));
+
+        // flag beats environment
+        let mut config = config_with("cfg-run", "cfg-build", "cfg-tester");
+        config.apply_run_metadata(Some("flag-run".to_string()), None, None);
+        assert_eq!(config.run_id.as_deref(), Some("flag-run"));
+
+        // empty and blank values count as absent at every level
+        std::env::set_var("TCMS_RUN_ID", "   ");
+        let mut config = VerifierConfig::default();
+        config.apply_run_metadata(Some(String::new()), None, Some("  ".to_string()));
+        assert_eq!(config.run_id, None);
+        assert_eq!(config.tester.as_deref(), Some("env-tester"));
+        assert_eq!(config.build_id, None);
+
+        for name in ["TCMS_RUN_ID", "TCMS_BUILD_ID", "TCMS_TESTER"] {
+            std::env::remove_var(name);
+        }
+    }
+
+    #[test]
+    fn test_blank_environment_is_absent_not_written_empty() {
+        // blank flag keeps the config value
+        let mut config = VerifierConfig {
+            environment: Some("cfg-env".to_string()),
+            ..Default::default()
+        };
+        config.apply_cli_overrides(None, None, Some("  ".to_string()), None, None);
+        assert_eq!(config.environment.as_deref(), Some("cfg-env"));
+
+        // blank config value and no flag: absent
+        let mut config = VerifierConfig {
+            environment: Some(String::new()),
+            ..Default::default()
+        };
+        config.apply_cli_overrides(None, None, None, None, None);
+        assert_eq!(config.environment, None);
+
+        // flag value is trimmed
+        let mut config = VerifierConfig::default();
+        config.apply_cli_overrides(None, None, Some(" Staging ".to_string()), None, None);
+        assert_eq!(config.environment.as_deref(), Some("Staging"));
+    }
+
+    #[test]
+    fn test_run_id_is_read_back_from_the_execution_log() {
+        let dir = tempfile::tempdir().unwrap();
+        let log = dir.path().join("log.json");
+
+        std::fs::write(&log, r#"[{"step": 1}, {"step": 2, "run_id": " RUN-7 "}]"#).unwrap();
+        assert_eq!(run_id_from_log(&log).as_deref(), Some("RUN-7"));
+
+        std::fs::write(&log, r#"[{"step": 1, "run_id": ""}]"#).unwrap();
+        assert_eq!(run_id_from_log(&log), None);
+
+        std::fs::write(&log, "not json").unwrap();
+        assert_eq!(run_id_from_log(&log), None);
+        assert_eq!(run_id_from_log(&dir.path().join("missing.json")), None);
+    }
+
+    #[test]
+    fn test_log_facts_timestamps_hook_failures_and_run_id() {
+        let dir = tempfile::tempdir().unwrap();
+        let ok = dir.path().join("ok.json");
+        let hook = dir.path().join("hook.json");
+        std::fs::write(
+            &ok,
+            r#"[{"timestamp": "2026-10-28T10:00:05", "exit_code": 0, "run_id": "RUN-9"},
+                {"timestamp": "2026-10-28T10:00:01", "exit_code": 1},
+                {"timestamp": "2026-10-28T10:00:09", "exit_code": 0, "hook_type": "after_step"}]"#,
+        )
+        .unwrap();
+        std::fs::write(
+            &hook,
+            r#"[{"timestamp": "2026-10-28T10:00:03", "exit_code": 127, "hook_type": "script_start"}]"#,
+        )
+        .unwrap();
+
+        let facts = collect_log_facts(&[
+            ("TC_OK".to_string(), ok),
+            ("TC_HOOK".to_string(), hook),
+            ("TC_GONE".to_string(), dir.path().join("missing.json")),
+        ]);
+
+        // a failing step is not an error; a failed hook is, and a passing hook is neither
+        assert_eq!(facts.errored.iter().collect::<Vec<_>>(), ["TC_HOOK"]);
+        assert_eq!(facts.run_id.as_deref(), Some("RUN-9"));
+        let (earliest, latest) = (facts.earliest.unwrap(), facts.latest.unwrap());
+        assert_eq!((latest - earliest).num_seconds(), 8);
+    }
+
+    #[test]
+    fn test_default_test_run_path_follows_the_report() {
+        assert_eq!(
+            default_test_run_path(Some(Path::new("out/results.yaml"))),
+            PathBuf::from("out/results.test-run.yaml")
+        );
+        assert_eq!(
+            default_test_run_path(Some(Path::new("report.json"))),
+            PathBuf::from("report.test-run.yaml")
+        );
+        assert_eq!(default_test_run_path(None), PathBuf::from("test-run.yaml"));
+    }
 }

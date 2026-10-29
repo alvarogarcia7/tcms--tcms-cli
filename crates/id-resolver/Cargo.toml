@@ -1,0 +1,17 @@
+[package]
+name = "id-resolver"
+version = "0.1.0"
+edition = "2021"
+description = "Resolve Jira and StrictDoc identifiers to URLs and back, driven by integration-config"
+
+[dependencies]
+testcase-models = { path = "../testcase-models" }
+testcase-common = { path = "../testcase-common" }
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+anyhow = { workspace = true }
+regex = { workspace = true }
+regex-syntax = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

@@ -1,0 +1,5 @@
+id: TP-GLOSS-1
+name: Glossary acceptance regression plan
+baseline_id: BL-2
+regression:
+  previous_baseline_id: BL-1

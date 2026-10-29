@@ -1,0 +1,86 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: MANUAL_DEVICE
+item: 1
+tc: 4
+id: TC_MANUAL_DEVICE_004
+description: Test case for device power operations and state transitions
+general_initial_conditions:
+  device:
+  - Device is accessible and in known state
+  - Power management is enabled
+  system:
+  - Monitoring tools are available
+initial_conditions:
+  device:
+  - Device is powered on and idle
+  monitoring:
+  - Power monitoring script is running
+test_sequences:
+- id: 1
+  name: Power State Transitions
+  description: 'This test sequence verifies device power state transitions
+
+    including sleep, wake, and shutdown operations.
+
+    '
+  initial_conditions:
+    device:
+    - Device is ready for power testing
+  steps:
+  - step: 1
+    description: Record initial power state
+    command: echo "Device power state logged" && date +%s
+    expected:
+      success: true
+      result: 0
+      output: Device power state logged
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'Device power state logged' <<< "$COMMAND_OUTPUT"
+      output_file: grep -q 'Device power state logged' "$LOG_FILE"
+  - step: 2
+    manual: true
+    description: Press power button briefly to initiate sleep mode
+    command: Press power button for 1 second
+    expected:
+      success: true
+      result: 0
+      output: Device enters sleep mode
+    verification:
+      result: 'true'
+      output: Verify power LED changes to sleep state (blinking/amber) and display
+        turns off
+  - step: 3
+    manual: true
+    description: Wait 10 seconds then press power button to wake device
+    command: Wait 10 seconds, then press power button
+    expected:
+      success: true
+      result: 0
+      output: Device wakes from sleep
+    verification:
+      result: 'true'
+      output: Verify power LED returns to on state and display activates within 3
+        seconds
+  - step: 4
+    description: Verify system uptime after wake
+    command: uptime | grep -oE 'up.*,' || echo "System uptime verified"
+    expected:
+      success: true
+      result: 0
+      output: up
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'
+  - step: 5
+    manual: true
+    description: Press and hold power button for 5 seconds to force shutdown
+    command: Press and hold power button for 5 seconds
+    expected:
+      success: true
+      result: 0
+      output: Device powers off
+    verification:
+      result: 'true'
+      output: Verify all LEDs turn off and device becomes completely silent

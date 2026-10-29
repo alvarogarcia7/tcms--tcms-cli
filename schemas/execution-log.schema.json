@@ -38,6 +38,15 @@
       "type": "string",
       "description": "Timestamp of the execution (optional)"
     },
+    "test_case_id": {
+      "type": "string",
+      "description": "ID of the test case that produced the entry (optional, TCMS-40.3)"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Test run the entry belongs to; omitted when no run ID is set (optional, TCMS-40.3)"
+    },
     "hook_type": {
       "type": "string",
       "description": "Type of hook execution (optional)",

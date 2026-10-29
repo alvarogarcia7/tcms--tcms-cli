@@ -1692,3 +1692,339 @@ RELATIONS:
   VALUE: SYS-VJ-006
 
 [[/SECTION]]
+
+[[SECTION]]
+TITLE: Verification Evidence, Traceability and Integration Requirements
+
+[REQUIREMENT]
+UID: HLR-VEV-001
+TITLE: Exit Status Reflects Verification
+STATEMENT: >>>
+The verifier shall exit with a non-zero status when a test case failed, when a log could not
+be verified, when a folder holds no logs, or when a test case was aborted by a failed hook.
+The option that accepts failed test cases shall not hide a log that could not be verified.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VEV-001
+
+[REQUIREMENT]
+UID: HLR-VEV-002
+TITLE: Test Cases Without Steps
+STATEMENT: >>>
+The verifier shall not report a test case without steps as passed.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VEV-001
+
+[REQUIREMENT]
+UID: HLR-VEV-003
+TITLE: Entries Of Other Test Cases
+STATEMENT: >>>
+The verifier shall ignore, with a warning, execution log entries that name a different test
+case than the one being verified.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VEV-001
+
+[REQUIREMENT]
+UID: HLR-VEV-004
+TITLE: Report Destination
+STATEMENT: >>>
+The verifier shall write its report to the file named by the output option and to standard
+output otherwise.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VER-003
+
+[REQUIREMENT]
+UID: HLR-VEV-005
+TITLE: Failed Hook Entry
+STATEMENT: >>>
+A generated test script shall record a failed lifecycle hook in the execution log as a
+complete entry that identifies the hook, so that the verifier can read it and report the
+test case as errored.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-VEV-001
+
+[REQUIREMENT]
+UID: HLR-RUN-001
+TITLE: Log Entry Identity
+STATEMENT: >>>
+Every execution log entry shall carry the test case ID and, when known, the run ID.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-RUN-001
+
+[REQUIREMENT]
+UID: HLR-RUN-002
+TITLE: Result Metadata
+STATEMENT: >>>
+The verifier shall stamp the run ID, build ID, environment, tester and date on each
+verification result. It shall take explicit values in the order flag, environment variable,
+configuration file and execution log, and shall omit values that are absent or blank.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-RUN-001
+
+[REQUIREMENT]
+UID: HLR-RUN-003
+TITLE: Test Run Record
+STATEMENT: >>>
+The verifier shall write a test run record by default when the run ID, build ID, environment
+and tester are known. The record shall give a verdict (pass, fail, not_executed or error)
+per test case, the reviewer and problem reports when given, and the start and end of the
+execution. A default run without those values shall warn and succeed; a run that asked for
+the record shall fail.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-RUN-001
+
+[REQUIREMENT]
+UID: HLR-RUN-004
+TITLE: Test Classification
+STATEMENT: >>>
+The system shall keep on each test case its requirement IDs, test type, test category,
+level, objective, environment, pass and fail criteria, author and independence flag, and
+shall refuse a test category that does not belong to the test type.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TRC-001
+
+[REQUIREMENT]
+UID: HLR-TRC-001
+TITLE: Traceability Matrix
+STATEMENT: >>>
+The system shall generate a traceability matrix relating each requirement to the test cases
+that list it and to the test runs whose results exercised them.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TRC-001
+
+[REQUIREMENT]
+UID: HLR-TRC-002
+TITLE: Normal-Range And Robustness Check
+STATEMENT: >>>
+The system shall fail, naming the requirement and the missing kind, when a high-level or
+low-level requirement has no normal-range test case or no robustness test case, and shall
+allow that check to be disabled.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TRC-001
+
+[REQUIREMENT]
+UID: HLR-TRC-003
+TITLE: Regression Selection
+STATEMENT: >>>
+The system shall select the test cases to run again from the change impact of a baseline and
+from the regression block of a test plan, and shall report a missing or invalid baseline.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TRC-001
+
+[REQUIREMENT]
+UID: HLR-TRC-004
+TITLE: Structural Coverage Import
+STATEMENT: >>>
+The system shall convert the output of a structural coverage tool into a coverage report,
+and shall require every coverage gap to carry a classification and a rationale.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TRC-001
+
+[REQUIREMENT]
+UID: HLR-TRC-005
+TITLE: Requirement Sources
+STATEMENT: >>>
+The system shall read the requirement set from an identifier list, from requirement records,
+or from a StrictDoc export, and shall not treat a test case that cannot be read as absent.
+<<<
+COMMENT: >>>
+The layout of the StrictDoc JSON export is an assumption (no export sample was available);
+see docs/TRACEABILITY.md and decision-1 of the backlog.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-TRC-001
+
+[REQUIREMENT]
+UID: HLR-IND-001
+TITLE: Reviewer Independence
+STATEMENT: >>>
+The system shall refuse to write a test run when a test case that requires independence has
+no reviewer, has no recorded author, or has the author as reviewer.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-IND-001
+
+[REQUIREMENT]
+UID: HLR-IND-002
+TITLE: Independence Assignment Records
+STATEMENT: >>>
+The system shall create and validate independence assignment records, and shall reject a
+record that declares the verifier independent when the verifier is the author.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-IND-001
+
+[REQUIREMENT]
+UID: HLR-PIN-001
+TITLE: Pinned Schemas
+STATEMENT: >>>
+The system shall keep a copy of the tcms-schemas schemas and samples pinned to a recorded
+commit, and shall provide a command that updates it.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-PIN-001
+
+[REQUIREMENT]
+UID: HLR-PIN-002
+TITLE: Schema Resolution
+STATEMENT: >>>
+The system shall resolve the schema named by the schema field of a document from its own
+schemas first and from the pinned copy second, and shall reject an unknown schema.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-PIN-001
+
+[REQUIREMENT]
+UID: HLR-PIN-003
+TITLE: Portable YAML Output
+STATEMENT: >>>
+The system shall write YAML that other readers read back unchanged: no language-specific
+tags, and quotes around strings that would otherwise read as dates, booleans or numbers.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-PIN-001
+
+[REQUIREMENT]
+UID: HLR-JIRA-001
+TITLE: Identifier Resolution
+STATEMENT: >>>
+The system shall resolve an identifier of the issue tracker or of the requirements tool to
+its URL, and a URL to its identifier, from configured patterns, and shall reject
+configurations with overlapping patterns.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-JIRA-001
+
+[REQUIREMENT]
+UID: HLR-JIRA-002
+TITLE: Write Policy
+STATEMENT: >>>
+The system shall refuse, before any request is sent, a write to the issue tracker that the
+configured write policy does not allow, including any change to the summary or description
+of a feature.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-JIRA-001
+
+[REQUIREMENT]
+UID: HLR-JIRA-003
+TITLE: Acting User
+STATEMENT: >>>
+The system shall record the acting user in every audit entry and in every comment it writes
+to the issue tracker.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-JIRA-001
+
+[REQUIREMENT]
+UID: HLR-JIRA-004
+TITLE: No Credentials In Records
+STATEMENT: >>>
+The system shall not write a credential to a record, a state file, an audit entry or a log.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-JIRA-001
+
+[REQUIREMENT]
+UID: HLR-JIRA-005
+TITLE: Requirement Import
+STATEMENT: >>>
+The system shall import requirements from exactly one configured source, the issue tracker
+or StrictDoc, into requirement records, and a repeated import shall change no unchanged
+record.
+<<<
+COMMENT: >>>
+Verified against a mock issue tracker only; the StrictDoc export layout is an assumption.
+See docs/JIRA_INTEGRATION.md and decision-1 of the backlog.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-JIRA-001
+
+[REQUIREMENT]
+UID: HLR-JIRA-006
+TITLE: Test Backends
+STATEMENT: >>>
+The system shall keep test cases, runs and statuses in the issue tracker through one
+interface for plain Jira, Xray, Zephyr Scale and Zephyr Squad, selected by configuration
+alone, and shall mark a deleted test case obsolete instead of deleting it.
+<<<
+COMMENT: >>>
+Verified against mock servers only; the Xray, Zephyr Scale and Zephyr Squad interfaces are
+assumptions from their documentation. See docs/JIRA_INTEGRATION.md and decision decision-1
+of the backlog.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-JIRA-001
+
+[REQUIREMENT]
+UID: HLR-JIRA-007
+TITLE: Status Roll-Up
+STATEMENT: >>>
+The system shall write the lifecycle and latest verdict of each test case and the
+verification and validation status and coverage of each feature, and an open linked defect
+shall prevent a pass.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-JIRA-001
+
+[REQUIREMENT]
+UID: HLR-JIRA-008
+TITLE: Milestones And Defects
+STATEMENT: >>>
+The system shall represent a test plan as a Fix Version, and shall create or link issue
+tracker issues from problem reports without creating a second issue for the same report.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-JIRA-001
+
+[REQUIREMENT]
+UID: HLR-JIRA-009
+TITLE: Controlled Synchronisation
+STATEMENT: >>>
+The system shall provide a synchronisation command that only previews its changes unless
+asked to apply them, and that records the acting user and the changes made.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-JIRA-001
+
+[[/SECTION]]

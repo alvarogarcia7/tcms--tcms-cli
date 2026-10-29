@@ -200,7 +200,7 @@ def main():
     
     test_case_dirs = [
         repo_root / "testcases",
-        repo_root / "test-acceptance" / "test_cases",
+        repo_root / "test-acceptance" / "00_test_cases",
     ]
     
     for base_dir in test_case_dirs:

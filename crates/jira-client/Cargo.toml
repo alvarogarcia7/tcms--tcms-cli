@@ -1,0 +1,29 @@
+[package]
+name = "jira-client"
+version = "0.1.0"
+edition = "2021"
+description = "Jira Cloud (REST v3) and Data Center (REST v2) client with a write guard and audit trail"
+
+[features]
+# std-only mock Jira HTTP server for tests of this crate and of crates that use it
+mock = []
+
+[dependencies]
+id-resolver = { path = "../id-resolver" }
+testcase-common = { path = "../testcase-common" }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+chrono = { workspace = true }
+anyhow = { workspace = true }
+log = { workspace = true }
+
+[dev-dependencies]
+jira-client = { path = ".", features = ["mock"] }
+tempfile = { workspace = true }
+
+[[bin]]
+name = "mock-jira"
+path = "src/bin/mock_jira.rs"
+required-features = ["mock"]

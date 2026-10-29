@@ -1,0 +1,35 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: LEGACY-NOT-USED
+item: 1
+tc: 1
+id: TC_GLOSS_RUN_002
+description: Glossary acceptance fixture for HLR-1 (robustness)
+author: bob
+independence_required: false
+requirements: [HLR-1]
+test_type: robustness
+general_initial_conditions:
+  system:
+  - Bash shell is available
+initial_conditions:
+  system:
+  - Echo command is available
+test_sequences:
+- id: 1
+  name: Echo the marker
+  description: Print a fixed marker and check it
+  initial_conditions:
+    system:
+    - Echo command is available
+  steps:
+  - step: 1
+    description: Print the marker
+    command: echo 'TC_GLOSS_RUN_002 marker'
+    expected:
+      success: true
+      result: '0'
+      output: TC_GLOSS_RUN_002 marker
+    verification:
+      result: '[[ $? -eq 0 ]]'
+      output: grep -q 'TC_GLOSS_RUN_002 marker' <<< "$COMMAND_OUTPUT"

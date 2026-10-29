@@ -502,6 +502,38 @@
         }
       }
     },
+    "requirements": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Requirement IDs (HLR/LLR) this test case verifies; used by traceability only"
+    },
+    "test_type": {
+      "type": "string",
+      "enum": ["normal_range", "robustness", "security"]
+    },
+    "test_category": {
+      "type": "string",
+      "enum": ["equivalence_class", "boundary_value", "state_transition", "invalid_value", "out_of_range", "failure_mode", "overflow", "timing_fault", "fuzzing", "penetration", "misuse_case", "vulnerability_scan"],
+      "description": "Must belong to test_type (checked by the loader and by the anyOf at the root)"
+    },
+    "level": {
+      "type": "string",
+      "enum": ["hw_sw_integration", "sw_integration", "low_level", "validation"]
+    },
+    "objective": { "type": "string" },
+    "environment": { "type": "string" },
+    "pass_fail_criteria": { "type": "string" },
+    "author": { "type": "string" },
+    "independence_required": { "type": "boolean" },
+    "version": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "in_review", "approved", "obsolete"]
+    },
+    "external_refs": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
     "test_sequences": {
       "type": "array",
       "items": {
@@ -881,5 +913,26 @@
     "general_initial_conditions",
     "initial_conditions",
     "test_sequences"
+  ],
+  "anyOf": [
+    { "not": { "required": ["test_type", "test_category"] } },
+    {
+      "properties": {
+        "test_type": { "enum": ["normal_range"] },
+        "test_category": { "enum": ["equivalence_class", "boundary_value", "state_transition"] }
+      }
+    },
+    {
+      "properties": {
+        "test_type": { "enum": ["robustness"] },
+        "test_category": { "enum": ["invalid_value", "out_of_range", "failure_mode", "overflow", "timing_fault"] }
+      }
+    },
+    {
+      "properties": {
+        "test_type": { "enum": ["security"] },
+        "test_category": { "enum": ["fuzzing", "penetration", "misuse_case", "vulnerability_scan"] }
+      }
+    }
   ]
 }

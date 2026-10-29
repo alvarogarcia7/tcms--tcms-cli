@@ -1,0 +1,87 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: MANUAL_DATABASE
+item: 1
+tc: 6
+id: TC_MANUAL_DATABASE_006
+description: Test case for database verification with manual SQL query validation
+general_initial_conditions:
+  database:
+  - Database server is running
+  - Test database exists
+  system:
+  - Database client tools are installed
+initial_conditions:
+  database:
+  - Test data is loaded
+  credentials:
+  - Database credentials are available
+test_sequences:
+- id: 1
+  name: Database Query and Data Verification
+  description: 'This test sequence verifies database connectivity, executes
+
+    queries, and manually validates complex data relationships.
+
+    '
+  initial_conditions:
+    database:
+    - Database is ready for testing
+  steps:
+  - step: 1
+    description: Verify database server is listening
+    command: nc -zv localhost 5432 2>&1 | grep -i 'succeeded\|open' || echo "Database
+      port check"
+    expected:
+      success: true
+      result: 0
+      output: Database port check
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'
+  - step: 2
+    description: Check database connection
+    command: echo "SELECT 1" | psql -h localhost -U testuser testdb 2>/dev/null ||
+      echo "Database connection test"
+    expected:
+      success: true
+      result: 0
+      output: Database connection test
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'
+  - step: 3
+    manual: true
+    description: Manually execute query to check user table row count
+    command: SELECT COUNT(*) FROM users WHERE status='active'
+    expected:
+      success: true
+      result: 0
+      output: 'count: 150'
+    verification:
+      result: 'true'
+      output: Verify query returns exactly 150 active users in result set
+  - step: 4
+    manual: true
+    description: Manually verify data integrity across related tables
+    command: SELECT u.name, o.order_id FROM users u JOIN orders o ON u.id=o.user_id
+      LIMIT 5
+    expected:
+      success: true
+      result: 0
+      output: 5 rows with matching user and order data
+    verification:
+      result: 'true'
+      output: Confirm all 5 rows show valid user names and corresponding order IDs
+        with no nulls
+  - step: 5
+    description: Check database transaction log
+    command: echo "Transaction log check completed" && date +%Y-%m-%d
+    expected:
+      success: true
+      result: 0
+      output: Transaction log check completed
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'Transaction log check completed' <<< "$COMMAND_OUTPUT"
+      output_file: grep -q 'Transaction log check completed' "$LOG_FILE"

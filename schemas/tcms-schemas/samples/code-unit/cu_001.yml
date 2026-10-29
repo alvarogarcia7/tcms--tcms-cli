@@ -1,0 +1,7 @@
+id: CU-ES6-UPDATE
+file: src/es6.c
+function: es6_update_metadata
+commit: a1b2c3d
+language: C
+design_element_id: DE-ES6
+implements_requirement_ids: [LLR-12.1, LLR-12.2]

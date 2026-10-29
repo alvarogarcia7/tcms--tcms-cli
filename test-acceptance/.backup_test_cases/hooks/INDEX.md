@@ -76,7 +76,7 @@ Quick reference guide for all hook test scenarios.
 To run a test case:
 ```bash
 # Generate script from test case
-cargo run --bin verifier -- test-acceptance/test_cases/hooks/HOOKS_SCRIPT_START_001.yaml
+cargo run --bin verifier -- test-acceptance/00_test_cases/hooks/HOOKS_SCRIPT_START_001.yaml
 
 # Execute the generated script
 ./generated_test_script.sh

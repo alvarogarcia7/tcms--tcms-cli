@@ -147,7 +147,7 @@ rm -rf test-acceptance/execution_logs
 rm -rf test-acceptance/verification_results
 
 # Delete nested backup directory
-rm -rf test-acceptance/test_cases/test-acceptance/
+rm -rf test-acceptance/00_test_cases/test-acceptance/
 ```
 
 ### 5. Documentation Created

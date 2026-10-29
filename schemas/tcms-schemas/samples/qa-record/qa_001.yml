@@ -1,0 +1,16 @@
+id: QA-001
+type: witness
+date: '2026-10-27'
+performed_by: qa.lead
+subject:
+  entity_type: test-run
+  entity_id: RUN-001
+description: Witnessed execution of the ES6 regression run on bench-3.
+findings:
+  - finding: Simulator tool qualification still pending
+    severity: minor
+    action_item_id: AI-002
+outcome: conformant
+signature:
+  signer: qa.lead
+  signed_at: '2026-10-27T10:00:00Z'

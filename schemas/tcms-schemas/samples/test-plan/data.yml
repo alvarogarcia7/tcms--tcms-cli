@@ -1,0 +1,25 @@
+date: '2026-10-27'
+product: 'eUICC ES6 profile management'
+description: 'Verification of the ES6.UpdateMetadata function against baseline BL-001 on the eUICC simulator.'
+id: TP-001
+name: ES6 verification plan
+activity: verification
+product_id: PROD-001
+plan_document_id: SVP-001
+objectives: [A-7.4]
+software_level: B
+baseline_id: BL-001
+scope:
+  test_cases: ['4.2.2.2.1 TC_eUICC_ES6.UpdateMetadata', '4.2.2.3 ANOTHER ONE']
+  requirements: [HLR-12]
+  levels: [hw_sw_integration]
+environment: eUICC simulator v2.3
+environment_id: ENV-SIM-23
+independence_rules: [Test results reviewed by someone other than the test author]
+coverage_goals:
+  requirements_based: true
+  structural: [statement, decision]
+external_refs:
+  - system: jira
+    key: '10042'
+    url: https://example.atlassian.net/projects/PAY/versions/10042

@@ -1,0 +1,13 @@
+id: AR-001
+analysis_type: timing
+baseline_id: BL-001
+tool: wcet-tool 4.1
+date: '2026-10-27'
+performed_by: second.engineer
+independent: true
+method: Static worst-case execution time analysis of the ES6 handler.
+results:
+  - item: ES6.UpdateMetadata
+    value: 3.2 ms
+    within_limits: true
+conclusion: satisfactory

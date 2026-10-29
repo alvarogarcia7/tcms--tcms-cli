@@ -1,0 +1,3 @@
+# Pinned copy of tcms-schemas. Update with scripts/sync-tcms-schemas.sh <ref>.
+repository: https://gitlab.crypto.tii.ae/int/test-case-management-system/tcms-schemas
+commit: 33c3d3f87fbad1e5b88b525702e6e035d432f7a4

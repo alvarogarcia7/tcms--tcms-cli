@@ -1,0 +1,19 @@
+run_id: RUN-001
+plan_id: TP-001
+baseline_id: BL-001
+build_id: build-2026.10.27+a1b2c3d
+environment: eUICC simulator v2.3
+environment_id: ENV-SIM-23
+tester: alvaro.garcia
+reviewer: second.engineer
+witness: qa.lead
+started_at: '2026-10-27T09:00:00Z'
+finished_at: '2026-10-27T09:12:00Z'
+results:
+  - test_case_id: '4.2.2.2.1 TC_eUICC_ES6.UpdateMetadata'
+    test_case_version: '2'
+    verdict: pass
+  - test_case_id: '4.2.2.3 ANOTHER ONE'
+    verdict: fail
+    problem_report_id: PR-57
+    notes: Step 3 returned SW=0x6A88

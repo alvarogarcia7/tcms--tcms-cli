@@ -265,7 +265,7 @@ Or skip documentation:
 
 - **Full Documentation:** See [ACCEPTANCE_SUITE.md](ACCEPTANCE_SUITE.md)
 - **Implementation Details:** See [ORCHESTRATOR_IMPLEMENTATION.md](ORCHESTRATOR_IMPLEMENTATION.md)
-- **Test Cases:** See [test_cases/README.md](test_cases/README.md)
+- **Test Cases:** See [test_cases/README.md](00_test_cases/README.md)
 - **Project Info:** See [README.md](README.md)
 
 ## Tips

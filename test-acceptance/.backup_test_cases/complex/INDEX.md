@@ -117,7 +117,7 @@
 ```bash
 # Generate script from a complex test case
 cargo run --bin verifier -- \
-  test-acceptance/test_cases/complex/TC_COMPLEX_MULTI_SEQ_HOOKS_001.yaml \
+  test-acceptance/00_test_cases/complex/TC_COMPLEX_MULTI_SEQ_HOOKS_001.yaml \
   test_script.sh
 
 # Execute the generated script
@@ -125,6 +125,6 @@ bash test_script.sh
 
 # Generate documentation
 test-plan-documentation-generator \
-  --input test-acceptance/test_cases/complex/ \
+  --input test-acceptance/00_test_cases/complex/ \
   --output reports/complex/
 ```

@@ -68,7 +68,7 @@ The `convert_verification_to_tpdg.py` script was executed with these flags:
 
 ```bash
 python3 scripts/convert_verification_to_tpdg.py \
-    --test-case-dir test-acceptance/test_cases \
+    --test-case-dir test-acceptance/00_test_cases \
     --logs-dir test-acceptance/execution_logs \
     --recursive \
     --output test-acceptance/results/acceptance_test_results_container.yaml \

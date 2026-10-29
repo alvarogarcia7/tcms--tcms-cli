@@ -4,7 +4,7 @@ use testcase_manager::validation::SchemaValidator;
 
 /// Integration test for bash_commands test cases
 /// Validates YAML schema compliance for all bash command test cases
-const BASH_COMMANDS_DIR: &str = "test-acceptance/test_cases/bash_commands";
+const BASH_COMMANDS_DIR: &str = "test-acceptance/00_test_cases/bash_commands";
 
 fn get_bash_commands_test_cases() -> Vec<PathBuf> {
     let dir = PathBuf::from(BASH_COMMANDS_DIR);
@@ -14,7 +14,7 @@ fn get_bash_commands_test_cases() -> Vec<PathBuf> {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_file()
-                && path.extension().and_then(|s| s.to_str()) == Some("yaml")
+                && path.extension().and_then(|s| s.to_str()) == Some("yml")
                 && path
                     .file_name()
                     .and_then(|s| s.to_str())
@@ -308,19 +308,19 @@ fn test_bash_commands_structure() {
 #[test]
 fn test_bash_commands_specific_files() {
     let expected_files = vec![
-        "TC_BASH_SIMPLE_001.yaml",
-        "TC_BASH_INTERMEDIATE_001.yaml",
-        "TC_BASH_COMPLEX_001.yaml",
-        "TC_BASH_VERIFICATION_001.yaml",
-        "TC_BASH_ARRAYS_001.yaml",
-        "TC_BASH_STRING_OPS_001.yaml",
-        "TC_BASH_CONDITIONALS_001.yaml",
-        "TC_BASH_LOOPS_001.yaml",
-        "TC_BASH_FILE_OPS_001.yaml",
-        "TC_BASH_MATH_OPS_001.yaml",
-        "TC_BASH_ENV_VARS_001.yaml",
-        "TC_BASH_PROCESS_OPS_001.yaml",
-        "TC_BASH_REDIRECTION_001.yaml",
+        "TC_BASH_SIMPLE_001.yml",
+        "TC_BASH_INTERMEDIATE_001.yml",
+        "TC_BASH_COMPLEX_001.yml",
+        "TC_BASH_VERIFICATION_001.yml",
+        "TC_BASH_ARRAYS_001.yml",
+        "TC_BASH_STRING_OPS_001.yml",
+        "TC_BASH_CONDITIONALS_001.yml",
+        "TC_BASH_LOOPS_001.yml",
+        "TC_BASH_FILE_OPS_001.yml",
+        "TC_BASH_MATH_OPS_001.yml",
+        "TC_BASH_ENV_VARS_001.yml",
+        "TC_BASH_PROCESS_OPS_001.yml",
+        "TC_BASH_REDIRECTION_001.yml",
     ];
 
     for file_name in expected_files {

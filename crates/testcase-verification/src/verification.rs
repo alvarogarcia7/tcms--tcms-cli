@@ -27,6 +27,31 @@ pub struct StepVerificationResult {
     pub diff: VerificationDiff,
 }
 
+/// (De)serialization of step results as single-key maps (`Pass: {...}`), the form the
+/// JSON schemas describe. Reading also accepts the `!Pass {...}` YAML tags that older
+/// versions of the tools wrote.
+mod step_results_serde {
+    use super::StepVerificationResultEnum;
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    // serde's `with` passes the field type, so this must take `&Vec`
+    #[allow(clippy::ptr_arg)]
+    pub fn serialize<S: Serializer>(
+        steps: &Vec<StepVerificationResultEnum>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        serde_yaml::with::singleton_map_recursive::serialize(steps, serializer)
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Vec<StepVerificationResultEnum>, D::Error> {
+        let value = testcase_common::untag(serde_yaml::Value::deserialize(deserializer)?);
+        serde_yaml::with::singleton_map_recursive::deserialize(value)
+            .map_err(serde::de::Error::custom)
+    }
+}
+
 /// Result of verifying a single step (enum-based, for batch verification)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum StepVerificationResultEnum {
@@ -172,6 +197,69 @@ pub struct TestExecutionLog {
     pub source_yaml_sha256: Option<String>,
 }
 
+/// Run metadata of a verification result: what ran, on which build, where, by whom and when
+/// (verification-result `run_id`, `build_id`, `environment`, `tester`, `date`).
+/// Absent values are omitted, never written empty.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RunInfo {
+    /// ID of the test run that produced the result
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_id: Option<String>,
+
+    /// Build/software identifier under test
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub build_id: Option<String>,
+
+    /// Environment the test ran in
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub environment: Option<String>,
+
+    /// Person or tool that executed the test
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tester: Option<String>,
+
+    /// When the result was produced (RFC 3339)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub date: Option<String>,
+}
+
+impl RunInfo {
+    /// Drop empty strings so that they are omitted rather than written empty
+    pub fn normalized(self) -> Self {
+        fn keep(value: Option<String>) -> Option<String> {
+            value
+                .map(|v| v.trim().to_string())
+                .filter(|v| !v.is_empty())
+        }
+        Self {
+            run_id: keep(self.run_id),
+            build_id: keep(self.build_id),
+            environment: keep(self.environment),
+            tester: keep(self.tester),
+            date: keep(self.date),
+        }
+    }
+
+    /// Fill the values that are not set yet from `defaults`
+    pub fn fill_missing(&mut self, defaults: &RunInfo) {
+        if self.run_id.is_none() {
+            self.run_id = defaults.run_id.clone();
+        }
+        if self.build_id.is_none() {
+            self.build_id = defaults.build_id.clone();
+        }
+        if self.environment.is_none() {
+            self.environment = defaults.environment.clone();
+        }
+        if self.tester.is_none() {
+            self.tester = defaults.tester.clone();
+        }
+        if self.date.is_none() {
+            self.date = defaults.date.clone();
+        }
+    }
+}
+
 /// Result of verifying a test case
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestCaseVerificationResult {
@@ -214,6 +302,10 @@ pub struct TestCaseVerificationResult {
     /// SHA-256 hash of the source YAML test case file (optional)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source_yaml_sha256: Option<String>,
+
+    /// Run metadata: run, build, environment, tester and date
+    #[serde(flatten)]
+    pub run: RunInfo,
 }
 
 /// Result of verifying a test sequence
@@ -225,7 +317,8 @@ pub struct SequenceVerificationResult {
     /// Sequence name
     pub name: String,
 
-    /// Step results
+    /// Step results, written as `Pass: {...}` maps (the form the JSON schemas describe)
+    #[serde(with = "step_results_serde")]
     pub step_results: Vec<StepVerificationResultEnum>,
 
     /// Whether all steps passed
@@ -377,6 +470,11 @@ pub struct ContainerReportConfig {
 
     /// Optional executor information
     pub executor: Option<String>,
+
+    /// Run metadata stamped on every result; set values replace what a result carries.
+    /// Unset ones fall back to the result's own, then (`environment`, `date`) to the report's
+    /// environment and generation time.
+    pub run: RunInfo,
 }
 
 /// Container report for batch verification with enhanced metadata
@@ -809,8 +907,21 @@ impl TestVerifier {
             }
         }
 
+        let raw_hashes = raw_source_hashes(content);
         let mut logs = Vec::new();
-        for entry in entries {
+        for (index, entry) in entries.into_iter().enumerate() {
+            // An entry that names another test case is not evidence for this one
+            if let Some(other) = entry.test_case_id.as_deref().filter(|id| !id.is_empty()) {
+                if other != test_case_id {
+                    log::warn!(
+                        "Ignoring entry for test case '{}' in the log of '{}': {}",
+                        other,
+                        test_case_id,
+                        log_path.display()
+                    );
+                    continue;
+                }
+            }
             // Derive success from exit_code (0 = success, non-zero = failure)
             let success = Some(entry.exit_code == 0);
 
@@ -845,7 +956,7 @@ impl TestVerifier {
                 log_file_path: log_path.to_path_buf(),
                 result_verification_pass: Some(entry.result_verification_pass),
                 output_verification_pass: Some(entry.output_verification_pass),
-                source_yaml_sha256: None,
+                source_yaml_sha256: raw_hashes.get(index).cloned().flatten(),
             });
         }
 
@@ -897,8 +1008,21 @@ impl TestVerifier {
             }
         }
 
+        let raw_hashes = raw_source_hashes(content);
         let mut logs = Vec::new();
-        for entry in entries {
+        for (index, entry) in entries.into_iter().enumerate() {
+            // An entry that names another test case is not evidence for this one
+            if let Some(other) = entry.test_case_id.as_deref().filter(|id| !id.is_empty()) {
+                if other != test_case_id {
+                    log::warn!(
+                        "Ignoring entry for test case '{}' in the log of '{}': {}",
+                        other,
+                        test_case_id,
+                        log_path.display()
+                    );
+                    continue;
+                }
+            }
             // Derive success from exit_code (0 = success, non-zero = failure)
             let success = Some(entry.exit_code == 0);
 
@@ -933,7 +1057,7 @@ impl TestVerifier {
                 log_file_path: log_path.to_path_buf(),
                 result_verification_pass: Some(entry.result_verification_pass),
                 output_verification_pass: Some(entry.output_verification_pass),
-                source_yaml_sha256: None,
+                source_yaml_sha256: raw_hashes.get(index).cloned().flatten(),
             });
         }
 
@@ -1017,7 +1141,8 @@ impl TestVerifier {
             });
         }
 
-        let overall_pass = failed_steps == 0 && not_executed_steps == 0;
+        // A test case with no steps verifies nothing, so it cannot pass
+        let overall_pass = total_steps > 0 && failed_steps == 0 && not_executed_steps == 0;
 
         log::debug!(
             "Test case {} verification complete: passed={}/{}, failed={}, not_executed={}, overall_pass={}",
@@ -1042,6 +1167,7 @@ impl TestVerifier {
             item,
             tc,
             source_yaml_sha256: None,
+            run: Default::default(),
         }
     }
 
@@ -1482,6 +1608,7 @@ impl TestVerifier {
                         item: None,
                         tc: None,
                         source_yaml_sha256: None,
+                        run: Default::default(),
                     };
                     report.add_test_case_result(failed_result);
                 }
@@ -1727,7 +1854,8 @@ impl TestVerifier {
 
     /// Generate YAML report for a single test case verification result
     pub fn generate_report_yaml(&self, result: &TestCaseVerificationResult) -> Result<String> {
-        serde_yaml::to_string(result).context("Failed to serialize verification result to YAML")
+        testcase_common::to_yaml_string(result)
+            .context("Failed to serialize verification result to YAML")
     }
 
     /// Generate JSON report for a single test case verification result
@@ -1772,6 +1900,28 @@ impl TestVerifier {
             }
         }
 
+        // Stamp run metadata. Precedence: the configured values (flag, environment, config
+        // file), then what the result already carries (the run ID found in its log), then the
+        // report's environment and generation time
+        let report_defaults = RunInfo {
+            environment: config.environment.clone(),
+            date: Some(
+                merged_report
+                    .generated_at
+                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            ),
+            ..Default::default()
+        }
+        .normalized();
+        let configured = config.run.clone().normalized();
+        for result in &mut merged_report.test_cases {
+            let own = std::mem::take(&mut result.run).normalized();
+            let mut stamped = configured.clone();
+            stamped.fill_missing(&own);
+            stamped.fill_missing(&report_defaults);
+            result.run = stamped;
+        }
+
         // Calculate execution duration
         let execution_duration = match (earliest_timestamp, latest_timestamp) {
             (Some(earliest), Some(latest)) if reports.len() > 1 => {
@@ -1793,13 +1943,31 @@ impl TestVerifier {
         );
 
         match format.to_lowercase().as_str() {
-            "yaml" => serde_yaml::to_string(&container_report)
+            "yaml" => testcase_common::to_yaml_string(&container_report)
                 .context("Failed to serialize container report to YAML"),
             "json" => serde_json::to_string_pretty(&container_report)
                 .context("Failed to serialize container report to JSON"),
             _ => anyhow::bail!("Unsupported format: {}. Use 'yaml' or 'json'.", format),
         }
     }
+}
+
+/// The `source_yaml_sha256` of each entry of a JSON execution log, by position. The key is not
+/// part of the typed entry, so it is read from the raw JSON.
+fn raw_source_hashes(content: &str) -> Vec<Option<String>> {
+    serde_json::from_str::<Vec<serde_json::Value>>(content)
+        .map(|entries| {
+            entries
+                .iter()
+                .map(|entry| {
+                    entry
+                        .get("source_yaml_sha256")
+                        .and_then(|hash| hash.as_str())
+                        .map(str::to_string)
+                })
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -1844,6 +2012,7 @@ mod tests {
             item: Some(1),
             tc: Some(1),
             source_yaml_sha256: None,
+            run: Default::default(),
         };
 
         let yaml = verifier.generate_report_yaml(&result).unwrap();
@@ -1873,6 +2042,7 @@ mod tests {
             item: Some(2),
             tc: Some(2),
             source_yaml_sha256: None,
+            run: Default::default(),
         };
 
         let json = verifier.generate_report_json(&result).unwrap();
@@ -1909,6 +2079,7 @@ mod tests {
             item: Some(1),
             tc: Some(1),
             source_yaml_sha256: None,
+            run: Default::default(),
         });
 
         let config = ContainerReportConfig {
@@ -1917,6 +2088,7 @@ mod tests {
             environment: Some("Test Env".to_string()),
             platform: Some("Test Platform".to_string()),
             executor: Some("Test Executor".to_string()),
+            run: Default::default(),
         };
         let yaml = verifier.generate_report(&[report], "yaml", config).unwrap();
 
@@ -1971,6 +2143,7 @@ mod tests {
             item: Some(1),
             tc: Some(1),
             source_yaml_sha256: None,
+            run: Default::default(),
         });
 
         let mut report2 = BatchVerificationReport::new();
@@ -1988,6 +2161,7 @@ mod tests {
             item: Some(2),
             tc: Some(2),
             source_yaml_sha256: None,
+            run: Default::default(),
         });
 
         let config = ContainerReportConfig {
@@ -1996,6 +2170,7 @@ mod tests {
             environment: None,
             platform: None,
             executor: None,
+            run: Default::default(),
         };
         let yaml = verifier
             .generate_report(&[report1, report2], "yaml", config)
@@ -2429,6 +2604,7 @@ mod tests {
             item: None,
             tc: None,
             source_yaml_sha256: None,
+            run: Default::default(),
         });
 
         let config = ContainerReportConfig {
@@ -2437,6 +2613,7 @@ mod tests {
             environment: Some("JSON Env".to_string()),
             platform: None,
             executor: None,
+            run: Default::default(),
         };
         let json = verifier.generate_report(&[report], "json", config).unwrap();
 
@@ -2461,5 +2638,177 @@ mod tests {
         assert_eq!(parsed.title, "JSON Test");
         assert_eq!(parsed.project, "JSON Project");
         assert_eq!(parsed.metadata.execution_duration, 0.0);
+    }
+
+    #[test]
+    fn test_step_results_are_written_as_maps_and_read_in_both_forms() {
+        let map_form = "\
+sequence_id: 1
+name: seq
+step_results:
+- Pass:
+    step: 1
+    description: first
+- NotExecuted:
+    step: 2
+    description: second
+all_steps_passed: false
+";
+        let tag_form = "\
+sequence_id: 1
+name: seq
+step_results:
+- !Pass
+  step: 1
+  description: first
+- !NotExecuted
+  step: 2
+  description: second
+all_steps_passed: false
+";
+        let from_map: SequenceVerificationResult = serde_yaml::from_str(map_form).unwrap();
+        let from_tags: SequenceVerificationResult = serde_yaml::from_str(tag_form).unwrap();
+        assert_eq!(from_map.step_results, from_tags.step_results);
+        assert!(matches!(
+            from_map.step_results[0],
+            StepVerificationResultEnum::Pass { step: 1, .. }
+        ));
+
+        // typed serialization writes the map form, also without the output helper
+        let written = serde_yaml::to_string(&from_tags).unwrap();
+        assert!(!written.contains('!'), "tags written: {written}");
+        assert!(written.contains("- Pass:"), "{written}");
+
+        // and JSON keeps the externally tagged form
+        let json = serde_json::to_value(&from_map).unwrap();
+        assert!(json["step_results"][0].get("Pass").is_some(), "{json}");
+        let back: SequenceVerificationResult = serde_json::from_value(json).unwrap();
+        assert_eq!(back.step_results, from_map.step_results);
+    }
+
+    fn result_with_run(id: &str, run: RunInfo) -> TestCaseVerificationResult {
+        TestCaseVerificationResult {
+            test_case_id: id.to_string(),
+            description: "d".to_string(),
+            sequences: vec![],
+            total_steps: 0,
+            passed_steps: 0,
+            failed_steps: 0,
+            not_executed_steps: 0,
+            overall_pass: true,
+            requirement: None,
+            item: None,
+            tc: None,
+            source_yaml_sha256: None,
+            run,
+        }
+    }
+
+    fn stamped_results(
+        results: Vec<TestCaseVerificationResult>,
+        environment: Option<&str>,
+        run: RunInfo,
+    ) -> Vec<TestCaseVerificationResult> {
+        let verifier = TestVerifier::with_exact_matching();
+        let mut report = BatchVerificationReport::new();
+        for result in results {
+            report.add_test_case_result(result);
+        }
+        let config = ContainerReportConfig {
+            title: "T".to_string(),
+            project: "P".to_string(),
+            environment: environment.map(str::to_string),
+            platform: None,
+            executor: None,
+            run,
+        };
+        let yaml = verifier.generate_report(&[report], "yaml", config).unwrap();
+        serde_yaml::from_str::<ContainerReport>(&yaml)
+            .unwrap()
+            .test_results
+    }
+
+    #[test]
+    fn test_run_info_is_stamped_on_every_result() {
+        let results = stamped_results(
+            vec![
+                result_with_run("TC1", RunInfo::default()),
+                result_with_run("TC2", RunInfo::default()),
+            ],
+            Some("Staging"),
+            RunInfo {
+                run_id: Some("RUN-1".to_string()),
+                build_id: Some("b-9".to_string()),
+                tester: Some("alice".to_string()),
+                ..Default::default()
+            },
+        );
+        assert_eq!(results.len(), 2);
+        for result in &results {
+            assert_eq!(result.run.run_id.as_deref(), Some("RUN-1"));
+            assert_eq!(result.run.build_id.as_deref(), Some("b-9"));
+            assert_eq!(result.run.tester.as_deref(), Some("alice"));
+            // environment and date default to the report's
+            assert_eq!(result.run.environment.as_deref(), Some("Staging"));
+            let date = result.run.date.as_deref().unwrap();
+            assert!(
+                chrono::DateTime::parse_from_rfc3339(date).is_ok(),
+                "date is not RFC 3339: {date}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_run_info_precedence_configured_then_result_then_report() {
+        let own = RunInfo {
+            run_id: Some("FROM-LOG".to_string()),
+            build_id: Some("own-build".to_string()),
+            ..Default::default()
+        };
+        let results = stamped_results(
+            vec![result_with_run("TC1", own)],
+            None,
+            RunInfo {
+                run_id: Some("CONFIGURED".to_string()),
+                ..Default::default()
+            },
+        );
+        // configured wins over the result's own value; the result's own survives otherwise
+        assert_eq!(results[0].run.run_id.as_deref(), Some("CONFIGURED"));
+        assert_eq!(results[0].run.build_id.as_deref(), Some("own-build"));
+        assert_eq!(results[0].run.environment, None);
+    }
+
+    #[test]
+    fn test_absent_and_empty_run_info_is_omitted_not_written_empty() {
+        let verifier = TestVerifier::with_exact_matching();
+        let mut report = BatchVerificationReport::new();
+        report.add_test_case_result(result_with_run("TC1", RunInfo::default()));
+        let config = ContainerReportConfig {
+            title: "T".to_string(),
+            project: "P".to_string(),
+            environment: Some("  ".to_string()),
+            platform: None,
+            executor: None,
+            run: RunInfo {
+                run_id: Some(String::new()),
+                build_id: Some("   ".to_string()),
+                ..Default::default()
+            },
+        };
+        let yaml = verifier.generate_report(&[report], "yaml", config).unwrap();
+        let results = serde_yaml::from_str::<ContainerReport>(&yaml)
+            .unwrap()
+            .test_results;
+        let run = &results[0].run;
+        assert_eq!(
+            (&run.run_id, &run.build_id, &run.tester, &run.environment),
+            (&None, &None, &None, &None)
+        );
+        for key in ["run_id:", "build_id:", "tester:"] {
+            assert!(!yaml.contains(key), "{key} written: {yaml}");
+        }
+        // the date is always known
+        assert!(run.date.is_some());
     }
 }

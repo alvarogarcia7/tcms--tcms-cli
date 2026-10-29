@@ -32,7 +32,7 @@ fn load_test_case(filename: &str) -> TestCase {
 
 #[test]
 fn test_e2e_tc_gsma_4_4_2_2_yaml_output() {
-    let test_case = load_test_case("gsma_4.4.2.2_TC.yml");
+    let test_case = load_test_case("GSMA_4_4_2_2_TC_002.yml");
 
     // Create mock verification result matching the test case structure
     let result = TestCaseVerificationResult {
@@ -97,6 +97,7 @@ fn test_e2e_tc_gsma_4_4_2_2_yaml_output() {
         not_executed_steps: 0,
         overall_pass: true,
         source_yaml_sha256: None,
+        run: Default::default(),
     };
 
     let verifier = TestVerifier::with_exact_matching();
@@ -115,7 +116,7 @@ fn test_e2e_tc_gsma_4_4_2_2_yaml_output() {
 
 #[test]
 fn test_e2e_tc_gsma_4_4_2_2_json_output() {
-    let test_case = load_test_case("gsma_4.4.2.2_TC.yml");
+    let test_case = load_test_case("GSMA_4_4_2_2_TC_002.yml");
 
     let result = TestCaseVerificationResult {
         test_case_id: test_case.id.clone(),
@@ -130,6 +131,7 @@ fn test_e2e_tc_gsma_4_4_2_2_json_output() {
         not_executed_steps: 0,
         overall_pass: true,
         source_yaml_sha256: None,
+        run: Default::default(),
     };
 
     let verifier = TestVerifier::with_exact_matching();
@@ -169,6 +171,7 @@ fn test_yaml_json_equivalence() {
         not_executed_steps: 0,
         overall_pass: false,
         source_yaml_sha256: None,
+        run: Default::default(),
     };
 
     let verifier = TestVerifier::with_exact_matching();
@@ -194,7 +197,7 @@ fn test_yaml_json_equivalence() {
 #[test]
 fn test_all_test_case_types_can_be_loaded() {
     // Verify TC test case file can be loaded
-    let test_case = load_test_case("gsma_4.4.2.2_TC.yml");
+    let test_case = load_test_case("GSMA_4_4_2_2_TC_002.yml");
     assert!(!test_case.id.is_empty(), "Test case ID should not be empty");
     assert!(
         !test_case.description.is_empty(),
@@ -252,6 +255,7 @@ fn test_e2e_container_format_test_results_structure() {
         not_executed_steps: 0,
         overall_pass: true,
         source_yaml_sha256: None,
+        run: Default::default(),
     });
 
     // Test case 2: Mixed pass/fail/not_executed
@@ -306,6 +310,7 @@ fn test_e2e_container_format_test_results_structure() {
         not_executed_steps: 1,
         overall_pass: false,
         source_yaml_sha256: None,
+        run: Default::default(),
     });
 
     let config = ContainerReportConfig {
@@ -314,6 +319,7 @@ fn test_e2e_container_format_test_results_structure() {
         environment: Some("Dev Environment".to_string()),
         platform: Some("Test Platform".to_string()),
         executor: Some("Test Executor".to_string()),
+        run: Default::default(),
     };
 
     let yaml = verifier
@@ -512,6 +518,7 @@ fn test_e2e_container_format_metadata_accuracy() {
             not_executed_steps: 0,
             overall_pass,
             source_yaml_sha256: None,
+            run: Default::default(),
         });
     }
 
@@ -521,6 +528,7 @@ fn test_e2e_container_format_metadata_accuracy() {
         environment: Some("Test Env".to_string()),
         platform: Some("Test Platform".to_string()),
         executor: Some("Test Executor".to_string()),
+        run: Default::default(),
     };
 
     let yaml = verifier.generate_report(&[report], "yaml", config).unwrap();
@@ -585,6 +593,7 @@ fn test_e2e_container_format_json_output() {
         not_executed_steps: 0,
         overall_pass: true,
         source_yaml_sha256: None,
+        run: Default::default(),
     });
 
     let config = ContainerReportConfig {
@@ -593,6 +602,7 @@ fn test_e2e_container_format_json_output() {
         environment: None,
         platform: None,
         executor: None,
+        run: Default::default(),
     };
 
     let json = verifier.generate_report(&[report], "json", config).unwrap();
@@ -698,6 +708,7 @@ fn test_e2e_container_format_matches_template_structure() {
         not_executed_steps: 0,
         overall_pass: true,
         source_yaml_sha256: None,
+        run: Default::default(),
     });
 
     let config = ContainerReportConfig {
@@ -706,6 +717,7 @@ fn test_e2e_container_format_matches_template_structure() {
         environment: Some("Test Env".to_string()),
         platform: Some("Test Platform".to_string()),
         executor: Some("Test Executor".to_string()),
+        run: Default::default(),
     };
 
     let yaml = verifier.generate_report(&[report], "yaml", config).unwrap();

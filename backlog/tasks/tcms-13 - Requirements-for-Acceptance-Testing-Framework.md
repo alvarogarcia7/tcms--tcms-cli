@@ -316,7 +316,7 @@ cargo run --bin test-plan-documentation-generator-compat -- \
 
 **Batch Validation**:
 ```bash
-find test-acceptance/test_cases -name "*.yaml" -type f | \
+find test-acceptance/00_test_cases -name "*.yaml" -type f | \
   while read testcase; do
     cargo run --bin verifier -- "$testcase" --validate-only
   done

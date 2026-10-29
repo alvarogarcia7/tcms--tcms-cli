@@ -1,0 +1,63 @@
+requirement: "XXX100"
+item: 1
+tc: 4
+id: '4.2.2.3 ANOTHER ONE'
+description: 'Throughout all the ES6.UpdateMetadata test cases, SMS is used as the secure OTA channel.'
+
+general_initial_conditions:
+  eUICC:
+    - "The profile The PROFILE_OPERATIONAL1 with #METADATA_WITH_PPRS_AND_ICON is loaded on the eUICC."
+
+initial_conditions:
+  eUICC:
+    - "The PROFILE_OPERATIONAL1 is Enabled."
+    - "The PROFILE_OPERATIONAL2 is Enabled."
+
+test_sequences:
+  - id: 1
+    name: "Test Sequence #01 Nominal: Unset PPR1"
+    description: |
+                   This test case verifies that the eUICC correctly processes an ES6.UpdateMetadata command to unset PPR1
+                   when the profile is in the operational state and PPR1 is currently set.
+    initial_conditions:
+      eUICC:
+        - "The PROFILE_OPERATIONAL3 is Enabled."
+    steps:
+      - step: 1
+        manual: True # Field is optional. Assumed to be False if not specified.
+        description: "MTD_SENDS_SMS_PP([INSTALL_PERSO_RES_ISDP]; MTD_STORE_DATA_SCRIPT(#REMOVE_PPR1, FALSE))"
+        command: |-
+                     ssh
+                     another one
+        expected:
+          success: False # Field is optional. Assumed to be True if not specified.
+          result: "SW=0x91XX"
+          output: "This operation was successful."
+      - step: 2
+        description: "Fetch 'XX'"
+        command: ssh
+        expected:
+          result: "MTD_CHECK_SMS_POR(0x9000)"
+          output: "This operation was successful."
+  - id: 2
+    name: "Test Sequence #02 Nominal: Unset PPPR2 and update icon"
+    description: |
+                   The purpose of this test is to verify that the MNO can unset PPR2 and update the icon and
+                   icon type values from a Profile.
+    initial_conditions:
+      eUICC:
+        - "The PROFILE_OPERATIONAL3 is Enabled."
+    steps:
+      - step: 1
+        description: "MTD_SENDS_SMS_PP([INSTALL_PERSO_RES_ISDP]; MTD_STORE_DATA_SCRIPT(#REMOVE_PPR1, FALSE))"
+        command: ssh
+        expected:
+          success: False # Field is optional. Assumed to be True if not specified.
+          result: "SW=0x91XX"
+          output: "This operation was successful."
+      - step: 2
+        description: "Fetch 'XX'"
+        command: ssh
+        expected:
+          result: "MTD_CHECK_SMS_POR(0x9000)"
+          output: "This operation was successful."

@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Product",
+  "description": "The product or project under verification: level targets, applicable standards, and the plans, baselines and configuration items it owns",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Product identifier"
+    },
+    "name": {
+      "type": "string",
+      "description": "Product name"
+    },
+    "description": {
+      "type": "string"
+    },
+    "dal": {
+      "type": "string",
+      "description": "Design assurance level / software level (DO-178C)",
+      "enum": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    "target_eal": {
+      "type": "string",
+      "description": "Target Common Criteria evaluation assurance level",
+      "enum": [
+        "EAL1",
+        "EAL2",
+        "EAL3",
+        "EAL4",
+        "EAL5",
+        "EAL6",
+        "EAL7"
+      ]
+    },
+    "applicable_standards": {
+      "type": "array",
+      "description": "Standards the product is developed and verified against (e.g. DO-178C, DO-330, ISO/IEC 15408)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "plan_document_ids": {
+      "type": "array",
+      "description": "Plan documents (plan-document.id)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "baseline_ids": {
+      "type": "array",
+      "description": "Baselines (baseline.id)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "configuration_items": {
+      "type": "array",
+      "description": "Configuration items the product consists of (paths, documents, components)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "external_refs": {
+      "type": "array",
+      "description": "Jira project(s) and StrictDoc document set this product maps to",
+      "items": {
+        "type": "object",
+        "properties": {
+          "system": {
+            "type": "string",
+            "description": "External system",
+            "enum": [
+              "jira",
+              "xray",
+              "zephyr_scale",
+              "zephyr_squad",
+              "strictdoc",
+              "gitlab",
+              "other"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "description": "Identifier in that system (Jira issue key, Xray test key, Zephyr key, StrictDoc UID, Fix Version id)"
+          },
+          "url": {
+            "type": "string",
+            "description": "Resolved URL; the resolver derives it from integration-config when absent",
+            "format": "uri"
+          },
+          "synced_at": {
+            "type": "string",
+            "description": "Last successful sync of this record to that system",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "system",
+          "key"
+        ]
+      }
+    }
+  },
+  "required": [
+    "id",
+    "name"
+  ]
+}

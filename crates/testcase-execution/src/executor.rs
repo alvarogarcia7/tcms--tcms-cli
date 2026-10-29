@@ -39,6 +39,13 @@ impl ConfirmPrompt for DefaultConfirmPrompt {
 pub struct TestExecutor {
     output_dir: Option<PathBuf>,
     config: Config,
+    /// Run ID written to execution log entries when `TCMS_RUN_ID` is not set at run time
+    run_id: Option<String>,
+}
+
+/// Quote `value` as a bash single-quoted string
+fn shell_single_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "'\\''"))
 }
 
 /// Helper function to check if capture_vars is empty
@@ -258,13 +265,24 @@ impl TestExecutor {
         Self {
             output_dir: None,
             config: Config::load_or_default(),
+            run_id: None,
         }
+    }
+
+    /// Set the run ID written to execution log entries. The `TCMS_RUN_ID` environment
+    /// variable of the process that runs the generated script takes precedence.
+    pub fn with_run_id(mut self, run_id: Option<String>) -> Self {
+        self.run_id = run_id
+            .map(|r| r.trim().to_string())
+            .filter(|r| !r.is_empty());
+        self
     }
 
     pub fn with_output_dir<P: Into<PathBuf>>(output_dir: P) -> Self {
         Self {
             output_dir: Some(output_dir.into()),
             config: Config::load_or_default(),
+            run_id: None,
         }
     }
 
@@ -272,6 +290,7 @@ impl TestExecutor {
         Self {
             output_dir: None,
             config,
+            run_id: None,
         }
     }
 
@@ -279,6 +298,7 @@ impl TestExecutor {
         Self {
             output_dir: Some(output_dir.into()),
             config,
+            run_id: None,
         }
     }
 
@@ -513,11 +533,48 @@ impl TestExecutor {
                 code.push_str("    fi\n");
                 // Write hook failure entry using echo instead of heredoc to ensure variable substitution
                 code.push_str("    cat >> \"$JSON_LOG\" << EOF\n");
+                // The entry must satisfy the execution-log schema (test_sequence, step,
+                // command, exit_code, output) and TestStepExecutionEntry, which is also
+                // what the verifier parses. Hooks outside a sequence or step log 0.
+                // Escape for JSON, then for the unquoted heredoc below.
+                let mut hook_path = String::new();
+                for c in resolved_command.chars() {
+                    match c {
+                        // JSON `\\`, written as `\\\\` so the heredoc yields `\\`
+                        '\\' => hook_path.push_str("\\\\\\\\"),
+                        // JSON `\"`; the heredoc keeps a backslash before a quote
+                        '"' => hook_path.push_str("\\\""),
+                        // heredoc must not expand these
+                        '$' | '`' => {
+                            hook_path.push('\\');
+                            hook_path.push(c);
+                        }
+                        // inline hooks are multi-line scripts; JSON forbids raw control characters
+                        '\n' => hook_path.push_str("\\n"),
+                        '\r' => hook_path.push_str("\\r"),
+                        '\t' => hook_path.push_str("\\t"),
+                        c if (c as u32) < 0x20 => {
+                            hook_path.push_str(&format!("\\u{:04x}", c as u32))
+                        }
+                        c => hook_path.push(c),
+                    }
+                }
                 code.push_str("  {\n");
-                code.push_str(&format!("    \"hook_name\": \"{}\",\n", hook_name));
-                code.push_str("    \"status\": \"failed\",\n");
+                code.push_str("    \"test_case_id\": \"$TEST_CASE_ID_ESCAPED\",\n");
+                code.push_str("    $RUN_ID_JSON\n");
+                code.push_str("    \"test_sequence\": ${TEST_SEQUENCE_ID:-0},\n");
+                code.push_str("    \"step\": ${TEST_STEP_NUMBER:-0},\n");
+                code.push_str(&format!("    \"command\": \"{}\",\n", hook_path));
                 code.push_str("    \"exit_code\": $HOOK_EXIT_CODE,\n");
-                code.push_str("    \"timestamp\": \"$TIMESTAMP\"\n");
+                code.push_str(&format!(
+                    "    \"output\": \"{} hook failed with exit code $HOOK_EXIT_CODE\",\n",
+                    hook_name
+                ));
+                code.push_str("    \"timestamp\": \"$TIMESTAMP\",\n");
+                code.push_str(&format!("    \"hook_type\": \"{}\",\n", hook_name));
+                code.push_str(&format!("    \"hook_path\": \"{}\",\n", hook_path));
+                code.push_str("    \"result_verification_pass\": false,\n");
+                code.push_str("    \"output_verification_pass\": false\n");
                 code.push_str("  }\n");
                 code.push_str("EOF\n");
             }
@@ -545,6 +602,28 @@ impl TestExecutor {
         // Initialize JSON logging FIRST before any hooks (so JSON file exists even if hooks fail)
         script.push_str(&format!("JSON_LOG=\"{}\"\n", json_output_path.display()));
         script.push_str("TIMESTAMP=$(date +\"%Y-%m-%dT%H:%M:%S\")\n");
+        // Identify the test case and the run in every log entry. The run ID comes from
+        // TCMS_RUN_ID when the script runs, else from the value given at generation;
+        // without one, no run_id is written.
+        script.push_str(&format!(
+            "TEST_CASE_ID={}\n",
+            shell_single_quote(&test_case.id)
+        ));
+        script.push_str(&format!(
+            "RUN_ID=\"${{TCMS_RUN_ID:-}}\"\n[ -n \"$RUN_ID\" ] || RUN_ID={}\n",
+            shell_single_quote(self.run_id.as_deref().unwrap_or(""))
+        ));
+        // JSON-escape both with the configured method (the same code as for command output)
+        let escaping = self.generate_json_escaping_code();
+        script.push_str("COMMAND_OUTPUT=\"$TEST_CASE_ID\"\n");
+        script.push_str(&escaping);
+        script.push_str("TEST_CASE_ID_ESCAPED=\"$OUTPUT_ESCAPED\"\n");
+        script.push_str("COMMAND_OUTPUT=\"$RUN_ID\"\n");
+        script.push_str(&escaping);
+        script.push_str("RUN_ID_ESCAPED=\"$OUTPUT_ESCAPED\"\n");
+        script.push_str("COMMAND_OUTPUT=\"\"\nOUTPUT_ESCAPED=\"\"\n");
+        script.push_str("RUN_ID_JSON=\"\"\n");
+        script.push_str("if [ -n \"$RUN_ID\" ]; then RUN_ID_JSON=\"\\\"run_id\\\": \\\"$RUN_ID_ESCAPED\\\",\"; fi\n");
         if let Some(ref hash) = source_hash {
             script.push_str(&format!("SOURCE_YAML_SHA256=\"{}\"\n", hash));
         }
@@ -1175,6 +1254,12 @@ impl TestExecutor {
                     script.push_str("# Write manual step JSON entry\n");
                     script.push_str("{\n");
                     script.push_str("    echo '  {\'\n");
+                    script.push_str(
+                        "    echo \"    \\\"test_case_id\\\": \\\"$TEST_CASE_ID_ESCAPED\\\",\"\n",
+                    );
+                    script.push_str(
+                        "    if [ -n \"$RUN_ID\" ]; then echo \"    $RUN_ID_JSON\"; fi\n",
+                    );
                     script.push_str(&format!(
                         "    echo '    \"test_sequence\": {},'\n",
                         sequence.id
@@ -1482,6 +1567,10 @@ impl TestExecutor {
                 script.push_str("# Write JSON entry\n");
                 script.push_str("{\n");
                 script.push_str("    echo '  {'\n");
+                script.push_str(
+                    "    echo \"    \\\"test_case_id\\\": \\\"$TEST_CASE_ID_ESCAPED\\\",\"\n",
+                );
+                script.push_str("    if [ -n \"$RUN_ID\" ]; then echo \"    $RUN_ID_JSON\"; fi\n");
                 script.push_str(&format!(
                     "    echo '    \"test_sequence\": {},'\n",
                     sequence.id
@@ -2160,6 +2249,8 @@ impl TestExecutor {
                     hook_path: None,
                     result_verification_pass: false,
                     output_verification_pass: false,
+                    run_id: None,
+                    test_case_id: None,
                 };
 
                 template_entries.push(entry);
@@ -2502,6 +2593,163 @@ mod tests {
     use super::*;
     use std::collections::HashMap;
     use testcase_models::{Expected, InitialConditions, Step, TestSequence, Verification};
+
+    /// A failing hook must leave an entry that satisfies the execution-log schema and
+    /// parses as `TestStepExecutionEntry`, even if its command has quotes, `$`,
+    /// backslashes and newlines (inline hooks).
+    #[test]
+    fn test_hook_failure_log_entry_is_valid_execution_log_entry() {
+        let hook = testcase_models::HookConfig {
+            command: "echo \"q\" '\\\\' $HOME `true` > /dev/null\n(exit 3)".to_string(),
+            on_error: None,
+        };
+        let hook_code = TestExecutor::generate_hook_execution("before_step", &hook, None);
+
+        let dir = tempfile::tempdir().unwrap();
+        let log = dir.path().join("log.json");
+        let script = format!(
+            "JSON_LOG='{}'\nFIRST_ENTRY=true\nTIMESTAMP=2026-10-28T12:00:00\n\
+             TEST_SEQUENCE_ID=2\nTEST_STEP_NUMBER=5\necho '[' > \"$JSON_LOG\"\n(\n{}\n)\nRC=$?\n\
+             echo ']' >> \"$JSON_LOG\"\nexit $RC\n",
+            log.display(),
+            hook_code
+        );
+        let status = std::process::Command::new("bash")
+            .arg("-c")
+            .arg(&script)
+            .status()
+            .unwrap();
+        assert_eq!(status.code(), Some(3));
+
+        let content = std::fs::read_to_string(&log).unwrap();
+        let entries: Vec<testcase_models::TestStepExecutionEntry> =
+            serde_json::from_str(&content).unwrap_or_else(|e| panic!("{e}: {content}"));
+        assert_eq!(entries.len(), 1);
+        let entry = &entries[0];
+        assert_eq!(
+            (entry.test_sequence, entry.step, entry.exit_code),
+            (2, 5, 3)
+        );
+        assert_eq!(entry.hook_type, Some(testcase_models::HookType::BeforeStep));
+        assert!(entry.command.contains("exit 3") && entry.command.contains("$HOME"));
+        assert!(!entry.output.is_empty());
+        assert!(!entry.result_verification_pass && !entry.output_verification_pass);
+    }
+
+    /// Run a generated script for a one-step test case and return the parsed log entries
+    fn run_script_log(
+        executor: &TestExecutor,
+        test_case_id: &str,
+        run_id_env: Option<&str>,
+    ) -> Vec<testcase_models::TestStepExecutionEntry> {
+        let mut test_case = TestCase::new(
+            "REQ".to_string(),
+            1,
+            1,
+            test_case_id.to_string(),
+            "run ids".to_string(),
+        );
+        let mut sequence = TestSequence::new(1, "Seq".to_string(), "d".to_string());
+        sequence.steps.push(Step {
+            step: 1,
+            manual: None,
+            description: "echo".to_string(),
+            command: "echo hello".to_string(),
+            capture_vars: None,
+            expected: Expected {
+                success: Some(true),
+                result: "0".to_string(),
+                output: "hello".to_string(),
+            },
+            verification: Verification {
+                result: VerificationExpression::Simple("[ $EXIT_CODE -eq 0 ]".to_string()),
+                output: VerificationExpression::Simple(
+                    "[ \"$COMMAND_OUTPUT\" = \"hello\" ]".to_string(),
+                ),
+                output_file: None,
+                general: None,
+            },
+            reference: None,
+        });
+        test_case.test_sequences.push(sequence);
+
+        let dir = tempfile::tempdir().unwrap();
+        let log = dir.path().join("log.json");
+        let script = executor.generate_test_script_with_json_output(&test_case, &log, None, None);
+        let script_path = dir.path().join("run.sh");
+        std::fs::write(&script_path, script).unwrap();
+
+        let mut command = std::process::Command::new("bash");
+        command.arg(&script_path).current_dir(dir.path());
+        command.env_remove("TCMS_RUN_ID");
+        if let Some(run_id) = run_id_env {
+            command.env("TCMS_RUN_ID", run_id);
+        }
+        let output = command.output().unwrap();
+        assert!(
+            output.status.success(),
+            "script failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+
+        let content = std::fs::read_to_string(&log).unwrap();
+        serde_json::from_str(&content).unwrap_or_else(|e| panic!("{e}: {content}"))
+    }
+
+    #[test]
+    fn test_log_entries_carry_test_case_id_and_run_id() {
+        // generation default
+        let executor = TestExecutor::new().with_run_id(Some("GEN-1".to_string()));
+        let entries = run_script_log(&executor, "TC_IDS_001", None);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].test_case_id.as_deref(), Some("TC_IDS_001"));
+        assert_eq!(entries[0].run_id.as_deref(), Some("GEN-1"));
+
+        // TCMS_RUN_ID at run time wins
+        let entries = run_script_log(&executor, "TC_IDS_001", Some("RUN-42"));
+        assert_eq!(entries[0].run_id.as_deref(), Some("RUN-42"));
+
+        // no run ID anywhere: no run_id key, never an empty one
+        let plain = TestExecutor::new();
+        let entries = run_script_log(&plain, "TC_IDS_001", None);
+        assert_eq!(entries[0].test_case_id.as_deref(), Some("TC_IDS_001"));
+        assert_eq!(entries[0].run_id, None);
+    }
+
+    #[test]
+    fn test_ids_with_quotes_and_backslashes_stay_valid_json() {
+        use testcase_common::{JsonEscapingConfig, ScriptGenerationConfig};
+        let mut methods = vec![JsonEscapingMethod::ShellFallback, JsonEscapingMethod::Auto];
+        if std::process::Command::new("jq")
+            .arg("--version")
+            .output()
+            .is_ok()
+        {
+            methods.push(JsonEscapingMethod::Jq);
+        }
+        for method in methods {
+            let config = Config {
+                script_generation: ScriptGenerationConfig {
+                    json_escaping: JsonEscapingConfig {
+                        method: method.clone(),
+                        enabled: true,
+                        binary_path: None,
+                        jq_path: None,
+                    },
+                },
+                ..Default::default()
+            };
+            let executor =
+                TestExecutor::with_config(config).with_run_id(Some("a\"b\\c".to_string()));
+            let entries = run_script_log(&executor, "TC 'odd' \"id\"", None);
+            assert_eq!(
+                entries[0].test_case_id.as_deref(),
+                Some("TC 'odd' \"id\""),
+                "{method:?}"
+            );
+            assert_eq!(entries[0].run_id.as_deref(), Some("a\"b\\c"), "{method:?}");
+        }
+    }
 
     #[test]
     fn test_helper_functions_in_generated_script() {

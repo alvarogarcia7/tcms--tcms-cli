@@ -304,7 +304,7 @@ fn test_executor_with_gsma_yaml_example() -> Result<()> {
 
 #[test]
 fn test_executor_with_self_validated_example() -> Result<()> {
-    let example_file = PathBuf::from("testcases/self_validated_example.yml");
+    let example_file = PathBuf::from("testcases/SELF_VALIDATED_EXAMPLE_002.yml");
     if !example_file.exists() {
         println!("Skipping test: self_validated_example.yml not found");
         return Ok(());

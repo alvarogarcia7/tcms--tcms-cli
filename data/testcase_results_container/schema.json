@@ -328,6 +328,31 @@
           "tc": {
             "type": "integer",
             "description": "TC number (optional, for reporting)"
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "ID of the test run that produced this result (optional)"
+          },
+          "build_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Build/software identifier under test (optional)"
+          },
+          "environment": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Environment the test ran in (optional)"
+          },
+          "tester": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Person or tool that executed the test (optional)"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the result was produced (optional)"
           }
         },
         "required": [

@@ -1,5 +1,7 @@
 # Example configuration file for the verifier binary
 # This file demonstrates the available configuration options
+type: container_config
+schema: tcms/container-config.schema.v1.json
 
 # Report title (default: "Test Execution Results")
 title: "Test Execution Results"
@@ -15,3 +17,11 @@ project: "Test Case Manager - Verification Results"
 
 # Optional: Executor information (e.g., "CI Pipeline v2.1", "Jenkins v3.2")
 # executor: "Jenkins v3.2"
+
+# Run metadata stamped on every verification result (optional). Each can also be given
+# with a flag (--run-id, --build-id, --tester) or an environment variable (TCMS_RUN_ID,
+# TCMS_BUILD_ID, TCMS_TESTER). Precedence: flag, environment variable, this file.
+# Values that are absent or empty are omitted from the output.
+# run_id: "RUN-2026-10-28-001"
+# build_id: "fw-1.4.2+abc123"
+# tester: "ci-service-account"

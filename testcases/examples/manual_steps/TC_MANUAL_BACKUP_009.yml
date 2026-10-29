@@ -1,0 +1,87 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: MANUAL_BACKUP
+item: 1
+tc: 9
+id: TC_MANUAL_BACKUP_009
+description: Test case for backup restoration process with manual verification steps
+general_initial_conditions:
+  backup:
+  - Backup files are available in backup directory
+  - Backup integrity has been verified
+  system:
+  - Restore tools are installed
+  - Sufficient disk space is available
+initial_conditions:
+  system:
+  - Target system is in clean state
+  backup:
+  - Latest backup archive is identified
+test_sequences:
+- id: 1
+  name: Backup Restoration and Validation
+  description: 'This test sequence covers backup file validation,
+
+    restoration process, and manual data integrity verification.
+
+    '
+  initial_conditions:
+    backup:
+    - Backup files are ready for restoration
+  steps:
+  - step: 1
+    description: List available backup files
+    command: ls -lh /backup/*.tar.gz 2>/dev/null | tail -1 || echo "Backup files listed"
+    expected:
+      success: true
+      result: 0
+      output: Backup files listed
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'
+  - step: 2
+    description: Verify backup file checksum
+    command: echo "Checksum verification completed" && md5sum /dev/null 2>/dev/null
+      || echo "md5sum available"
+    expected:
+      success: true
+      result: 0
+      output: md5sum available
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'
+  - step: 3
+    manual: true
+    description: Extract backup archive to staging directory
+    command: tar -xzf /backup/system_backup_20240115.tar.gz -C /restore/staging
+    expected:
+      success: true
+      result: 0
+      output: Backup extracted successfully
+    verification:
+      result: 'true'
+      output: Verify tar command completes without errors and all files are extracted
+  - step: 4
+    manual: true
+    description: Manually inspect restored configuration files
+    command: Review contents of /restore/staging/config/ directory
+    expected:
+      success: true
+      result: 0
+      output: Configuration files present and valid
+    verification:
+      result: 'true'
+      output: Verify all expected config files exist, are readable, and contain valid
+        syntax
+  - step: 5
+    manual: true
+    description: Manually compare restored data with backup manifest
+    command: diff -r /restore/staging/data /backup/manifest/data_listing.txt
+    expected:
+      success: true
+      result: 0
+      output: No differences found, restoration complete
+    verification:
+      result: 'true'
+      output: Confirm all files match manifest, no missing files, and file sizes are
+        correct

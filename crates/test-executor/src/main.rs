@@ -68,6 +68,11 @@ enum Commands {
         /// Update audit traceability log with generated artifacts
         #[arg(long, value_name = "AUDIT_LOG")]
         audit_log: Option<PathBuf>,
+
+        /// Run ID written to the execution log entries; the TCMS_RUN_ID environment variable
+        /// of the process that runs the script takes precedence
+        #[arg(long, value_name = "ID")]
+        run_id: Option<String>,
     },
     /// Execute a test case by generating and running the script
     Execute {
@@ -126,6 +131,116 @@ enum Commands {
         /// Show statistics about test cases
         #[arg(long)]
         show_stats: bool,
+    },
+    /// Create or check independence-assignment records (author and verifier of an artifact)
+    #[command(subcommand)]
+    IndependenceAssignment(IndependenceCommands),
+    /// Generate the traceability matrix (requirement, test cases, runs) and check that every
+    /// requirement has a normal-range and a robustness test case
+    TraceMatrix {
+        /// Directory of test cases (searched recursively)
+        #[arg(value_name = "TEST_CASE_DIR")]
+        test_case_dir: PathBuf,
+
+        /// Requirements: an ID list (one ID, ID:HLR or ID:LLR per line), a requirement YAML
+        /// file, a directory of requirement records, or a StrictDoc JSON export (a `.json` file).
+        /// Only HLR and LLR count
+        #[arg(long, value_name = "PATH")]
+        requirements: PathBuf,
+
+        /// Test run records (test-run YAML files or directories of them) to link results
+        #[arg(long = "runs", value_name = "PATH")]
+        runs: Vec<PathBuf>,
+
+        /// Matrix ID (defaults to TM-<UTC date and time>)
+        #[arg(long, value_name = "ID")]
+        id: Option<String>,
+
+        /// Baseline the matrix belongs to
+        #[arg(long, value_name = "BASELINE_ID")]
+        baseline_id: Option<String>,
+
+        /// Output file (defaults to stdout)
+        #[arg(short, long, value_name = "OUTPUT_FILE")]
+        output: Option<PathBuf>,
+
+        /// Do not fail when a requirement lacks a normal-range or robustness test case
+        #[arg(long)]
+        no_coverage_check: bool,
+    },
+    /// Select the regression test cases from a baseline's change impact: the test cases the
+    /// impact analysis lists plus those tracing to the impacted requirements
+    RegressionSelect {
+        /// Directory of test cases (searched recursively)
+        #[arg(value_name = "TEST_CASE_DIR")]
+        test_case_dir: PathBuf,
+
+        /// Baseline YAML file(s) or directories; with --plan, the one the plan names is used
+        #[arg(long = "baseline", value_name = "PATH", required = true)]
+        baselines: Vec<PathBuf>,
+
+        /// Test plan with a `regression` block (baseline_id, regression.previous_baseline_id)
+        #[arg(long, value_name = "PLAN_FILE")]
+        plan: Option<PathBuf>,
+
+        /// Output format: `ids` (one test case ID per line, for scripts), `json` or `yaml`
+        #[arg(long, value_name = "FORMAT", default_value = "ids")]
+        format: String,
+
+        /// Output file (defaults to stdout)
+        #[arg(short, long, value_name = "OUTPUT_FILE")]
+        output: Option<PathBuf>,
+
+        /// Do not fail when the baseline lists test case IDs that do not exist
+        #[arg(long)]
+        allow_unknown_test_cases: bool,
+    },
+    /// Import coverage tool output (LCOV, MC/DC side file, traceability matrix) into a
+    /// coverage-report and apply gap annotations; unclassified gaps are reported and fail
+    CoverageImport {
+        /// LCOV tracefile (statement and decision coverage)
+        #[arg(long, value_name = "FILE")]
+        lcov: Option<PathBuf>,
+
+        /// MC/DC side input (YAML: mcdc_percent, units, gaps)
+        #[arg(long, value_name = "FILE")]
+        mcdc: Option<PathBuf>,
+
+        /// Traceability matrix YAML (from `trace-matrix`) for requirements-based coverage
+        #[arg(long, value_name = "FILE")]
+        trace_matrix: Option<PathBuf>,
+
+        /// Gap annotations (YAML list: location, classification, rationale, approver, ...)
+        #[arg(long, value_name = "FILE")]
+        annotations: Option<PathBuf>,
+
+        /// Baseline measured (required by the coverage-report schema)
+        #[arg(long, value_name = "BASELINE_ID")]
+        baseline_id: String,
+
+        /// Report ID (defaults to COV-<UTC date and time>)
+        #[arg(long, value_name = "ID")]
+        id: Option<String>,
+
+        /// Test run the coverage was measured on
+        #[arg(long, value_name = "RUN_ID")]
+        run_id: Option<String>,
+
+        /// Coverage tool name
+        #[arg(long, value_name = "NAME")]
+        tool: Option<String>,
+
+        /// Coverage tool version
+        #[arg(long, value_name = "VERSION")]
+        tool_version: Option<String>,
+
+        /// Output file (defaults to stdout)
+        #[arg(short, long, value_name = "OUTPUT_FILE")]
+        output: Option<PathBuf>,
+
+        /// Do not fail when gaps are left without classification and rationale
+        #[arg(long)]
+        allow_unclassified: bool,
     },
     /// Resolve dependencies in test case YAML files
     Resolve {
@@ -187,10 +302,130 @@ enum AuditLogCommands {
 }
 
 fn load_test_case(yaml_file: &PathBuf) -> Result<TestCase> {
-    load_and_validate_yaml::<TestCase, _, _>(yaml_file, "schemas/").context(format!(
-        "Failed to load and validate YAML file: {}",
-        yaml_file.display()
-    ))
+    let test_case =
+        load_and_validate_yaml::<TestCase, _, _>(yaml_file, "schemas/").context(format!(
+            "Failed to load and validate YAML file: {}",
+            yaml_file.display()
+        ))?;
+    test_case
+        .validate_classification()
+        .map_err(|e| anyhow::anyhow!("{}: {}", yaml_file.display(), e))?;
+    Ok(test_case)
+}
+
+#[derive(Subcommand)]
+enum IndependenceCommands {
+    /// Create an independence-assignment record; the verifier counts as independent only when
+    /// it is not the author
+    Create {
+        /// Record ID
+        #[arg(long)]
+        id: String,
+
+        /// The objective that asks for independence
+        #[arg(long)]
+        objective: String,
+
+        /// Objective ID (for example A-7.4)
+        #[arg(long)]
+        objective_id: Option<String>,
+
+        /// What was checked (a run ID, a test case ID, a document)
+        #[arg(long)]
+        artifact: String,
+
+        /// Who wrote the artifact
+        #[arg(long)]
+        author: String,
+
+        /// Who checked it
+        #[arg(long)]
+        verifier: String,
+
+        /// Date of the check (defaults to today, UTC)
+        #[arg(long, value_name = "YYYY-MM-DD")]
+        date: Option<String>,
+
+        /// Output file (defaults to stdout)
+        #[arg(short, long, value_name = "OUTPUT_FILE")]
+        output: Option<PathBuf>,
+    },
+    /// Validate independence-assignment records against their schema and the rule that a
+    /// verifier who is the author cannot be independent
+    Check {
+        /// Record files
+        #[arg(value_name = "FILES", required = true)]
+        files: Vec<PathBuf>,
+    },
+}
+
+fn independence_assignment(command: IndependenceCommands) -> Result<()> {
+    use testcase_verification::IndependenceAssignment;
+
+    match command {
+        IndependenceCommands::Create {
+            id,
+            objective,
+            objective_id,
+            artifact,
+            author,
+            verifier,
+            date,
+            output,
+        } => {
+            let mut record =
+                IndependenceAssignment::new(&id, &objective, &artifact, &author, &verifier);
+            record.objective_id = objective_id;
+            record.date =
+                Some(date.unwrap_or_else(|| chrono::Utc::now().format("%Y-%m-%d").to_string()));
+            record.validate().map_err(|e| anyhow::anyhow!(e))?;
+            let yaml = testcase_common::to_yaml_string(&record)?;
+            match output {
+                Some(path) => fs::write(&path, &yaml)
+                    .context(format!("Failed to write record: {}", path.display()))?,
+                None => print!("{yaml}"),
+            }
+            if !record.verifier_is_independent {
+                eprintln!(
+                    "Note: the verifier is the author, so the record says the check is not independent"
+                );
+            }
+            Ok(())
+        }
+        IndependenceCommands::Check { files } => {
+            let mut failed = 0;
+            for file in &files {
+                let result = (|| -> Result<()> {
+                    let mut content = fs::read_to_string(file)
+                        .context(format!("Failed to read {}", file.display()))?;
+                    // the tcms-schemas samples carry no envelope; add it as a user would
+                    if !content.lines().any(|l| l.starts_with("schema:")) {
+                        content = format!(
+                            "type: independence_assignment\nschema: tcms/independence-assignment.schema.json\n{content}"
+                        );
+                    }
+                    let record: IndependenceAssignment =
+                        testcase_common::parse_and_validate_yaml_string(
+                            &content,
+                            "schemas/",
+                            &file.display().to_string(),
+                        )?;
+                    record.validate().map_err(|e| anyhow::anyhow!(e))
+                })();
+                match result {
+                    Ok(()) => println!("✓ {}", file.display()),
+                    Err(e) => {
+                        failed += 1;
+                        eprintln!("✗ {}: {:#}", file.display(), e);
+                    }
+                }
+            }
+            if failed > 0 {
+                std::process::exit(1);
+            }
+            Ok(())
+        }
+    }
 }
 
 fn load_all_yaml_files_from_dir(dir: &PathBuf) -> Result<Vec<(PathBuf, TestCase)>> {
@@ -251,6 +486,339 @@ fn build_dependency_resolver_from_dir(test_case_dir: &Path) -> Result<Dependency
     }
 
     Ok(DependencyResolver::new(index))
+}
+
+/// Read test run records from files and directories; other YAML files are skipped
+fn read_test_runs(paths: &[PathBuf]) -> Result<Vec<testcase_verification::TestRunRecord>> {
+    let mut files = Vec::new();
+    for path in paths {
+        if path.is_dir() {
+            for entry in fs::read_dir(path)
+                .context(format!("Failed to read directory: {}", path.display()))?
+            {
+                files.push(entry?.path());
+            }
+        } else {
+            files.push(path.clone());
+        }
+    }
+    files.sort();
+
+    let mut runs = Vec::new();
+    for file in files {
+        let is_yaml = matches!(
+            file.extension().and_then(|e| e.to_str()),
+            Some("yml") | Some("yaml")
+        );
+        if !file.is_file() || !is_yaml {
+            continue;
+        }
+        let content = fs::read_to_string(&file)
+            .context(format!("Failed to read test run: {}", file.display()))?;
+        match serde_yaml::from_str::<testcase_verification::TestRunRecord>(&content) {
+            Ok(run) if run.doc_type == "test_run" => runs.push(run),
+            Ok(_) => {}
+            Err(e) if paths.contains(&file) => {
+                anyhow::bail!("{} is not a test run record: {}", file.display(), e)
+            }
+            Err(_) => {}
+        }
+    }
+    Ok(runs)
+}
+
+/// Load every test case below `dir`. A coverage claim must not rest on test cases that could
+/// not be read, so any file that fails to load fails the whole load, naming each one.
+fn load_test_cases_strict(dir: &Path) -> Result<Vec<TestCase>> {
+    fn walk(dir: &Path, files: &mut Vec<PathBuf>) -> Result<()> {
+        for entry in
+            fs::read_dir(dir).context(format!("Failed to read directory: {}", dir.display()))?
+        {
+            let path = entry?.path();
+            if path.is_dir() {
+                walk(&path, files)?;
+            } else if matches!(
+                path.extension().and_then(|e| e.to_str()),
+                Some("yml") | Some("yaml")
+            ) {
+                files.push(path);
+            }
+        }
+        Ok(())
+    }
+
+    if !dir.is_dir() {
+        anyhow::bail!("Not a directory: {}", dir.display());
+    }
+    let mut files = Vec::new();
+    walk(dir, &mut files)?;
+    files.sort();
+
+    let mut test_cases = Vec::new();
+    let mut failures = Vec::new();
+    for file in &files {
+        match load_test_case(file) {
+            Ok(test_case) => test_cases.push(test_case),
+            Err(e) => failures.push(format!("  {}: {:#}", file.display(), e)),
+        }
+    }
+    if !failures.is_empty() {
+        anyhow::bail!(
+            "{} of {} YAML files below {} are not valid test cases (the directory must hold \
+             test cases only):\n{}",
+            failures.len(),
+            files.len(),
+            dir.display(),
+            failures.join("\n")
+        );
+    }
+    Ok(test_cases)
+}
+
+/// Requirements of the matrix. A `.json` file is a StrictDoc export (its layout is an assumption,
+/// see `requirement_import::strictdoc`); anything else is read by `testcase_verification`.
+fn read_matrix_requirements(path: &Path) -> Result<Vec<testcase_verification::Requirement>> {
+    let is_json = path.is_file()
+        && path
+            .extension()
+            .and_then(|e| e.to_str())
+            .is_some_and(|e| e.eq_ignore_ascii_case("json"));
+    if !is_json {
+        return testcase_verification::read_requirements(path);
+    }
+
+    let text =
+        fs::read_to_string(path).with_context(|| format!("Failed to read {}", path.display()))?;
+    let items = requirement_import::strictdoc::export_levels(&text)
+        .with_context(|| format!("{} is not a StrictDoc export", path.display()))?;
+    let mut seen = std::collections::BTreeSet::new();
+    let mut requirements = Vec::new();
+    for (id, level) in items {
+        if !seen.insert(id.clone()) {
+            anyhow::bail!(
+                "{}: requirement '{id}' appears twice in the StrictDoc export",
+                path.display()
+            );
+        }
+        let level = match level.as_str() {
+            "HLR" => testcase_verification::RequirementLevel::Hlr,
+            "LLR" => testcase_verification::RequirementLevel::Llr,
+            _ => continue, // only HLR and LLR count
+        };
+        requirements.push(testcase_verification::Requirement { id, level });
+    }
+    Ok(requirements)
+}
+
+fn trace_matrix(
+    test_case_dir: &Path,
+    requirements_path: &Path,
+    run_paths: &[PathBuf],
+    id: Option<String>,
+    baseline_id: Option<String>,
+    output: Option<PathBuf>,
+    no_coverage_check: bool,
+) -> Result<()> {
+    let requirements = read_matrix_requirements(requirements_path)?;
+    if requirements.is_empty() {
+        anyhow::bail!("No HLR or LLR found in {}", requirements_path.display());
+    }
+    let test_cases = load_test_cases_strict(test_case_dir)?;
+    let runs = read_test_runs(run_paths)?;
+
+    let id = id.unwrap_or_else(|| format!("TM-{}", chrono::Utc::now().format("%Y%m%dT%H%M%SZ")));
+    let (matrix, findings) = testcase_verification::build_matrix(
+        &id,
+        baseline_id.as_deref(),
+        &requirements,
+        &test_cases,
+        &runs,
+    );
+
+    let yaml = testcase_common::to_yaml_string(&matrix)?;
+    match &output {
+        Some(path) => {
+            fs::write(path, &yaml)
+                .context(format!("Failed to write matrix: {}", path.display()))?;
+            eprintln!(
+                "Trace matrix {} written to {} ({} requirements, {} test cases, {} runs)",
+                matrix.id,
+                path.display(),
+                requirements.len(),
+                test_cases.len(),
+                runs.len()
+            );
+        }
+        None => print!("{yaml}"),
+    }
+
+    if !findings.untraced.is_empty() {
+        eprintln!(
+            "Requirements without test cases: {}",
+            findings.untraced.join(", ")
+        );
+    }
+    for (test_case_id, unknown) in &findings.unknown_references {
+        eprintln!(
+            "Warning: test case {} names requirements that are not in the requirement set: {}",
+            test_case_id,
+            unknown.join(", ")
+        );
+    }
+
+    if !findings.complete() && !no_coverage_check {
+        eprintln!(
+            "Coverage check failed: every HLR and LLR needs a normal-range and a robustness test \
+             (use --no-coverage-check to skip):\n{}",
+            findings.gap_report()
+        );
+        std::process::exit(1);
+    }
+    Ok(())
+}
+
+fn regression_select(
+    test_case_dir: &Path,
+    baseline_paths: &[PathBuf],
+    plan_path: Option<&Path>,
+    format: &str,
+    output: Option<PathBuf>,
+    allow_unknown: bool,
+) -> Result<()> {
+    if !matches!(format, "ids" | "json" | "yaml") {
+        anyhow::bail!("Unknown --format '{format}': use ids, json or yaml");
+    }
+    let baselines = testcase_verification::read_baselines(baseline_paths)?;
+    let plan = plan_path
+        .map(testcase_verification::read_regression_plan)
+        .transpose()?;
+    let baseline = testcase_verification::resolve_baseline(&baselines, plan.as_ref())?;
+    let test_cases = load_test_cases_strict(test_case_dir)?;
+    let selection = testcase_verification::select_regression(baseline, &test_cases);
+
+    let text = match format {
+        "json" => serde_json::to_string_pretty(&selection)? + "\n",
+        "yaml" => testcase_common::to_yaml_string(&selection)?,
+        _ => selection
+            .test_case_ids()
+            .iter()
+            .map(|id| format!("{id}\n"))
+            .collect(),
+    };
+    match &output {
+        Some(path) => fs::write(path, &text)
+            .context(format!("Failed to write selection: {}", path.display()))?,
+        None => print!("{text}"),
+    }
+    eprintln!(
+        "Regression scope of baseline {} (from {}): {} of {} test cases",
+        selection.baseline_id,
+        selection.previous_baseline_id,
+        selection.selected.len(),
+        test_cases.len()
+    );
+    if !selection.untested_requirements.is_empty() {
+        eprintln!(
+            "Warning: impacted requirements without test cases: {}",
+            selection.untested_requirements.join(", ")
+        );
+    }
+    if !selection.unknown_listed.is_empty() {
+        eprintln!(
+            "Baseline lists test cases that do not exist (or are obsolete): {}",
+            selection.unknown_listed.join(", ")
+        );
+        if !allow_unknown {
+            eprintln!("(use --allow-unknown-test-cases to accept this)");
+            std::process::exit(1);
+        }
+    }
+    Ok(())
+}
+
+struct CoverageImportArgs {
+    lcov: Option<PathBuf>,
+    mcdc: Option<PathBuf>,
+    trace_matrix: Option<PathBuf>,
+    annotations: Option<PathBuf>,
+    baseline_id: String,
+    id: Option<String>,
+    run_id: Option<String>,
+    tool: Option<String>,
+    tool_version: Option<String>,
+    output: Option<PathBuf>,
+    allow_unclassified: bool,
+}
+
+fn coverage_import(args: CoverageImportArgs) -> Result<()> {
+    use testcase_verification as tv;
+    let matrix = match &args.trace_matrix {
+        Some(path) => {
+            let text = fs::read_to_string(path).context(format!(
+                "Cannot read traceability matrix {}",
+                path.display()
+            ))?;
+            let matrix: tv::TraceMatrix = serde_yaml::from_str(&text)
+                .context(format!("{} is not a traceability matrix", path.display()))?;
+            Some(matrix)
+        }
+        None => None,
+    };
+    let input = tv::CoverageInput {
+        id: args
+            .id
+            .unwrap_or_else(|| format!("COV-{}", chrono::Utc::now().format("%Y%m%dT%H%M%SZ"))),
+        baseline_id: args.baseline_id,
+        run_id: args.run_id,
+        tool: args.tool,
+        tool_version: args.tool_version,
+        lcov: args.lcov.as_deref().map(tv::Lcov::read).transpose()?,
+        mcdc: args.mcdc.as_deref().map(tv::McdcInput::read).transpose()?,
+        matrix,
+        annotations: match &args.annotations {
+            Some(path) => tv::read_annotations(path)?,
+            None => Vec::new(),
+        },
+    };
+    let (report, findings) = tv::build_coverage_report(input)?;
+
+    let yaml = testcase_common::to_yaml_string(&report)?;
+    match &args.output {
+        Some(path) => {
+            fs::write(path, &yaml).context(format!(
+                "Failed to write coverage report: {}",
+                path.display()
+            ))?;
+            eprintln!(
+                "Coverage report {} written to {} ({} classified gaps)",
+                report.id,
+                path.display(),
+                report.gaps.len()
+            );
+        }
+        None => print!("{yaml}"),
+    }
+    for (classification, count) in tv::classification_counts(&report) {
+        eprintln!("  {count} gap(s) classified {classification}");
+    }
+    for location in &findings.unused_annotations {
+        eprintln!("Warning: annotation for '{location}' matches no gap");
+    }
+    if !findings.unclassified.is_empty() {
+        eprintln!(
+            "{} unclassified gap(s); each needs a classification and a rationale in the \
+             annotations (they are not in the report):",
+            findings.unclassified.len()
+        );
+        for gap in &findings.unclassified {
+            eprintln!("  {} ({})", gap.location, gap.coverage_type);
+        }
+        if !args.allow_unclassified {
+            eprintln!("(use --allow-unclassified to accept this)");
+            std::process::exit(1);
+        }
+    }
+    Ok(())
 }
 
 fn load_all_yaml_files_from_dir_recursive(dir: &Path) -> Result<Vec<(PathBuf, TestCase)>> {
@@ -453,6 +1021,7 @@ fn main() -> Result<()> {
             force,
             test_case_dir,
             audit_log,
+            run_id,
         } => {
             let result = (|| -> Result<()> {
                 let yaml_bytes = fs::read(&yaml_file)
@@ -468,7 +1037,7 @@ fn main() -> Result<()> {
                     .resolve(&test_case)
                     .context("Failed to resolve dependencies")?;
 
-                let executor = TestExecutor::new();
+                let executor = TestExecutor::new().with_run_id(run_id.clone());
                 let script = executor.generate_test_script_from_yaml_with_path(
                     &test_case,
                     &yaml_bytes,
@@ -704,6 +1273,64 @@ fn main() -> Result<()> {
             automated_only,
             show_stats,
         } => list_test_cases(base_path, manual_only, automated_only, show_stats),
+        Commands::IndependenceAssignment(command) => independence_assignment(command),
+        Commands::TraceMatrix {
+            test_case_dir,
+            requirements,
+            runs,
+            id,
+            baseline_id,
+            output,
+            no_coverage_check,
+        } => trace_matrix(
+            &test_case_dir,
+            &requirements,
+            &runs,
+            id,
+            baseline_id,
+            output,
+            no_coverage_check,
+        ),
+        Commands::RegressionSelect {
+            test_case_dir,
+            baselines,
+            plan,
+            format,
+            output,
+            allow_unknown_test_cases,
+        } => regression_select(
+            &test_case_dir,
+            &baselines,
+            plan.as_deref(),
+            &format,
+            output,
+            allow_unknown_test_cases,
+        ),
+        Commands::CoverageImport {
+            lcov,
+            mcdc,
+            trace_matrix,
+            annotations,
+            baseline_id,
+            id,
+            run_id,
+            tool,
+            tool_version,
+            output,
+            allow_unclassified,
+        } => coverage_import(CoverageImportArgs {
+            lcov,
+            mcdc,
+            trace_matrix,
+            annotations,
+            baseline_id,
+            id,
+            run_id,
+            tool,
+            tool_version,
+            output,
+            allow_unclassified,
+        }),
         Commands::Resolve { yaml_files, output } => {
             let resolver = build_resolver_from_files(&yaml_files)?;
 
@@ -901,7 +1528,7 @@ mod tests {
         }
 
         // Load a real test case YAML file and generate a script from it
-        let yaml_path = PathBuf::from("testcases/self_validated_example.yml");
+        let yaml_path = PathBuf::from("testcases/SELF_VALIDATED_EXAMPLE_002.yml");
         if !yaml_path.exists() {
             eprintln!("Test YAML file not found, skipping test");
             return;
@@ -915,5 +1542,60 @@ mod tests {
             result,
             "Generated test script should pass shellcheck validation"
         );
+    }
+
+    #[test]
+    fn strictdoc_export_gives_hlr_and_llr_only() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("export.json");
+        std::fs::write(
+            &path,
+            r#"{"documents":[{"path":"docs/srs.sdoc","requirements":[
+                {"uid":"SYS-1","level":"system"},
+                {"uid":"HLR-1","level":"HLR"},
+                {"uid":"LLR-2","level":"LLR"},
+                {"uid":"SFR-3","level":"SFR"}]}]}"#,
+        )
+        .unwrap();
+        let reqs = read_matrix_requirements(&path).unwrap();
+        let ids: Vec<(&str, testcase_verification::RequirementLevel)> =
+            reqs.iter().map(|r| (r.id.as_str(), r.level)).collect();
+        assert_eq!(
+            ids,
+            vec![
+                ("HLR-1", testcase_verification::RequirementLevel::Hlr),
+                ("LLR-2", testcase_verification::RequirementLevel::Llr),
+            ]
+        );
+    }
+
+    #[test]
+    fn strictdoc_export_refuses_unknown_levels_duplicates_and_bad_json() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("export.json");
+        let cases = [
+            (
+                r#"{"documents":[{"path":"a.sdoc","requirements":[{"uid":"X-1","level":"Epic"}]}]}"#,
+                "not a requirement type",
+            ),
+            (
+                r#"{"documents":[{"path":"a.sdoc","requirements":[{"uid":"HLR-1","level":"HLR"},{"uid":"HLR-1","level":"HLR"}]}]}"#,
+                "appears twice",
+            ),
+            ("{ not json", "not a StrictDoc export"),
+        ];
+        for (text, expected) in cases {
+            std::fs::write(&path, text).unwrap();
+            let err = format!("{:#}", read_matrix_requirements(&path).unwrap_err());
+            assert!(err.contains(expected), "{err}");
+        }
+    }
+
+    #[test]
+    fn id_lists_are_still_read_as_before() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("ids.txt");
+        std::fs::write(&path, "HLR-1\nLLR-2:LLR\n").unwrap();
+        assert_eq!(read_matrix_requirements(&path).unwrap().len(), 2);
     }
 }

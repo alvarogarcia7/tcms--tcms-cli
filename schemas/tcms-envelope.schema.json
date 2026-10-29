@@ -13,14 +13,38 @@
         "test_verification",
         "test_result",
         "container_config",
-        "test_results_container"
+        "test_results_container",
+        "test_case_main",
+        "test_plan",
+        "test_run",
+        "execution_log",
+        "verification_result",
+        "trace_matrix",
+        "baseline",
+        "review",
+        "action_item",
+        "independence_assignment",
+        "analysis_report",
+        "coverage_report",
+        "product",
+        "plan_document",
+        "requirement",
+        "design_element",
+        "code_unit",
+        "environment",
+        "problem_report",
+        "change_request",
+        "qa_record",
+        "objective",
+        "audit_trail_entry",
+        "integration_config"
       ],
       "description": "Type of TCMS document"
     },
     "schema": {
       "type": "string",
-      "pattern": "^tcms/.*\\.schema\\.v\\d+\\.json$",
-      "description": "Schema reference following the tcms/<type>.schema.v<version>.json convention"
+      "pattern": "^tcms/.*\\.schema(\\.v\\d+)?\\.json$",
+      "description": "Schema reference: tcms/<name>.schema.v<version>.json (CLI schemas) or tcms/<name>.schema.json (tcms-schemas, pinned in schemas/tcms/TCMS_SCHEMAS_VERSION)"
     }
   },
   "required": [

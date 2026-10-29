@@ -31,7 +31,7 @@ echo ""
 # ============================================================================
 section "TC_BASH_CONDITIONALS_001: Conditional Expressions"
 
-COND_YAML="test-acceptance/test_cases/bash_commands/TC_BASH_CONDITIONALS_001.yaml"
+COND_YAML="test-acceptance/00_test_cases/bash_commands/TC_BASH_CONDITIONALS_001.yml"
 COND_SCRIPT=$(mktemp)
 trap "rm -f $COND_SCRIPT" EXIT
 
@@ -74,7 +74,7 @@ echo ""
 # ============================================================================
 section "TC_BASH_LOOPS_001: Loop Constructs"
 
-LOOPS_YAML="test-acceptance/test_cases/bash_commands/TC_BASH_LOOPS_001.yaml"
+LOOPS_YAML="test-acceptance/00_test_cases/bash_commands/TC_BASH_LOOPS_001.yml"
 LOOPS_SCRIPT=$(mktemp)
 
 # Validation

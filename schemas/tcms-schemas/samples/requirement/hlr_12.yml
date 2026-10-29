@@ -1,0 +1,17 @@
+id: HLR-12
+type: HLR
+title: Update profile metadata over SMS
+text: The eUICC shall apply an ES6.UpdateMetadata command received over the SMS secure OTA channel within 5 seconds.
+version: '3'
+status: approved
+validation_status: validated
+safety_related: false
+security_related: true
+parent_ids: [SYS-4]
+verified_by_test_case_ids: ['4.2.2.2.1 TC_eUICC_ES6.UpdateMetadata']
+source: docs/srs.sdoc#HLR-12
+source_system: strictdoc
+external_refs:
+  - system: strictdoc
+    key: HLR-12
+    url: https://pages.example.com/srs/software-requirements.html#HLR-12

@@ -119,6 +119,7 @@ fn create_test_case_result(
         item,
         tc,
         source_yaml_sha256: None,
+        run: Default::default(),
     }
 }
 

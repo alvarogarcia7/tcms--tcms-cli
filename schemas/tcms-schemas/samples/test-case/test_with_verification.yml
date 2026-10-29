@@ -1,0 +1,231 @@
+requirement: "VERIFICATION_DEMO"
+item: 1
+tc: 1
+id: 'VERIFICATION_DEMO_001'
+description: 'Comprehensive test demonstrating various verification patterns including exit code checks, output grep, and regex matching.'
+
+general_initial_conditions:
+  eUICC:
+    - "The eUICC is in a ready state."
+  LPA:
+    - "The LPA is connected to the network."
+
+initial_conditions:
+  eUICC:
+    - "The test profile is enabled."
+    - "All previous test data is cleared."
+
+test_sequences:
+  - id: 1
+    name: "Exit Code Verification Examples"
+    description: |
+                   This test sequence demonstrates different ways to verify exit codes.
+                   It shows success conditions (exit_code == 0) and failure conditions (exit_code != 0).
+    initial_conditions:
+      eUICC:
+        - "The eUICC is in operational state."
+    steps:
+      - step: 1
+        description: "Verify successful command execution with exit code 0"
+        command: echo "Success"
+        expected:
+          success: true
+          result: 0
+          output: "Success"
+        verification:
+          result: "exit_code == 0"
+          output: "true" 
+      - step: 2
+        description: "Verify command with specific exit code check"
+        command: /bin/sh -c "exit 0"
+        expected:
+          result: 0
+          output: ""
+        verification:
+          result: "exit_code == 0"
+          output: ""
+      - step: 3
+        description: "Verify failure condition - expecting non-zero exit code"
+        command: /bin/sh -c "exit 1"
+        expected:
+          success: false
+          result: 1
+          output: ""
+        verification:
+          result: "exit_code != 0"
+          output: ""
+      - step: 4
+        description: "Verify specific exit code value"
+        command: /bin/sh -c "exit 2"
+        expected:
+          success: false
+          result: 2
+          output: ""
+        verification:
+          result: "exit_code == 2"
+          output: ""
+  - id: 2
+    name: "Output Grep Verification Examples"
+    description: |
+                   This test sequence demonstrates using grep to verify command output.
+                   Shows various grep patterns including literal strings and regular expressions.
+    initial_conditions:
+      eUICC:
+        - "The eUICC is in operational state."
+    steps:
+      - step: 1
+        description: "Verify output contains specific string"
+        command: echo "The operation completed successfully"
+        expected:
+          result: 0
+          output: "The operation completed successfully"
+        verification:
+          result: "exit_code == 0"
+          output: "grep -q 'operation completed successfully' <<< \"$output\""
+      - step: 2
+        description: "Verify output contains status code using grep"
+        command: 'echo "Status: SW=0x9000"'
+        expected:
+          result: 0 
+          output: "Status: SW=0x9000"
+        verification:
+          result: "exit_code == 0"
+          output: "grep -q 'SW=0x9000' <<< \"$output\""
+      - step: 3
+        description: "Verify output with case-insensitive grep"
+        command: echo "SUCCESS"
+        expected:
+          result: 0
+          output: "SUCCESS"
+        verification:
+          result: "exit_code == 0"
+          output: "grep -iq 'success' <<< \"$output\""
+      - step: 4
+        description: "Verify multiple patterns in output"
+        command: 'echo "Profile enabled with ICCID: 123456789"'
+        expected:
+          result: 0
+          output: "Profile enabled with ICCID: 123456789"
+        verification:
+          result: "exit_code == 0"
+          output: "grep -q 'Profile enabled' <<< \"$output\" && grep -q 'ICCID:' <<< \"$output\""
+  - id: 3
+    name: "Regex Pattern Matching Examples"
+    description: |
+                   This test sequence demonstrates using regex patterns to verify command output.
+                   Shows extended regex patterns with grep -E for more complex matching.
+    initial_conditions:
+      eUICC:
+        - "The eUICC is in operational state."
+    steps:
+      - step: 1
+        description: "Verify output matches hex pattern"
+        command: 'echo "Response: 0x9ABC"'
+        expected:
+          result: 0
+          output: "Response: 0x9ABC"
+        verification:
+          result: "exit_code == 0"
+          output: "grep -qE '0x[0-9A-Fa-f]{4}' <<< \"$output\""
+      - step: 2
+        description: "Verify output matches ICCID pattern (numeric)"
+        command: 'echo "ICCID: 8901234567890123456"'
+        expected:
+          result: 0
+          output: "ICCID: 8901234567890123456"
+        verification:
+          result: "exit_code == 0"
+          output: "grep -qE 'ICCID: [0-9]{19,20}' <<< \"$output\""
+      - step: 3
+        description: "Verify output matches UUID pattern"
+        command: 'echo "Session ID: 550e8400-e29b-41d4-a716-446655440000"'
+        expected:
+          result: 0
+          output: "Session ID: 550e8400-e29b-41d4-a716-446655440000"
+        verification:
+          result: "exit_code == 0"
+          output: "grep -qE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' <<< \"$output\""
+      - step: 4
+        description: "Verify output matches status word pattern"
+        command: echo "SW1=0x90 SW2=0x00"
+        expected:
+          result: 0
+          output: "SW1=0x90 SW2=0x00"
+        verification:
+          result: "exit_code == 0"
+          output: "grep -qE 'SW[12]=0x[0-9A-Fa-f]{2}' <<< \"$output\""
+  - id: 4
+    name: "Combined Verification Patterns"
+    description: |
+                   This test sequence demonstrates combining multiple verification techniques.
+                   Shows complex verification logic using exit codes and multiple output checks.
+    initial_conditions:
+      eUICC:
+        - "The eUICC is in operational state."
+      LPA:
+        - "The LPA has network connectivity."
+    steps:
+      - step: 1
+        description: "Verify success with multiple output conditions"
+        command: echo -e "Profile downloaded\nInstallation successful\nProfile enabled"
+        expected:
+          result: 0
+          output: "Profile downloaded\nInstallation successful\nProfile enabled"
+        verification:
+          result: "exit_code == 0"
+          output: "grep -q 'Profile downloaded' <<< \"$output\" && grep -q 'Installation successful' <<< \"$output\" && grep -q 'Profile enabled' <<< \"$output\""
+      - step: 2
+        description: "Verify with exit code and error absence"
+        command: echo "Operation completed without errors"
+        expected:
+          result: 0
+          output: "Operation completed without errors"
+        verification:
+          result: "exit_code == 0"
+          output: "! grep -qi 'error' <<< \"$output\""
+      - step: 3
+        description: "Verify with pattern matching and count"
+        command: echo -e "Step 1 complete\nStep 2 complete\nStep 3 complete"
+        expected:
+          result: 0
+          output: "Step 1 complete\nStep 2 complete\nStep 3 complete"
+        verification:
+          result: "exit_code == 0"
+          output: "[[ $(grep -c 'complete' <<< \"$output\") -eq 3 ]]"
+      - step: 4
+        description: "Verify JSON response structure"
+        command: |
+            echo '{"status":"success","code":200,"message":"Operation completed"}'
+        expected:
+          result: 0
+          output: '{"status":"success","code":200,"message":"Operation completed"}'
+        verification:
+          result: "exit_code == 0"
+          output: "grep -qE '\"status\":\"success\"' <<< \"$output\" && grep -qE '\"code\":200' <<< \"$output\""
+  - id: 5
+    name: "Empty and Default Verification Examples"
+    description: |
+                   This test sequence demonstrates steps with minimal or default verification.
+                   Shows the default verification pattern (exit_code == 0 with empty output check).
+    initial_conditions:
+      eUICC:
+        - "The eUICC is in operational state."
+    steps:
+      - step: 1
+        description: "Step with default verification (exit code only)"
+        command: /bin/true
+        expected:
+          result: 0
+          output: ""
+        verification:
+          result: "exit_code == 0"
+          output: ""
+      - step: 2
+        description: "Step with minimal output verification"
+        command: echo "OK"
+        expected:
+          result: 0
+          output: "OK"
+        verification:
+          result: "exit_code == 0"
+          output: "grep -q 'OK' <<< \"$output\""

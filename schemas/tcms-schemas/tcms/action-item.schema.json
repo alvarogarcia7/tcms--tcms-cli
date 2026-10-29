@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Action Item",
+  "description": "A follow-up raised by a review, analysis or coverage gap",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Action item identifier"
+    },
+    "source_type": {
+      "type": "string",
+      "description": "What raised it",
+      "enum": [
+        "review",
+        "analysis",
+        "coverage"
+      ]
+    },
+    "source_id": {
+      "type": "string",
+      "description": "ID of the review, analysis report or coverage report"
+    },
+    "description": {
+      "type": "string",
+      "description": "What must be done"
+    },
+    "owner": {
+      "type": "string",
+      "description": "Responsible person"
+    },
+    "status": {
+      "type": "string",
+      "description": "State",
+      "enum": [
+        "open",
+        "in_progress",
+        "closed",
+        "rejected"
+      ]
+    },
+    "due_date": {
+      "type": "string",
+      "description": "Due date",
+      "format": "date"
+    },
+    "resolution": {
+      "type": "string",
+      "description": "How it was resolved"
+    }
+  },
+  "required": [
+    "id",
+    "source_type",
+    "source_id",
+    "description",
+    "status"
+  ]
+}

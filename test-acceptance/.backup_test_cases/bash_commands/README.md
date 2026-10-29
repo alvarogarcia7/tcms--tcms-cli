@@ -257,7 +257,7 @@ All test cases are designed for:
 
 ### Validate All Test Cases
 ```bash
-for file in test-acceptance/test_cases/bash_commands/*.yaml; do
+for file in test-acceptance/00_test_cases/bash_commands/*.yaml; do
   echo "Validating $file"
   cargo run --bin verifier -- "$file" || echo "FAILED: $file"
 done
@@ -265,7 +265,7 @@ done
 
 ### Generate Test Scripts
 ```bash
-for file in test-acceptance/test_cases/bash_commands/TC_*.yaml; do
+for file in test-acceptance/00_test_cases/bash_commands/TC_*.yaml; do
   echo "Generating script for $file"
   cargo run -- "$file"
 done
@@ -273,7 +273,7 @@ done
 
 ### Execute Test Scripts
 ```bash
-for file in test-acceptance/test_cases/bash_commands/TC_*.sh; do
+for file in test-acceptance/00_test_cases/bash_commands/TC_*.sh; do
   echo "Executing $file"
   bash "$file"
 done

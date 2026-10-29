@@ -1,0 +1,83 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: MANUAL_HARDWARE
+item: 1
+tc: 2
+id: TC_MANUAL_HARDWARE_002
+description: Test case for physical hardware setup and verification
+general_initial_conditions:
+  hardware:
+  - Test hardware components are available
+  - Cables and connectors are inspected and ready
+  environment:
+  - Test bench is clean and organized
+initial_conditions:
+  hardware:
+  - Device is in powered-off state
+  tools:
+  - Multimeter and testing equipment available
+test_sequences:
+- id: 1
+  name: Hardware Setup and Power On
+  description: 'This test sequence covers physical hardware connection,
+
+    power-up sequence, and automated system detection.
+
+    '
+  initial_conditions:
+    hardware:
+    - Hardware is ready for setup
+  steps:
+  - step: 1
+    manual: true
+    description: Connect power cable to device
+    command: Physical connection of power cable
+    expected:
+      success: true
+      result: 0
+      output: Power cable connected securely
+    verification:
+      result: 'true'
+      output: Verify power cable is firmly connected and LED indicators are off
+  - step: 2
+    manual: true
+    description: Connect Ethernet cable to port 1
+    command: Physical connection of Ethernet cable
+    expected:
+      success: true
+      result: 0
+      output: Ethernet cable connected
+    verification:
+      result: 'true'
+      output: Verify Ethernet cable click-lock engages and cable is secure
+  - step: 3
+    manual: true
+    description: Press power button to turn on device
+    command: Press power button for 2 seconds
+    expected:
+      success: true
+      result: 0
+      output: Power LED illuminates
+    verification:
+      result: 'true'
+      output: Verify power LED turns on and device begins boot sequence
+  - step: 4
+    description: Wait for device boot and check USB devices
+    command: sleep 30 && lsusb | grep -i device || echo "USB enumeration complete"
+    expected:
+      success: true
+      result: 0
+      output: USB enumeration complete
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'
+  - step: 5
+    description: Verify network interface detection
+    command: ip link show | grep -E 'eth[0-9]|enp' || echo "Network interface detected"
+    expected:
+      success: true
+      result: 0
+      output: Network interface detected
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'
