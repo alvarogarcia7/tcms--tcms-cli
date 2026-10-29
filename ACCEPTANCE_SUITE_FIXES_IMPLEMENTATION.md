@@ -125,7 +125,7 @@ find test-acceptance/scripts -maxdepth 2 -type f -delete
 rm -rf test-acceptance/scripts/hooks
 rm -rf test-acceptance/execution_logs
 rm -rf test-acceptance/verification_results
-rm -rf test-acceptance/test_cases/test-acceptance/
+rm -rf test-acceptance/00_test_cases/test-acceptance/
 ```
 
 ## Success Test Cases (13 Total)
@@ -150,13 +150,13 @@ The following steps verify the fixes are correct:
 
 ### 1. Verify Test Case Count
 ```bash
-find test-acceptance/test_cases -name "*.yaml" | wc -l
+find test-acceptance/00_test_cases -name "*.yaml" | wc -l
 # Expected: 13
 ```
 
 ### 2. Verify All Are Success Tests
 ```bash
-find test-acceptance/test_cases -name "*.yaml" -exec basename {} \; | grep -v SUCCESS
+find test-acceptance/00_test_cases -name "*.yaml" -exec basename {} \; | grep -v SUCCESS
 # Expected: empty output (all have SUCCESS in name)
 ```
 

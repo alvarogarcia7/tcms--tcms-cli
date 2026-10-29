@@ -1,0 +1,11 @@
+type: test_run
+schema: tcms/test-run.schema.json
+run_id: RUN-ACC-1
+build_id: build-acc
+environment: lab-acc
+tester: tester1
+started_at: "2026-10-27T10:00:00Z"
+finished_at: "2026-10-27T10:05:00Z"
+results:
+  - test_case_id: TC_TRACE_001
+    verdict: pass

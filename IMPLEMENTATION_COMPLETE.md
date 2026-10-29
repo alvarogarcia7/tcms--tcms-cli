@@ -289,9 +289,9 @@ test-acceptance/test_cases/complex/ (9 YAML files)
 2. **Test sample generation**:
    ```bash
    target/debug/test-executor generate \
-     --test-case-dir test-acceptance/test_cases \
+     --test-case-dir test-acceptance/00_test_cases \
      --output /tmp/test.sh \
-     test-acceptance/test_cases/dependencies/TC_DEPENDENCY_SIMPLE_001.yaml
+     test-acceptance/00_test_cases/dependencies/TC_DEPENDENCY_SIMPLE_001.yaml
    ```
 
 3. **Test sample execution**:

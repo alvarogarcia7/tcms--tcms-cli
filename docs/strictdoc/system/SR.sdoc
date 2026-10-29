@@ -830,3 +830,61 @@ and resource cleanup.
 <<<
 
 [[/SECTION]]
+
+[[SECTION]]
+TITLE: Verification Evidence and Integration Requirements
+
+[REQUIREMENT]
+UID: SYS-VEV-001
+TITLE: No Silent Passes
+STATEMENT: >>>
+The system shall report a verification failure, never a pass, when no verification took
+place: an empty set of execution logs, a log that cannot be verified, an execution aborted
+by a failed hook, or a test case without steps.
+<<<
+
+[REQUIREMENT]
+UID: SYS-RUN-001
+TITLE: Attributable Results
+STATEMENT: >>>
+The system shall attribute execution logs and verification results to a test run, a build,
+an environment and a tester, and shall record each verified execution as a test run with a
+verdict per test case.
+<<<
+
+[REQUIREMENT]
+UID: SYS-TRC-001
+TITLE: Traceability and Coverage Evidence
+STATEMENT: >>>
+The system shall relate requirements to the test cases that verify them and to the runs that
+exercised them, shall check that every high-level and low-level requirement has a normal-
+range and a robustness test, and shall select regression test cases from the change impact
+of a baseline.
+<<<
+
+[REQUIREMENT]
+UID: SYS-IND-001
+TITLE: Independent Verification
+STATEMENT: >>>
+The system shall refuse a test run whose reviewer is missing, or is the author of a test
+case, when that test case requires independent review.
+<<<
+
+[REQUIREMENT]
+UID: SYS-PIN-001
+TITLE: Schema Conformance of Outputs
+STATEMENT: >>>
+The system shall write records that validate against the project JSON schemas (tcms-schemas)
+and shall obtain those schemas from a copy pinned to a recorded version.
+<<<
+
+[REQUIREMENT]
+UID: SYS-JIRA-001
+TITLE: Controlled Issue Tracker Integration
+STATEMENT: >>>
+The system shall read requirements from, and write verification status to, an issue tracker
+only within a configured write policy, shall identify the acting user in every external
+write, and shall never store a credential in a record or a log.
+<<<
+
+[[/SECTION]]

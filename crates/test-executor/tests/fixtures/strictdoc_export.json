@@ -1,0 +1,14 @@
+{
+  "_comment": "CRAFTED FIXTURE: written by hand to the ASSUMED StrictDoc JSON layout (see crates/requirement-import/src/strictdoc.rs). Not a real StrictDoc export.",
+  "documents": [
+    {
+      "path": "docs/srs.sdoc",
+      "requirements": [
+        {"uid": "SYS-1", "level": "system", "statement": "The system updates the SMS settings."},
+        {"uid": "HLR-1", "level": "HLR", "title": "SMS update", "statement": "Apply within 5 s.", "status": "approved", "parent_uids": ["SYS-1"]},
+        {"uid": "LLR-2", "level": "LLR", "title": "SMS parser", "statement": "Parse the update frame.", "status": "draft", "parent_uids": ["HLR-1"]},
+        {"uid": "HLR-3", "level": "HLR", "title": "SMS retry", "statement": "Retry a failed update three times.", "status": "approved", "parent_uids": ["SYS-1"]}
+      ]
+    }
+  ]
+}

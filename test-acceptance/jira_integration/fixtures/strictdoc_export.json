@@ -1,0 +1,43 @@
+{
+  "documents": [
+    {
+      "path": "docs/system.sdoc",
+      "requirements": [
+        {
+          "uid": "SYS-4",
+          "level": "system",
+          "title": "Remote profile management",
+          "statement": "The eUICC shall support remote profile management over SMS and HTTPS.",
+          "status": "approved",
+          "safety_related": false,
+          "security_related": true
+        }
+      ]
+    },
+    {
+      "path": "docs/srs.sdoc",
+      "requirements": [
+        {
+          "uid": "HLR-12",
+          "level": "HLR",
+          "title": "Update profile metadata over SMS",
+          "statement": "The eUICC shall apply an ES6.UpdateMetadata command received over the SMS secure OTA channel within 5 seconds.",
+          "status": "approved",
+          "parent_uids": ["SYS-4"],
+          "safety_related": false,
+          "security_related": true
+        },
+        {
+          "uid": "HLR-3",
+          "level": "HLR",
+          "title": "Reject unsigned profiles",
+          "statement": "The eUICC shall reject a profile whose signature does not verify.",
+          "status": "in_review",
+          "parent_uids": ["SYS-4"],
+          "safety_related": true,
+          "security_related": true
+        }
+      ]
+    }
+  ]
+}

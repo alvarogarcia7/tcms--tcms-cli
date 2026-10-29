@@ -60,6 +60,8 @@ SKIP_EXECUTION=0
 SKIP_VERIFICATION=0
 SKIP_DOCUMENTATION=0
 SKIP_CONSOLIDATED_DOCS=0
+SKIP_GLOSSARY=0
+SKIP_JIRA=0
 
 # Paths - Using numbered directory structure
 TEST_CASES_DIR="$SCRIPT_DIR/00_test_cases"
@@ -131,6 +133,10 @@ OPTIONS:
     --skip-verification        Skip verification stage
     --skip-documentation       Skip documentation generation stage
     --skip-consolidated-docs   Skip consolidated documentation generation stage
+    --skip-glossary            Skip glossary entity scenarios (run metadata, traceability matrix,
+                               regression selection, independence)
+    --skip-jira                Skip Jira integration scenarios (tcms against a mock Jira and the
+                               StrictDoc export; TCMS-42)
     -h, --help                 Show this help message
 
 STAGES:
@@ -141,6 +147,8 @@ STAGES:
     5. Container Validation Validate container YAMLs against schema (20_verification/)
     6. Documentation       Generate AsciiDoc and Markdown reports (30_documentation_source/)
     7. Consolidated Docs   Generate unified documentation for all tests (30_documentation_source/consolidated/)
+    8. Glossary Entities   Run validate_glossary_entities.sh on glossary_entities/fixtures/ (no report output)
+    9. Jira Integration    Run validate_jira_integration.sh: tcms against mock-jira and a StrictDoc export (no report output)
 
 EXIT CODES:
     0 - All stages completed successfully
@@ -177,6 +185,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --skip-consolidated-docs)
             SKIP_CONSOLIDATED_DOCS=1
+            shift
+            ;;
+        --skip-glossary)
+            SKIP_GLOSSARY=1
+            shift
+            ;;
+        --skip-jira)
+            SKIP_JIRA=1
             shift
             ;;
         -h|--help)
@@ -834,6 +850,7 @@ generate_consolidated_documentation() {
     # Use --success-on-completion flag to ensure verifier exits 0 even if test cases failed
     if "$VERIFIER" \
         --folder "$EXECUTION_LOGS_DIR" \
+        --test-case-dir "$TEST_CASES_DIR" \
         --title "Acceptance Test Suite - All Test Cases" \
         --project "Test Case Manager - Acceptance Suite" \
         --environment "Automated Test Environment - $(hostname)" \
@@ -1061,6 +1078,8 @@ main() {
     log_info "  Skip Verification: $SKIP_VERIFICATION"
     log_info "  Skip Documentation: $SKIP_DOCUMENTATION"
     log_info "  Skip Consolidated Docs: $SKIP_CONSOLIDATED_DOCS"
+    log_info "  Skip Glossary Entities: $SKIP_GLOSSARY"
+    log_info "  Skip Jira Integration: $SKIP_JIRA"
     echo ""
     
     # Verify binaries
@@ -1111,6 +1130,26 @@ main() {
         overall_success=1
     fi
     
+    # Stage 8: Glossary entities (run metadata, traceability matrix, regression selection,
+    # independence). Its own script reports its checks; it does not use the *_FAILED counters.
+    if [[ $SKIP_GLOSSARY -eq 0 ]]; then
+        section "Stage 8: Glossary Entities"
+        if ! "$SCRIPT_DIR/validate_glossary_entities.sh"; then
+            log_error "Stage 8 (Glossary Entities) failed"
+            overall_success=1
+        fi
+    fi
+
+    # Stage 9: Jira integration (TCMS-42). Its own script runs the real tcms binary against a
+    # mock Jira it starts itself, and reports its checks; it does not use the *_FAILED counters.
+    if [[ $SKIP_JIRA -eq 0 ]]; then
+        section "Stage 9: Jira Integration"
+        if ! "$SCRIPT_DIR/validate_jira_integration.sh"; then
+            log_error "Stage 9 (Jira Integration) failed"
+            overall_success=1
+        fi
+    fi
+
     # Generate final summary
     if ! generate_summary_report; then
         overall_success=1

@@ -178,12 +178,12 @@ To test these test cases:
 ```bash
 # Validate all prerequisite test cases
 ./target/debug/validate-yaml --schema schemas/test-case.schema.json \
-  test-acceptance/test_cases/prerequisites/*.yaml
+  test-acceptance/00_test_cases/prerequisites/*.yaml
 
 # Generate scripts for all prerequisite test cases
 ./target/debug/test-executor generate --json-log \
   --output /tmp/prereq_test.sh \
-  test-acceptance/test_cases/prerequisites/PREREQ_AUTO_PASS_001.yaml
+  test-acceptance/00_test_cases/prerequisites/PREREQ_AUTO_PASS_001.yaml
 
 # Run acceptance test suite (includes prerequisite tests)
 make acceptance-test

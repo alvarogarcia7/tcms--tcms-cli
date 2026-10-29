@@ -42,7 +42,7 @@ The script will:
 ```bash
 # From project root
 python3 scripts/convert_verification_to_tpdg.py \
-    --test-case-dir test-acceptance/test_cases \
+    --test-case-dir test-acceptance/00_test_cases \
     --logs-dir test-acceptance/execution_logs \
     --recursive \
     --output test-acceptance/results/acceptance_test_results_container.yaml \
@@ -155,5 +155,5 @@ The orchestrator automatically:
 
 - [Acceptance Test Suite README](../README.md)
 - [TPDG Conversion Script](../../scripts/convert_verification_to_tpdg.py)
-- [Test Cases Directory](../test_cases/README.md)
+- [Test Cases Directory](../00_test_cases/README.md)
 - [Container Schema](../../data/testcase_results_container/schema.json)

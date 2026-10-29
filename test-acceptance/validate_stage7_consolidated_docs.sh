@@ -62,6 +62,7 @@ source "$REPO_ROOT/scripts/lib/find-binary.sh" || exit 1
 
 # Configuration
 EXECUTION_LOGS_DIR="$SCRIPT_DIR/10_test_results/execution_logs"
+TEST_CASES_DIR="$SCRIPT_DIR/00_test_cases"
 REPORTS_DIR="$SCRIPT_DIR/30_documentation_source"
 CONSOLIDATED_DIR="$REPORTS_DIR/consolidated"
 CONTAINER_SCHEMA="$REPO_ROOT/data/testcase_results_container/schema.json"
@@ -284,6 +285,7 @@ run_verifier_folder_mode() {
     # Run verifier in folder mode
     if "$verifier_path" \
         --folder "$EXECUTION_LOGS_DIR" \
+        --test-case-dir "$TEST_CASES_DIR" \
         --title "$TITLE" \
         --project "$PROJECT" \
         --environment "$environment_full" \

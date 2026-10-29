@@ -1,0 +1,25 @@
+[package]
+name = "test-backends"
+version = "0.1.0"
+edition = "2021"
+description = "Test backend adapters for Jira: plain Jira, Xray, Zephyr Scale, Zephyr Squad behind one trait (TCMS-42.4)"
+
+[features]
+# in-process fake of the four backends' endpoints, for tests of this crate and its users
+mock = []
+
+[dependencies]
+id-resolver = { path = "../id-resolver" }
+testcase-models = { path = "../testcase-models" }
+jira-client = { path = "../jira-client" }
+anyhow = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+reqwest = { workspace = true }
+log = { workspace = true }
+
+[dev-dependencies]
+test-backends = { path = ".", features = ["mock"] }
+jira-client = { path = "../jira-client", features = ["mock"] }
+testcase-common = { path = "../testcase-common" }
+tempfile = { workspace = true }

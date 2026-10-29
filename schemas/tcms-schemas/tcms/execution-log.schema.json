@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Test Execution Log Entry",
+  "description": "Schema for test execution log entries",
+  "type": "object",
+  "properties": {
+    "test_sequence": {
+      "type": "integer",
+      "description": "Sequence number of the test"
+    },
+    "step": {
+      "type": "integer",
+      "description": "Step number within the test sequence"
+    },
+    "command": {
+      "type": "string",
+      "description": "The command that was executed"
+    },
+    "exit_code": {
+      "type": "integer",
+      "description": "Exit code of the command execution"
+    },
+    "output": {
+      "type": "string",
+      "description": "Output from the command execution"
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "Timestamp of the execution (optional)"
+    },
+    "run_id": {
+      "type": "string",
+      "description": "ID of the test run (see test-run schema) this entry belongs to"
+    },
+    "test_case_id": {
+      "type": "string",
+      "description": "ID of the test case being executed"
+    }
+  },
+  "required": [
+    "test_sequence",
+    "step",
+    "command",
+    "exit_code",
+    "output"
+  ]
+}

@@ -15,9 +15,9 @@ SCHEMA_DIR="$PROJECT_ROOT/schemas"
 TEST_CASE_SCHEMA="$SCHEMA_DIR/test-case.schema.json"
 
 # Directories to test
-DEPENDENCIES_DIR="$SCRIPT_DIR/test_cases/dependencies"
-PREREQUISITES_DIR="$SCRIPT_DIR/test_cases/prerequisites"
-COMPLEX_DIR="$SCRIPT_DIR/test_cases/complex"
+DEPENDENCIES_DIR="$SCRIPT_DIR/00_test_cases/dependencies"
+PREREQUISITES_DIR="$SCRIPT_DIR/00_test_cases/prerequisites"
+COMPLEX_DIR="$SCRIPT_DIR/00_test_cases/complex"
 
 echo "========================================"
 echo "Testing Dependencies, Prerequisites, and Complex Test Cases"
@@ -82,14 +82,14 @@ generate_dir() {
             local basename=$(basename "$yaml_file" .yaml)
             local script_file="$SCRIPTS_DIR/${basename}.sh"
             
-            if "$TEST_EXECUTOR" generate --json-log --test-case-dir "$SCRIPT_DIR/test_cases" --output "$script_file" "$yaml_file" > /dev/null 2>&1; then
+            if "$TEST_EXECUTOR" generate --json-log --test-case-dir "$SCRIPT_DIR/00_test_cases" --output "$script_file" "$yaml_file" > /dev/null 2>&1; then
                 echo "  ✓ $basename.sh"
                 chmod +x "$script_file"
                 ((passed++))
             else
                 echo "  ✗ $basename.sh"
                 ((failed++))
-                "$TEST_EXECUTOR" generate --json-log --test-case-dir "$SCRIPT_DIR/test_cases" --output "$script_file" "$yaml_file" 2>&1 | sed 's/^/    /'
+                "$TEST_EXECUTOR" generate --json-log --test-case-dir "$SCRIPT_DIR/00_test_cases" --output "$script_file" "$yaml_file" 2>&1 | sed 's/^/    /'
             fi
         fi
     done

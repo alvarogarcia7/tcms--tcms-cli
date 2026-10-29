@@ -299,7 +299,7 @@ rust:build-test-lint:
 
     # Test - Python tests
     - echo "===== Running Python Tests ====="
-    - uv run python3.14 -m pytest scripts/ -v 2>&1 | tee python_test_output.txt || true
+    - uv run python3.14 -m pytest scripts/ -v --junitxml=python-junit.xml 2>&1 | tee python_test_output.txt || true
 
     # Test - unit tests
     - echo "===== Running Unit Tests ====="
@@ -364,7 +364,11 @@ rust:build-test-lint:
     - export PATH="$HOME/.cargo/bin:$PATH"
     - make strictdoc-validate
   after_script:
-    - export PATH="$HOME/.cargo/bin:$PATH"
+    - export PATH="$HOME/.cargo/bin:$HOME/.local/bin:/root/.cargo/bin:/root/.local/bin:$PATH"
+    # Runs even when tests fail, so the failing run still gets a JUnit report.
+    # Missing output files are created empty, which yields an empty report.
+    - touch test_output.txt doc_test_output.txt
+    - uv run python3.14 scripts/ci_junit_report.py --output rust-junit.xml test_output.txt doc_test_output.txt
     - |
       if [ -f test_results.json ]; then
         uv run python3.14 scripts/ci_post_mr_comment.py test_results.json || true
@@ -373,6 +377,13 @@ rust:build-test-lint:
       if [ -f clippy_output.txt ] && grep -q "warning:" clippy_output.txt; then
         uv run python3.14 scripts/ci_post_clippy_comment.py clippy_output.txt || true
       fi
+  artifacts:
+    when: always
+    expire_in: 1 week
+    reports:
+      junit:
+        - rust-junit.xml
+        - python-junit.xml
   coverage: '/lines\.*: \d+\.\d+%/'
 
 #docker:verify:
@@ -558,7 +569,7 @@ release:build:
     - rustup target add x86_64-unknown-linux-gnu aarch64-apple-darwin
     # Detect the binaries to ship directly from the workspace metadata so the
     # list stays in sync as crates/binaries are added or removed.
-    - export RELEASE_BINS=$(cargo metadata --format-version 1 --no-deps | jq -r '[.packages[].targets[] | select(.kind[] == "bin") | .name] | unique | join(" ")')
+    - export RELEASE_BINS=$(cargo metadata --format-version 1 --no-deps | jq -r '[.packages[].targets[] | select((.kind | index("bin")) and ((.["required-features"] // []) | length == 0)) | .name] | unique | join(" ")')
     - echo "Detected release binaries -- $RELEASE_BINS"
   script:
     - mkdir -p dist
@@ -635,3 +646,75 @@ release:publish:
         - name: 'testcase-manager-$CI_COMMIT_TAG-macos-arm64.zip'
           url: '${PACKAGE_REGISTRY_URL}/testcase-manager-$CI_COMMIT_TAG-macos-arm64.zip'
           link_type: 'package'
+
+# Test case file names: id equals the file name, extension .yml. The script decides whether anything
+# below testcases/ or test-acceptance/ changed (nothing to check -> exit 0) and checks only the changed
+# files, so this job runs on every branch and merge request pipeline.
+check:testcase-files:
+  stage: rust
+  image: python:3.12-slim
+  variables:
+    GIT_DEPTH: "0"
+  rules:
+    # Not in merge request pipelines: a rule that matches them would create a merge request pipeline
+    # holding only this job, which then replaces the full branch pipeline as the MR's head pipeline.
+    - if: '$CI_COMMIT_TAG || $CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - when: on_success
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq git
+  script:
+    - |
+      if [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then
+        BASE="$CI_MERGE_REQUEST_DIFF_BASE_SHA"
+      elif [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ] && [ -n "$CI_COMMIT_BEFORE_SHA" ] && [ "$CI_COMMIT_BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+        BASE="$CI_COMMIT_BEFORE_SHA"
+      else
+        git fetch -q origin "$CI_DEFAULT_BRANCH"
+        BASE="$(git merge-base "origin/$CI_DEFAULT_BRANCH" HEAD)"
+      fi
+    - python3 -m unittest scripts/test_check_testcase_files.py
+    - python3 scripts/check_testcase_files.py --changed-since "$BASE"
+
+# TCMS-42.9: Jira write-back for one product. It runs on every default-branch pipeline (D-42.9d):
+# the repo and GitLab have no marker of a results merge (no predefined variable, no results
+# branch naming), so the default branch is the condition, and the apply only there. Not verified
+# here: this pipeline cannot run GitLab CI in the authoring environment. Hidden template, then the
+# job for the default branch. Set in CI/CD variables (masked): TCMS_INTEGRATION_CONFIG (path in
+# the repo), TCMS_PRODUCT (product_id), the token named by auth.secret_ref in the config
+# (for example TCMS_JIRA_TOKEN) and TCMS_JIRA_USER (service account, Cloud). The job applies;
+# the sync is a dry run anywhere else (run it with `tcms jira sync --product ...` by hand).
+# The mode is chosen in the script: --apply only when CI_COMMIT_BRANCH is CI_DEFAULT_BRANCH.
+.tcms-jira-sync:
+  stage: e2e
+  image: rust:1.95
+  variables:
+    CARGO_INCREMENTAL: "0"
+    TCMS_STATE_DIR: ".tcms/jira-sync"
+  before_script:
+    - rustc --version
+    - cargo --version
+  script:
+    - cargo build -p tcms --release
+    # the default branch applies; any other branch is a dry run (D-42.4n)
+    - |
+      if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then MODE=--apply; else MODE=--dry-run; fi
+      echo "tcms jira sync for $TCMS_PRODUCT: $MODE"
+      ./target/release/tcms --config "$TCMS_INTEGRATION_CONFIG" \
+        jira sync --product "$TCMS_PRODUCT" "$MODE" \
+        --as "${TCMS_USER:-$GITLAB_USER_LOGIN}" --state-dir "$TCMS_STATE_DIR"
+  artifacts:
+    name: "jira-sync-$CI_COMMIT_REF_SLUG"
+    paths:
+      - .tcms/jira-sync/audit/
+    when: always
+    expire_in: 90 days
+
+tcms:jira-sync:
+  extends: .tcms-jira-sync
+  rules:
+    - if: '$TCMS_PRODUCT && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      when: on_success
+    - if: '$TCMS_PRODUCT'
+      when: manual
+      allow_failure: true

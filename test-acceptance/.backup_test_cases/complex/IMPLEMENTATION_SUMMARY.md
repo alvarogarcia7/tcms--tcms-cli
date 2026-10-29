@@ -198,7 +198,7 @@ All test cases follow these requirements:
 ```bash
 # Example for multi-sequence test with hooks
 cargo run --bin verifier -- \
-  test-acceptance/test_cases/complex/TC_COMPLEX_MULTI_SEQ_HOOKS_001.yaml \
+  test-acceptance/00_test_cases/complex/TC_COMPLEX_MULTI_SEQ_HOOKS_001.yaml \
   generated_test.sh
 ```
 

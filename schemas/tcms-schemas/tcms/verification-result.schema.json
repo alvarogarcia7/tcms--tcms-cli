@@ -1,0 +1,298 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Test Case Verification Result",
+  "description": "Schema for test case verification results",
+  "type": "object",
+  "properties": {
+    "test_case_id": {
+      "type": "string",
+      "description": "Unique identifier for the test case"
+    },
+    "test_case_version": {
+      "type": "string",
+      "description": "Version of the test case executed"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the test case"
+    },
+    "sequences": {
+      "type": "array",
+      "description": "Test sequence verification results",
+      "items": {
+        "$ref": "#/definitions/SequenceVerificationResult"
+      }
+    },
+    "total_steps": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of steps across all sequences"
+    },
+    "passed_steps": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of steps that passed verification"
+    },
+    "failed_steps": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of steps that failed verification"
+    },
+    "not_executed_steps": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of steps that were not executed"
+    },
+    "overall_pass": {
+      "type": "boolean",
+      "description": "Overall pass/fail status for the test case"
+    },
+    "run_id": {
+      "type": "string",
+      "description": "ID of the test run that produced this result"
+    },
+    "build_id": {
+      "type": "string",
+      "description": "Build/software identifier under test"
+    },
+    "environment": {
+      "type": "string",
+      "description": "Environment the test ran in"
+    },
+    "environment_id": {
+      "type": "string",
+      "description": "Environment record (environment.id)"
+    },
+    "tester": {
+      "type": "string",
+      "description": "Person or tool that executed the test"
+    },
+    "executor": {
+      "type": "string",
+      "description": "Tool or person that executed the steps, when different from the tester who signs"
+    },
+    "date": {
+      "type": "string",
+      "description": "When the result was produced",
+      "format": "date-time"
+    },
+    "requirements": {
+      "type": "array",
+      "description": "Requirement IDs verified by this result",
+      "items": {
+        "type": "string"
+      }
+    },
+    "problem_report_ids": {
+      "type": "array",
+      "description": "Problem reports raised from this result",
+      "items": {
+        "type": "string"
+      }
+    },
+    "execution_log_ref": {
+      "type": "string",
+      "description": "Path of the execution-log file with timestamps and outputs"
+    },
+    "signature": {
+      "type": "object",
+      "description": "Signature of the tester over the result",
+      "properties": {
+        "signer": {
+          "type": "string",
+          "description": "Person signing"
+        },
+        "signed_at": {
+          "type": "string",
+          "description": "When signed",
+          "format": "date-time"
+        },
+        "method": {
+          "type": "string",
+          "description": "How the signature was produced (e.g. git-commit, pgp, tool login)"
+        },
+        "value": {
+          "type": "string",
+          "description": "Signature value or hash"
+        }
+      },
+      "required": [
+        "signer",
+        "signed_at"
+      ]
+    }
+  },
+  "required": [
+    "test_case_id",
+    "description",
+    "sequences",
+    "total_steps",
+    "passed_steps",
+    "failed_steps",
+    "not_executed_steps",
+    "overall_pass"
+  ],
+  "definitions": {
+    "SequenceVerificationResult": {
+      "type": "object",
+      "description": "Verification result for a single test sequence",
+      "properties": {
+        "sequence_id": {
+          "type": "integer",
+          "description": "Unique identifier for the sequence"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the test sequence"
+        },
+        "step_results": {
+          "type": "array",
+          "description": "Verification results for each step",
+          "items": {
+            "$ref": "#/definitions/StepVerificationResult"
+          }
+        },
+        "all_steps_passed": {
+          "type": "boolean",
+          "description": "Whether all steps in the sequence passed"
+        }
+      },
+      "required": [
+        "sequence_id",
+        "name",
+        "step_results",
+        "all_steps_passed"
+      ]
+    },
+    "StepVerificationResult": {
+      "description": "Verification result for a single step",
+      "oneOf": [
+        {
+          "type": "object",
+          "description": "Step passed verification",
+          "properties": {
+            "Pass": {
+              "type": "object",
+              "properties": {
+                "step": {
+                  "type": "integer",
+                  "description": "Step number"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Step description"
+                }
+              },
+              "required": [
+                "step",
+                "description"
+              ]
+            }
+          },
+          "required": [
+            "Pass"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Step failed verification",
+          "properties": {
+            "Fail": {
+              "type": "object",
+              "properties": {
+                "step": {
+                  "type": "integer",
+                  "description": "Step number"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Step description"
+                },
+                "expected": {
+                  "$ref": "#/definitions/Expected"
+                },
+                "actual_result": {
+                  "type": "string",
+                  "description": "Actual result from execution"
+                },
+                "actual_output": {
+                  "type": "string",
+                  "description": "Actual output from execution"
+                },
+                "reason": {
+                  "type": "string",
+                  "description": "Reason for failure"
+                }
+              },
+              "required": [
+                "step",
+                "description",
+                "expected",
+                "actual_result",
+                "actual_output",
+                "reason"
+              ]
+            }
+          },
+          "required": [
+            "Fail"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Step was not executed",
+          "properties": {
+            "NotExecuted": {
+              "type": "object",
+              "properties": {
+                "step": {
+                  "type": "integer",
+                  "description": "Step number"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Step description"
+                }
+              },
+              "required": [
+                "step",
+                "description"
+              ]
+            }
+          },
+          "required": [
+            "NotExecuted"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Expected": {
+      "type": "object",
+      "description": "Expected outcome for a test step",
+      "properties": {
+        "success": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Whether the step should succeed (optional)"
+        },
+        "result": {
+          "type": "string",
+          "description": "Expected result value"
+        },
+        "output": {
+          "type": "string",
+          "description": "Expected output"
+        }
+      },
+      "required": [
+        "result",
+        "output"
+      ]
+    }
+  }
+}

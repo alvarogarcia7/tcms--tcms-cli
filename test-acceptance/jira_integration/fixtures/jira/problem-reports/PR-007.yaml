@@ -1,0 +1,13 @@
+type: problem_report
+schema: tcms/problem-report.schema.json
+id: PR-007
+title: Robustness case fails
+description: Robustness input is accepted.
+severity: critical
+category: code
+status: open
+raised_by: tester1
+date: "2026-10-27"
+affected_items:
+  - entity_type: requirement
+    entity_id: PAY-2

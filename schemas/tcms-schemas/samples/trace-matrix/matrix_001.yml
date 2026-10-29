@@ -1,0 +1,9 @@
+id: TM-001
+baseline_id: BL-001
+links:
+  - requirement_id: HLR-12
+    level: HLR
+    test_case_ids: ['4.2.2.2.1 TC_eUICC_ES6.UpdateMetadata']
+    normal_range_covered: true
+    robustness_covered: false
+    run_ids: [RUN-001]

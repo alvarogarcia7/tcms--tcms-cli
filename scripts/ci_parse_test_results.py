@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Parse Rust test output and generate JSON results for CI/CD reporting.
+JUnit XML for the GitLab test report is produced by ci_junit_report.py.
 """
 
 import sys
@@ -50,28 +51,6 @@ def parse_test_output(output_file: str) -> dict[str, Any]:
     return results
 
 
-def generate_junit_xml(results: dict[str, Any], output_file: str = 'test_results.xml'):
-    """Generate JUnit XML format for GitLab CI/CD integration."""
-    
-    xml_lines = ['<?xml version="1.0" encoding="UTF-8"?>']
-    xml_lines.append(f'<testsuites tests="{results["total"]}" failures="{results["failed"]}" time="{results["duration"]}">')
-    xml_lines.append(f'  <testsuite name="rust-tests" tests="{results["total"]}" failures="{results["failed"]}" time="{results["duration"]}">')
-    
-    for test in results['test_cases']:
-        xml_lines.append(f'    <testcase name="{test["name"]}" classname="rust" time="0">')
-        if test['status'] == 'FAILED':
-            xml_lines.append('      <failure message="Test failed"/>')
-        elif test['status'] == 'ignored':
-            xml_lines.append('      <skipped/>')
-        xml_lines.append('    </testcase>')
-    
-    xml_lines.append('  </testsuite>')
-    xml_lines.append('</testsuites>')
-    
-    with open(output_file, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(xml_lines))
-
-
 def main():
     if len(sys.argv) < 2:
         print("Usage: parse_test_results.py <test_output_file>", file=sys.stderr)
@@ -79,8 +58,6 @@ def main():
     
     output_file = sys.argv[1]
     results = parse_test_output(output_file)
-    
-    generate_junit_xml(results)
     
     print(json.dumps(results, indent=2))
 

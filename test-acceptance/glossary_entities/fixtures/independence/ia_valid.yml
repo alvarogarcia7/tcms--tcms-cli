@@ -1,0 +1,7 @@
+id: IA-001
+objective: Test results reviewed by someone other than the test author
+artifact: RUN-001
+author: alvaro.garcia
+verifier: second.engineer
+verifier_is_independent: true
+date: '2026-10-27'

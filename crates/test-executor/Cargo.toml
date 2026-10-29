@@ -14,11 +14,15 @@ testcase-storage = { path = "../testcase-storage" }
 testcase-models = { path = "../testcase-models" }
 testcase-validation = { path = "../testcase-validation" }
 testcase-common = { path = "../testcase-common" }
+testcase-verification = { path = "../testcase-verification" }
+requirement-import = { path = "../requirement-import" }
+chrono = { workspace = true }
 audit-verifier = { path = "../audit-verifier" }
 clap = { workspace = true }
 anyhow = { workspace = true }
 serde = { workspace = true }
 serde_yaml = { workspace = true }
+serde_json = { workspace = true }
 tempfile = { workspace = true }
 env_logger = { workspace = true }
 

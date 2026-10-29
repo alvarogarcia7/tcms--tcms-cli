@@ -613,8 +613,8 @@ fi
 # Test 8: Test with the actual example dependency files in the repo
 section "Test 8: Validate Actual Example Dependency Files"
 
-EXAMPLE_DEP_1="$PROJECT_ROOT/testcases/examples/dependencies/1.yaml"
-EXAMPLE_DEP_2="$PROJECT_ROOT/testcases/examples/dependencies/2.yaml"
+EXAMPLE_DEP_1="$PROJECT_ROOT/testcases/examples/dependencies/TC_VAR_001.yml"
+EXAMPLE_DEP_2="$PROJECT_ROOT/testcases/examples/dependencies/TC_VAR_002.yml"
 
 if [[ -f "$EXAMPLE_DEP_1" ]] && [[ -f "$EXAMPLE_DEP_2" ]]; then
     EXAMPLE_VALIDATE_OUTPUT="$TEMP_DIR/example_validate_output.txt"

@@ -229,7 +229,7 @@ To use cross-directory dependencies:
 test-executor generate --output script.sh testcase.yaml
 
 # New way (dependencies across all directories)
-test-executor generate --test-case-dir test_cases/ --output script.sh testcase.yaml
+test-executor generate --test-case-dir 00_test_cases/ --output script.sh testcase.yaml
 ```
 
 ### For Acceptance Suite

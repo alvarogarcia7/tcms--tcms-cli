@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Test Environment",
+  "description": "A rig, target hardware or simulator with its tool versions and qualification status; referenced by runs and plans",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "rig": {
+      "type": "string",
+      "description": "Test rig or bench"
+    },
+    "target_hardware": {
+      "type": "string"
+    },
+    "simulator": {
+      "type": "string"
+    },
+    "tools": {
+      "type": "array",
+      "description": "Tools and their qualification",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tool": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "qualification_status": {
+            "type": "string",
+            "enum": [
+              "not_required",
+              "qualified",
+              "pending",
+              "not_qualified"
+            ]
+          },
+          "qualification_ref": {
+            "type": "string",
+            "description": "Tool qualification record (DO-330)"
+          }
+        },
+        "required": [
+          "tool",
+          "version"
+        ]
+      }
+    },
+    "qualification_status": {
+      "type": "string",
+      "description": "Overall environment qualification",
+      "enum": [
+        "not_required",
+        "qualified",
+        "pending",
+        "not_qualified"
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "name"
+  ]
+}

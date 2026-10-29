@@ -1,9 +1,11 @@
 ---
 id: TCMS-40.1
 title: Consume the extended tcms-schemas
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-27T19:39:00Z'
+updated_date: '2026-10-28T17:10:00Z'
 labels: []
 dependencies:
   - TCMS-25
@@ -34,3 +36,25 @@ Two things must be decided here, not assumed: (1) how the CLI obtains tcms-schem
 <!-- DOD:BEGIN -->
 - [ ] #1 All tests are passing. Run 'make test'
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Vendor the tcms-schemas schemas/tcms/*.schema.json at a pinned commit into schemas/tcms/ (unversioned names) plus VERSION file; scripts/sync-tcms-schemas.sh refreshes it
+2. Widen the envelope meta-schema: type enum lists every tcms-schemas schema, schema URI pattern accepts tcms/<name>.schema.json and tcms/<name>.schema.v<n>.json
+3. Document the mechanism and the pinned version
+4. Tests: every vendored schema is a valid Draft-07 schema and is reachable through the envelope; sample files from tcms-schemas validate
+5. Not done here (blocked): removing the legacy test-case/execution-log/verification-result copies, because the upstream test-case schema rejects the CLI's include: dependency syntax
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Decision D-40.1: vendor a pinned copy (offline, reproducible, works in Docker/CI). Rejected: git submodule (CI/Docker friction), build-time download (needs network at build). Upstream files go into schemas/tcms/ under their unversioned names; they do not clash with the existing *.schema.v1.json files, so the existing resolver (join of schemas root and the schema URI) finds tcms/<name>.schema.json unchanged.
+
+Implemented: vendored tcms-schemas @ 6c29a5cd (schemas/tcms-schemas, scripts/sync-tcms-schemas.sh), envelope type enum + schema URI pattern widened, resolver fallback to the vendored dir, docs/TCMS_SCHEMAS.md, tests (crates/testcase-common/tests/tcms_schemas.rs + envelope unit tests). NOT done: criterion #2 (no duplicate local copy). The upstream test-case-main / execution-log / verification-result are less strict than the CLI copies (hooks, hydration_vars, prerequisites, include:, hook_type and the verification flags are missing upstream), so deleting the local copies would silently drop validation. Needs a tcms-schemas change first; the exact list is in docs/TCMS_SCHEMAS.md. Finding: requirement, design-element, plan-document and qa-record have a domain field 'type', so their documents can carry only 'schema:'.
+
+Review (TCMS-40.1, reviewer, branch tcms-40-review): NOT Done. Verified: pinned vendored copy and docs (AC #4); envelope type enum and schema URI resolution for tcms-schemas types (AC #5); the 11 repo test case samples in testcases/ validate (AC #3). Open: AC #1 is only partly true (new record types come from tcms-schemas, but test-case, execution-log and verification-result still use the CLI's own schemas); AC #2 open (duplicate local copies of test-case, execution-log, verification-result remain, documented in docs/TCMS_SCHEMAS.md as blocked on upstream strictness gaps - needs an upstream change or a product decision).
+
+Blocked on the upstream epic SCH-006 'Absorb the tcms-cli schema extensions so the CLI can drop its local schema copies' (tcms-schemas, branch sch-006-tcms-cli-parity, 8 subtasks: hooks, hydration_vars/prerequisites, include dependencies, boolean verification fields, execution-log hook/verification fields, verification-result extras, the envelope decision, parity samples + fixture check). When it is merged: bump the pin with scripts/sync-tcms-schemas.sh, delete the local test-case/execution-log/verification-result schemas, point the tcms/*.schema.v1.json URIs at the vendored ones, run the whole suite; that closes AC #2. Owner decision: leave this task open until then.
+<!-- SECTION:NOTES:END -->

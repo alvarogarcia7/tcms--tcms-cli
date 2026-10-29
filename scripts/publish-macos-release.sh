@@ -97,7 +97,7 @@ cargo build --release --target "$TARGET" --workspace --bins
 # Detect the binaries to ship directly from workspace metadata (same logic as
 # the CI release:build job) so the set stays in sync as crates are added.
 RELEASE_BINS="$(cargo metadata --format-version 1 --no-deps \
-    | jq -r '[.packages[].targets[] | select(.kind[] == "bin") | .name] | unique | join(" ")')"
+    | jq -r '[.packages[].targets[] | select((.kind | index("bin")) and ((.["required-features"] // []) | length == 0)) | .name] | unique | join(" ")')"
 log_info "Binaries: $RELEASE_BINS"
 
 # ---------------------------------------------------------------------------

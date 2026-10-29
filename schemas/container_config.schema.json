@@ -65,6 +65,24 @@
         "Docker container (Alpine Linux)"
       ]
     },
+    "run_id": {
+      "type": "string",
+      "description": "ID of the test run; stamped on every verification result (optional, overridden by --run-id and TCMS_RUN_ID)",
+      "minLength": 1,
+      "maxLength": 150
+    },
+    "build_id": {
+      "type": "string",
+      "description": "Build/software identifier under test; stamped on every verification result (optional, overridden by --build-id and TCMS_BUILD_ID)",
+      "minLength": 1,
+      "maxLength": 150
+    },
+    "tester": {
+      "type": "string",
+      "description": "Person or tool that executed the tests; stamped on every verification result (optional, overridden by --tester and TCMS_TESTER)",
+      "minLength": 1,
+      "maxLength": 150
+    },
     "executor": {
       "type": "string",
       "description": "Information about the executor or CI/CD system running the tests (optional)",

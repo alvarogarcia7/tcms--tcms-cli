@@ -57,10 +57,10 @@ class ValidationResult:
 def discover_test_files() -> List[str]:
     """Discover all test case YAML files."""
     try:
-        # Find all YAML files in testcases, tests/sample, data, and test-acceptance/test_cases directories
+        # Find all YAML files in testcases, tests/sample, data, and test-acceptance/00_test_cases directories
         result = subprocess.run(
             [
-                "find", "testcases", "tests/sample", "data", "test-acceptance/test_cases",
+                "find", "testcases", "tests/sample", "data", "test-acceptance/00_test_cases",
                 "-type", "f",
                 "(", "-name", "*.yml", "-o", "-name", "*.yaml", ")"
             ],

@@ -22,8 +22,8 @@ fn load_test_case(file_path: &str) -> Result<TestCase> {
 
 #[test]
 fn test_dependency_resolution_integration() -> Result<()> {
-    let tc1_path = "testcases/examples/dependencies/1.yaml";
-    let tc2_path = "testcases/examples/dependencies/2.yaml";
+    let tc1_path = "testcases/examples/dependencies/TC_VAR_001.yml";
+    let tc2_path = "testcases/examples/dependencies/TC_VAR_002.yml";
 
     let tc1 = load_test_case(tc1_path)?;
     let tc2 = load_test_case(tc2_path)?;
@@ -94,8 +94,8 @@ fn test_dependency_resolution_integration() -> Result<()> {
 
 #[test]
 fn test_resolved_yaml_is_valid_and_parseable() -> Result<()> {
-    let tc1_path = "testcases/examples/dependencies/1.yaml";
-    let tc2_path = "testcases/examples/dependencies/2.yaml";
+    let tc1_path = "testcases/examples/dependencies/TC_VAR_001.yml";
+    let tc2_path = "testcases/examples/dependencies/TC_VAR_002.yml";
 
     let tc1 = load_test_case(tc1_path)?;
     let tc2 = load_test_case(tc2_path)?;
@@ -128,8 +128,8 @@ fn test_resolved_yaml_is_valid_and_parseable() -> Result<()> {
 
 #[test]
 fn test_expansion_merges_conditions() -> Result<()> {
-    let tc1_path = "testcases/examples/dependencies/1.yaml";
-    let tc2_path = "testcases/examples/dependencies/2.yaml";
+    let tc1_path = "testcases/examples/dependencies/TC_VAR_001.yml";
+    let tc2_path = "testcases/examples/dependencies/TC_VAR_002.yml";
 
     let tc1 = load_test_case(tc1_path)?;
     let tc2 = load_test_case(tc2_path)?;
@@ -164,8 +164,8 @@ fn test_expansion_merges_conditions() -> Result<()> {
 
 #[test]
 fn test_ref_items_replaced_with_descriptions() -> Result<()> {
-    let tc1_path = "testcases/examples/dependencies/1.yaml";
-    let tc2_path = "testcases/examples/dependencies/2.yaml";
+    let tc1_path = "testcases/examples/dependencies/TC_VAR_001.yml";
+    let tc2_path = "testcases/examples/dependencies/TC_VAR_002.yml";
 
     let tc1 = load_test_case(tc1_path)?;
     let tc2 = load_test_case(tc2_path)?;
@@ -208,8 +208,8 @@ fn test_ref_items_replaced_with_descriptions() -> Result<()> {
 
 #[test]
 fn test_idempotent_resolution() -> Result<()> {
-    let tc1_path = "testcases/examples/dependencies/1.yaml";
-    let tc2_path = "testcases/examples/dependencies/2.yaml";
+    let tc1_path = "testcases/examples/dependencies/TC_VAR_001.yml";
+    let tc2_path = "testcases/examples/dependencies/TC_VAR_002.yml";
 
     let tc1 = load_test_case(tc1_path)?;
     let tc2 = load_test_case(tc2_path)?;
@@ -233,8 +233,8 @@ fn test_idempotent_resolution() -> Result<()> {
 
 #[test]
 fn test_test_sequence_initial_conditions_resolved() -> Result<()> {
-    let tc1_path = "testcases/examples/dependencies/1.yaml";
-    let tc2_path = "testcases/examples/dependencies/2.yaml";
+    let tc1_path = "testcases/examples/dependencies/TC_VAR_001.yml";
+    let tc2_path = "testcases/examples/dependencies/TC_VAR_002.yml";
 
     let tc1 = load_test_case(tc1_path)?;
     let tc2 = load_test_case(tc2_path)?;

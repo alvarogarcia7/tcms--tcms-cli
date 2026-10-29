@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Audit Trail Entry",
+  "description": "Who did what to which record, when, with the before and after state and the reason. One entry per change on every entity",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "who": {
+      "type": "string"
+    },
+    "when": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "create",
+        "update",
+        "delete",
+        "status_change",
+        "approve",
+        "sign",
+        "execute",
+        "import",
+        "sync"
+      ]
+    },
+    "entity": {
+      "type": "object",
+      "description": "Record changed, or record synced to an external system (action: sync; after holds the external_refs written)",
+      "properties": {
+        "entity_type": {
+          "type": "string",
+          "description": "Schema name of the referenced record",
+          "enum": [
+            "product",
+            "plan-document",
+            "requirement",
+            "design-element",
+            "code-unit",
+            "test-case",
+            "test-plan",
+            "baseline",
+            "environment",
+            "test-run",
+            "verification-result",
+            "execution-log",
+            "coverage-report",
+            "review",
+            "action-item",
+            "problem-report",
+            "change-request",
+            "qa-record",
+            "objective",
+            "independence-assignment",
+            "analysis-report",
+            "trace-matrix"
+          ]
+        },
+        "entity_id": {
+          "type": "string",
+          "description": "ID of the referenced record"
+        },
+        "version": {
+          "type": "string",
+          "description": "Version of the referenced record, when versioned"
+        }
+      },
+      "required": [
+        "entity_type",
+        "entity_id"
+      ]
+    },
+    "before": {
+      "description": "State before the change (any JSON)"
+    },
+    "after": {
+      "description": "State after the change (any JSON)"
+    },
+    "reason": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "who",
+    "when",
+    "action",
+    "entity"
+  ]
+}

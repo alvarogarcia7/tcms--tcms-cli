@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Design Element",
+  "description": "A module, component, interface or partition of the design; implements requirements and maps to code units",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "module",
+        "component",
+        "interface",
+        "partition"
+      ]
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "parent_id": {
+      "type": "string",
+      "description": "Enclosing design element"
+    },
+    "implements_requirement_ids": {
+      "type": "array",
+      "description": "Requirements implemented",
+      "items": {
+        "type": "string"
+      }
+    },
+    "code_unit_ids": {
+      "type": "array",
+      "description": "Code units realising it",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "id",
+    "type",
+    "name"
+  ]
+}

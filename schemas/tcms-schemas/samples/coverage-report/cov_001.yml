@@ -1,0 +1,26 @@
+id: COV-001
+run_id: RUN-001
+baseline_id: BL-001
+tool: gcov
+tool_version: '13'
+requirements_based:
+  total_requirements: 10
+  covered_normal_range: 10
+  covered_robustness: 8
+  uncovered: [HLR-7, HLR-12]
+structural:
+  statement_percent: 100
+  decision_percent: 98.5
+  mcdc_percent: 96.2
+gaps:
+  - location: src/es6.c:210
+    coverage_type: decision
+    classification: deactivated_code
+    rationale: Debug branch disabled by build configuration; shown unable to activate.
+    approver: qa.lead
+    code_unit_id: CU-ES6-UPDATE
+  - location: HLR-12
+    coverage_type: requirements
+    classification: missing_test
+    rationale: No robustness test for out-of-range metadata.
+    test_case_id: '4.2.2.2.9 TC_eUICC_ES6.UpdateMetadata_OutOfRange'

@@ -1,0 +1,193 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string"
+    },
+    "product": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string",
+      "description": "Unique test plan identifier"
+    },
+    "name": {
+      "type": "string",
+      "description": "Short plan name"
+    },
+    "product_id": {
+      "type": "string",
+      "description": "Product the plan belongs to (product.id)"
+    },
+    "plan_document_id": {
+      "type": "string",
+      "description": "Software Verification Plan this test plan is derived from (plan-document.id)"
+    },
+    "objectives": {
+      "type": "array",
+      "description": "Objectives (objective.id) the plan contributes evidence to",
+      "items": {
+        "type": "string"
+      }
+    },
+    "activity": {
+      "type": "string",
+      "description": "Whether the plan covers verification (built it right) or validation (built the right thing).",
+      "enum": [
+        "verification",
+        "validation"
+      ]
+    },
+    "software_level": {
+      "type": "string",
+      "description": "Software level (DO-178C A to E) of the item under verification. Determines which coverage goals (MC/DC only at A) and independence rules apply.",
+      "enum": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E"
+      ]
+    },
+    "baseline_id": {
+      "type": "string",
+      "description": "ID of the baseline (see baseline schema) the plan is executed against"
+    },
+    "scope": {
+      "type": "object",
+      "description": "What the plan covers",
+      "properties": {
+        "test_cases": {
+          "type": "array",
+          "description": "Test case IDs in scope",
+          "items": {
+            "type": "string"
+          }
+        },
+        "requirements": {
+          "type": "array",
+          "description": "Requirement IDs in scope",
+          "items": {
+            "type": "string"
+          }
+        },
+        "levels": {
+          "type": "array",
+          "description": "Test levels in scope (see test-case-main.level)",
+          "items": {
+            "type": "string",
+            "enum": [
+              "hw_sw_integration",
+              "sw_integration",
+              "low_level",
+              "validation"
+            ]
+          }
+        }
+      }
+    },
+    "environment": {
+      "type": "string",
+      "description": "Test environment description"
+    },
+    "environment_id": {
+      "type": "string",
+      "description": "Environment record (environment.id); 'environment' stays as free text for compatibility"
+    },
+    "regression": {
+      "type": "object",
+      "description": "Present when the plan is a regression plan. The scope is the change_impact recorded on the baseline referenced by baseline_id, measured from previous_baseline_id.",
+      "properties": {
+        "previous_baseline_id": {
+          "type": "string",
+          "description": "Baseline the changes are measured from; must match change_impact of the plan's baseline"
+        },
+        "rationale": {
+          "type": "string",
+          "description": "Why the selected regression scope is sufficient, if it differs from the baseline's change_impact"
+        }
+      },
+      "required": [
+        "previous_baseline_id"
+      ]
+    },
+    "independence_rules": {
+      "type": "array",
+      "description": "Objectives requiring independence (checker is not the author)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "coverage_goals": {
+      "type": "object",
+      "description": "Coverage goals for the plan",
+      "properties": {
+        "requirements_based": {
+          "type": "boolean"
+        },
+        "structural": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "statement",
+              "decision",
+              "mcdc"
+            ]
+          }
+        }
+      }
+    },
+    "external_refs": {
+      "type": "array",
+      "description": "Jira Fix Version (milestone) and, for Xray/Zephyr, the Test Plan or cycle",
+      "items": {
+        "type": "object",
+        "properties": {
+          "system": {
+            "type": "string",
+            "description": "External system",
+            "enum": [
+              "jira",
+              "xray",
+              "zephyr_scale",
+              "zephyr_squad",
+              "strictdoc",
+              "gitlab",
+              "other"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "description": "Identifier in that system (Jira issue key, Xray test key, Zephyr key, StrictDoc UID, Fix Version id)"
+          },
+          "url": {
+            "type": "string",
+            "description": "Resolved URL; the resolver derives it from integration-config when absent",
+            "format": "uri"
+          },
+          "synced_at": {
+            "type": "string",
+            "description": "Last successful sync of this record to that system",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "system",
+          "key"
+        ]
+      }
+    }
+  },
+  "required": [
+    "date",
+    "product",
+    "description"
+  ],
+  "title": "Test Plan",
+  "description": "Schema for a test plan: what is verified, against which baseline, in which environment, with which independence rules"
+}

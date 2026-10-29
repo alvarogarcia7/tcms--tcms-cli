@@ -874,6 +874,8 @@ fn test_short_flags_folder_mode() {
 
     create_test_case_yaml(&test_case_dir, "TC001");
     fs::create_dir_all(&folder_path).unwrap();
+    // A folder without logs verified nothing, which is an error (TCMS-41), so give it one
+    create_execution_log(&folder_path.join("TC001_execution_log.json"), "TC001");
 
     let schema_path = get_schema_path();
 

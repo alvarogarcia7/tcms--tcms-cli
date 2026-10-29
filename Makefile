@@ -113,7 +113,7 @@ build-release:
 # Requires: GITLAB_TOKEN env var (personal access token with 'api' scope),
 #           plus cargo, jq, zip, curl.
 publish-macos:
-	@scripts/publish-macos-release.sh "$(TAG)"
+	@scripts/publish-macos-release.sh "$(TAG)-mac-local"
 .PHONY: publish-macos
 
 # Per-crate build targets
@@ -559,6 +559,21 @@ sccache-clean:
 	@echo "To manually remove cache: rm -rf ~/.cache/sccache/testcase-manager"
 .PHONY: sccache-clean
 
+# Test case file naming: the file name must equal the `id:` inside, and the extension must be .yml.
+# Checks every test case below testcases/ and test-acceptance/ (existing files that break the rule are
+# listed). CI runs the changed-files mode: make check-testcase-files-changed BASE_REF=origin/main
+check-testcase-files:
+	@python3 scripts/check_testcase_files.py
+.PHONY: check-testcase-files
+
+check-testcase-files-changed:
+	@python3 scripts/check_testcase_files.py --changed-since $(or $(BASE_REF),main)
+.PHONY: check-testcase-files-changed
+
+test-check-testcase-files:
+	@python3 -m unittest scripts/test_check_testcase_files.py
+.PHONY: test-check-testcase-files
+
 verify-scripts:
 	@echo "Verifying shell script syntax..."
 	@FAILED=0; \
@@ -646,7 +661,7 @@ verify-testcases: build-validate-yaml
 	@echo "Verifying test case files against their declared schemas..."
 	@FAILED=0; \
 	VALIDATED=0; \
-	for file in $$(find testcases tests/sample data -type f \( -name "*.yml" -o -name "*.yaml" \) -not \( -path "*/expected_output_reports/*" -o -path "*/testcase_results_container/*" -o -path "*/generated_samples/*" -o -path "*/verifier_scenarios_incorrect/*" -o -name "*te.y*" -o -iname "sample_test_runs.yaml" -o -name "*wrong*" -o -name "data.yml" -o -name "steps-in-json.yml" -o -name "1.yaml" -o -name "SGP.22_4.4.2.yaml" -o -name "conditional_verification_example.yml" -o -name "doc_gen_*.yml" -o -name "*container*" -o -path "*test_case_result*" -o -path "*test_result_01*" \) 2>/dev/null); do \
+	for file in $$(find testcases tests/sample data -type f \( -name "*.yml" -o -name "*.yaml" \) -not \( -path "*/expected_output_reports/*" -o -path "*/testcase_results_container/*" -o -path "*/generated_samples/*" -o -path "*/verifier_scenarios_incorrect/*" -o -name "*te.y*" -o -iname "sample_test_runs.yaml" -o -name "*wrong*" -o -name "data.yml" -o -name "steps-in-json.yml" -o -name "1.yaml" -o -name "SGP.22_4.4.2.yaml" -o -name "CONDITIONAL_VERIFICATION_001.yml" -o -name "doc_gen_*.yml" -o -name "*container*" -o -path "*test_case_result*" -o -path "*test_result_01*" \) 2>/dev/null); do \
 		VALIDATED=$$((VALIDATED + 1)); \
 		if ! grep -q "^schema:" "$$file" 2>/dev/null; then \
 			echo "✗ $$file - Missing required 'schema' field"; \
@@ -722,7 +737,7 @@ test-e2e-executor:
 test-e2e-orchestrator:
 	@${MAKE} build BASE_REF=$(or $(BASE_REF),main)
 	./tests/integration/test_orchestrator_e2e.sh
-	cargo run --bin test-orchestrator run testcases/self_validated_example.yml --verbose
+	cargo run --bin test-orchestrator run testcases/SELF_VALIDATED_EXAMPLE_002.yml --verbose
 	! cargo run --bin test-orchestrator run testcases/self_validated_example_wrong.yml
 .PHONY: test-e2e-orchestrator
 
@@ -761,6 +776,14 @@ test-container-compat:
 	./scripts/test_container_yaml_compatibility.sh
 .PHONY: test-container-compat
 
+# Download the test-plan-documentation-generator (TPDG) release used by the acceptance suite into
+# tools/tpdg/tpdg (linux-amd64 only). Needs a GitLab token with read_api on the TPDG project:
+#   TPDG_TOKEN=glpat-... make download-tpdg [TPDG_VERSION=v0.1.0-rc.1]
+# acceptance-test uses tools/tpdg/tpdg automatically when TEST_PLAN_DOC_GEN is not set.
+download-tpdg:
+	@TPDG_VERSION="$(or $(TPDG_VERSION),v0.1.0-rc.1)" ./scripts/download-tpdg.sh
+.PHONY: download-tpdg
+
 acceptance-test: build-acceptance-binaries
 	@echo "========================================="
 	@echo "Running Acceptance Test Suite"
@@ -770,16 +793,21 @@ acceptance-test: build-acceptance-binaries
 	@LOG_FILE="test-acceptance/reports/acceptance_suite_execution.log"; \
 	echo "Execution log: $$LOG_FILE"; \
 	echo ""; \
+	if [ -z "$$TEST_PLAN_DOC_GEN" ] && [ -x tools/tpdg/tpdg ]; then \
+		export TEST_PLAN_DOC_GEN="$$PWD/tools/tpdg/tpdg"; \
+	fi; \
 	if ! command -v test-plan-documentation-generator > /dev/null 2>&1 && [ -z "$$TEST_PLAN_DOC_GEN" ]; then \
 		echo "ERROR: test-plan-documentation-generator (TPDG) not found"; \
 		echo ""; \
 		echo "TPDG is required for acceptance tests."; \
 		echo ""; \
 		echo "Install options:"; \
-		echo "  1. Install globally:"; \
+		echo "  1. Download the release (needs a token): TPDG_TOKEN=... make download-tpdg"; \
+		echo ""; \
+		echo "  2. Install globally:"; \
 		echo "     cargo install test-plan-documentation-generator"; \
 		echo ""; \
-		echo "  2. Set TEST_PLAN_DOC_GEN environment variable:"; \
+		echo "  3. Set TEST_PLAN_DOC_GEN environment variable:"; \
 		echo "     export TEST_PLAN_DOC_GEN=/path/to/test-plan-documentation-generator"; \
 		echo ""; \
 		exit 1; \

@@ -3,6 +3,10 @@ use serde::Deserialize;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// Directory under the schemas root that holds the pinned copy of tcms-schemas
+/// (see `schemas/tcms-schemas/TCMS_SCHEMAS_VERSION` and `scripts/sync-tcms-schemas.sh`)
+pub const VENDORED_SCHEMAS_DIR: &str = "tcms-schemas";
+
 /// Envelope structure for extracting schema field from YAML/JSON documents
 #[derive(Debug, Deserialize)]
 pub struct Envelope {
@@ -79,15 +83,27 @@ pub fn resolve_schema_from_payload<P: AsRef<Path>>(
 /// Resolve schema URI to local file path
 ///
 /// # Arguments
-/// * `schema_uri` - Schema URI from the document (e.g., "tcms/test-case.schema.v1.json")
+/// * `schema_uri` - Schema URI from the document (e.g., "tcms/test-case.schema.v1.json" or,
+///   for the vendored tcms-schemas, "tcms/test-run.schema.json")
 /// * `schemas_root` - Root directory for schemas
 ///
 /// # Returns
 /// * `Ok(PathBuf)` - Local schema file path
 pub fn resolve_schema_uri(schema_uri: &str, schemas_root: &str) -> Result<PathBuf> {
     // Schema URI is expected to be a relative path like "tcms/test-case.schema.v1.json"
-    // We simply join it with the schemas root
-    let schema_path = PathBuf::from(schemas_root).join(schema_uri);
+    // We join it with the schemas root
+    let mut schema_path = PathBuf::from(schemas_root).join(schema_uri);
+
+    // URIs of the vendored tcms-schemas copy ("tcms/test-run.schema.json") live under
+    // <root>/tcms-schemas/; the CLI's own schemas keep priority
+    if !schema_path.exists() {
+        let vendored = PathBuf::from(schemas_root)
+            .join(VENDORED_SCHEMAS_DIR)
+            .join(schema_uri);
+        if vendored.exists() {
+            schema_path = vendored;
+        }
+    }
 
     log::debug!(
         "Resolving schema URI '{}' with root '{}' to '{}'",
@@ -214,5 +230,43 @@ id: TEST_001
             .unwrap_err()
             .to_string()
             .contains("Schema file not found"));
+    }
+
+    #[test]
+    fn test_resolve_schema_uri_falls_back_to_vendored_tcms_schemas() {
+        let temp_dir = TempDir::new().unwrap();
+        let root = temp_dir.path();
+        let vendored = root.join(VENDORED_SCHEMAS_DIR).join("tcms");
+        std::fs::create_dir_all(&vendored).unwrap();
+        std::fs::write(vendored.join("test-run.schema.json"), b"{}").unwrap();
+
+        let resolved =
+            resolve_schema_uri("tcms/test-run.schema.json", root.to_str().unwrap()).unwrap();
+        assert_eq!(resolved, vendored.join("test-run.schema.json"));
+    }
+
+    #[test]
+    fn test_resolve_schema_uri_prefers_cli_schema_over_vendored() {
+        let temp_dir = TempDir::new().unwrap();
+        let root = temp_dir.path();
+        for dir in [
+            root.join("tcms"),
+            root.join(VENDORED_SCHEMAS_DIR).join("tcms"),
+        ] {
+            std::fs::create_dir_all(&dir).unwrap();
+            std::fs::write(dir.join("review.schema.json"), b"{}").unwrap();
+        }
+
+        let resolved =
+            resolve_schema_uri("tcms/review.schema.json", root.to_str().unwrap()).unwrap();
+        assert_eq!(resolved, root.join("tcms/review.schema.json"));
+    }
+
+    #[test]
+    fn test_resolve_schema_uri_missing_keeps_primary_path_for_the_error() {
+        let temp_dir = TempDir::new().unwrap();
+        let root = temp_dir.path();
+        let resolved = resolve_schema_uri("tcms/nope.schema.json", root.to_str().unwrap()).unwrap();
+        assert_eq!(resolved, root.join("tcms/nope.schema.json"));
     }
 }

@@ -1,0 +1,11 @@
+id: AT-001
+who: second.engineer
+when: '2026-10-27T11:00:00Z'
+action: status_change
+entity:
+  entity_type: test-case
+  entity_id: '4.2.2.2.1 TC_eUICC_ES6.UpdateMetadata'
+  version: '2'
+before: {status: in_review}
+after: {status: approved}
+reason: Review REV-001 approved with actions.

@@ -1,0 +1,19 @@
+id: CR-12
+title: Handle missing ICCID metadata in ES6.UpdateMetadata
+scope: Guard the metadata lookup in src/es6.c and add an LLR for the empty case.
+status: approved
+raised_by: alvaro.garcia
+date: '2026-10-28'
+problem_report_ids: [PR-57]
+impact_analysis:
+  changed_items: [src/es6.c, docs/srs.sdoc]
+  impacted_requirements: [HLR-12, LLR-12.2]
+  impacted_design_elements: [DE-ES6]
+  impacted_test_cases: ['4.2.2.3 ANOTHER ONE']
+  regression_test_cases: ['4.2.2.2.1 TC_eUICC_ES6.UpdateMetadata', '4.2.2.3 ANOTHER ONE']
+  rationale: Change confined to the ES6 handler; callers unchanged.
+ccb_decision:
+  decision: approved
+  date: '2026-10-29'
+  members: [qa.lead, second.engineer]
+  minutes_ref: docs/ccb/2026-10-29.md

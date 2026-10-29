@@ -1,0 +1,240 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: SELF_VALIDATED_EXAMPLE
+item: 1
+tc: 1
+id: SELF_VALIDATED_EXAMPLE_002
+description: Simple self-validated test case demonstrating shell commands with expected
+  results and file-based output verification
+general_initial_conditions:
+  system:
+  - Shell environment is available
+initial_conditions:
+  system:
+  - All commands can be executed
+test_sequences:
+- id: 1
+  name: Basic Shell Commands
+  description: 'This test sequence demonstrates simple shell commands with verification.
+
+    Uses echo, true, and false commands to show success and failure cases.
+
+    '
+  initial_conditions:
+    system:
+    - Shell is ready
+  steps:
+  - step: 1
+    description: Echo a simple message
+    command: echo "Hello World"
+    expected:
+      success: true
+      result: 0
+      output: Hello World
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'Hello World' <<< "$COMMAND_OUTPUT"
+      output_file: grep -q "Hello World" "$LOG_FILE"
+  - step: 2
+    description: Successful command with true
+    command: true
+    expected:
+      success: true
+      result: 0
+      output: ''
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'
+  - step: 3
+    description: Failed command with false
+    command: false
+    expected:
+      success: false
+      result: 1
+      output: ''
+    verification:
+      result: '[[ $EXIT_CODE -ne 0 ]]'
+      output: 'true'
+- id: 2
+  name: Echo with Different Outputs
+  description: 'This test sequence demonstrates echo commands with different outputs
+
+    and verification patterns.
+
+    '
+  initial_conditions:
+    system:
+    - Shell is ready
+  steps:
+  - step: 1
+    description: Echo success status
+    command: 'echo "Status: SUCCESS"'
+    expected:
+      result: 0
+      output: 'Status: SUCCESS'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'SUCCESS' <<< "$COMMAND_OUTPUT"
+      output_file: grep -q "SUCCESS" "$LOG_FILE"
+  - step: 2
+    description: Echo with exit code verification
+    command: echo "Operation completed"
+    expected:
+      result: 0
+      output: Operation completed
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'Operation completed' <<< "$COMMAND_OUTPUT"
+      output_file: grep -q "Operation completed" "$LOG_FILE"
+  - step: 3
+    description: Echo multiple lines
+    command: echo -e "Line 1\nLine 2\nLine 3"
+    expected:
+      result: 0
+      output: 'Line 1
+
+        Line 2
+
+        Line 3'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: '[[ $(grep -c ''Line'' <<< "$COMMAND_OUTPUT") -eq 3 ]]'
+      output_file: '[[ $(grep -c "Line" "$LOG_FILE") -eq 3 ]]'
+- id: 3
+  name: Exit Code Tests
+  description: 'This test sequence demonstrates different exit codes using shell commands.
+
+    '
+  initial_conditions:
+    system:
+    - Shell is ready
+  steps:
+  - step: 1
+    description: Exit with code 0
+    command: /bin/sh -c "exit 0"
+    expected:
+      success: true
+      result: 0
+      output: ''
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'
+  - step: 2
+    description: Exit with code 1
+    command: /bin/sh -c "exit 1"
+    expected:
+      success: false
+      result: 1
+      output: ''
+    verification:
+      result: '[[ $EXIT_CODE -eq 1 ]]'
+      output: 'true'
+  - step: 3
+    description: Exit with code 2
+    command: /bin/sh -c "exit 2"
+    expected:
+      success: false
+      result: 2
+      output: ''
+    verification:
+      result: '[[ $EXIT_CODE -eq 2 ]]'
+      output: 'true'
+- id: 4
+  name: Mixed Verification Types
+  description: 'This test sequence demonstrates backward compatibility by mixing
+
+    simple verification expressions with conditional ones in practical scenarios.
+
+    '
+  initial_conditions:
+    system:
+    - Shell is ready
+  steps:
+  - step: 1
+    description: Simple verification for basic echo
+    command: echo "Basic test"
+    expected:
+      success: true
+      result: 0
+      output: Basic test
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'Basic test' <<< "$COMMAND_OUTPUT"
+      output_file: grep -q 'Basic test' "$LOG_FILE"
+  - step: 2
+    description: Conditional verification for success case
+    command: 'echo "Status: SUCCESS"'
+    expected:
+      success: true
+      result: 0
+      output: 'Status: SUCCESS'
+    verification:
+      result:
+        condition: '[[ $EXIT_CODE -eq 0 ]]'
+        if_true:
+        - 'echo ''DEBUG: Exit code verification passed'''
+        if_false:
+        - 'echo ''ERROR: Unexpected exit code $EXIT_CODE'''
+        - exit 1
+      output: grep -q 'SUCCESS' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: Conditional verification for failure case
+    command: /bin/sh -c "exit 10"
+    expected:
+      success: false
+      result: 10
+      output: ''
+    verification:
+      result:
+        condition: '[[ $EXIT_CODE -eq 10 ]]'
+        if_true:
+        - 'echo ''DEBUG: Got expected exit code 10'''
+        if_false:
+        - 'echo ''ERROR: Expected exit code 10, got $EXIT_CODE'''
+        - exit 1
+      output: 'true'
+  - step: 4
+    description: Conditional output verification with pattern matching
+    command: 'echo "Count: 42"'
+    expected:
+      result: 0
+      output: 'Count: 42'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output:
+        condition: 'echo "$COMMAND_OUTPUT" | grep -qE ''Count: [0-9]+'''
+        if_true:
+        - 'echo ''INFO: Output matches expected pattern'''
+        if_false:
+        - 'echo ''ERROR: Output does not match pattern'''
+        - exit 1
+  - step: 5
+    description: All conditional verifications with always clause
+    command: echo "Complete"
+    expected:
+      success: true
+      result: 0
+      output: Complete
+    verification:
+      result:
+        condition: '[[ $EXIT_CODE -eq 0 ]]'
+        if_true:
+        - 'echo ''DEBUG: Command succeeded'''
+        if_false:
+        - 'echo ''ERROR: Command failed'''
+        - exit 1
+        always:
+        - 'echo ''DEBUG: Verification step completed'''
+      output:
+        condition: grep -q 'Complete' <<< "$COMMAND_OUTPUT"
+        if_true:
+        - 'echo ''INFO: Output verified'''
+        if_false:
+        - 'echo ''ERROR: Output verification failed'''
+        - exit 1
+      output_file:
+        condition: grep -q 'Complete' "$LOG_FILE"
+        if_true:
+        - 'echo ''INFO: Log file updated'''
+        if_false:
+        - 'echo ''WARN: Log file check failed'''

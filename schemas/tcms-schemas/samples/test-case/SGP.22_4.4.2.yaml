@@ -1,0 +1,41 @@
+requirement: SGP.22
+item: 4
+tc: 42
+id: SGP.22_4.4.2
+description: Sample test case for demonstration
+
+general_initial_conditions:
+  LPA:
+    - LPA is installed
+
+initial_conditions:
+  LPA:
+    - test
+test_sequences:
+  - id: 1
+    name: seq
+    description: ""
+    initial_conditions:
+      LPA:
+        - LPA ON
+    steps:
+      - step: 1
+        description: 'Sample step 1: Perform test action'
+        command: AT+COMMAND
+        expected:
+          success: true
+          result: 0
+          output: none
+        verification:
+          result: "exit_code == 0"
+          output: ""
+      - step: 2
+        description: 'Sample step 2: Perform test action'
+        command: AT+COMMAND
+        expected:
+          success: true
+          result: 0
+          output: none
+        verification:
+          result: "exit_code == 0"
+          output: ""

@@ -1,0 +1,450 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "requirement": {
+      "type": "string"
+    },
+    "item": {
+      "type": "integer"
+    },
+    "tc": {
+      "type": "integer"
+    },
+    "id": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "general_initial_conditions": {
+      "type": "object",
+      "description": "Top-level general initial conditions. Values can use BDD patterns (e.g., 'create directory \"/tmp/test\"') that are automatically converted to executable commands, or plain text that becomes comments. See docs/BDD_INITIAL_CONDITIONS.md for pattern reference.",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A condition statement. Can be a BDD pattern (e.g., 'create directory \"/path\"', 'set environment variable \"VAR\" to \"value\"', 'wait for 5 seconds') or plain text description."
+        }
+      }
+    },
+    "initial_conditions": {
+      "type": "object",
+      "description": "Top-level initial conditions specific to devices/systems. Values can use BDD patterns (e.g., 'file \"/path\" should exist', 'restart service \"nginx\"') that are automatically converted to executable commands, or plain text that becomes comments. See docs/BDD_INITIAL_CONDITIONS.md for pattern reference.",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "A condition statement. Can be a BDD pattern (e.g., 'ping device \"192.168.1.1\" with 3 retries', 'port 80 on \"localhost\" should be open') or plain text description."
+        }
+      }
+    },
+    "test_sequences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "initial_conditions": {
+            "type": "object",
+            "description": "Sequence-level initial conditions. Values can use BDD patterns (e.g., 'wait until file \"/tmp/ready\" exists with timeout 30 seconds') that are automatically converted to executable commands, or plain text that becomes comments. See docs/BDD_INITIAL_CONDITIONS.md for pattern reference.",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "A condition statement. Can be a BDD pattern or plain text description."
+              }
+            }
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "step": {
+                  "type": "integer"
+                },
+                "manual": {
+                  "type": "boolean"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "command": {
+                  "type": [
+                    "string",
+                    "boolean"
+                  ]
+                },
+                "expected": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "result": {
+                      "type": [
+                        "string",
+                        "integer"
+                      ]
+                    },
+                    "output": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "result",
+                    "output"
+                  ]
+                },
+                "verification": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "condition": {
+                              "type": "string"
+                            },
+                            "if_true": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "if_false": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "always": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "required": [
+                            "condition"
+                          ]
+                        }
+                      ]
+                    },
+                    "output": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "condition": {
+                              "type": "string"
+                            },
+                            "if_true": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "if_false": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "always": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "required": [
+                            "condition"
+                          ]
+                        }
+                      ]
+                    },
+                    "output_file": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "condition": {
+                              "type": "string"
+                            },
+                            "if_true": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "if_false": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "always": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "required": [
+                            "condition"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result",
+                    "output"
+                  ]
+                }
+              },
+              "required": [
+                "step",
+                "description",
+                "command",
+                "expected"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "initial_conditions",
+          "steps"
+        ]
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "description": "Requirement IDs (HLR/LLR, owned by the requirements tool) this test case verifies. Traceability and coverage use this list only; the legacy required 'requirement' field is kept for compatibility and is not used for coverage.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "test_type": {
+      "type": "string",
+      "description": "Normal-range tests exercise inputs the software should handle; robustness tests exercise abnormal inputs and conditions; security tests exercise attacks and misuse.",
+      "enum": [
+        "normal_range",
+        "robustness",
+        "security"
+      ]
+    },
+    "test_category": {
+      "type": "string",
+      "description": "Technique used to select inputs. Normal range: equivalence_class, boundary_value, state_transition. Robustness: invalid_value, out_of_range, failure_mode, overflow, timing_fault. Security: fuzzing, penetration, misuse_case, vulnerability_scan. The pairing is enforced when both fields are present.",
+      "enum": [
+        "equivalence_class",
+        "boundary_value",
+        "state_transition",
+        "invalid_value",
+        "out_of_range",
+        "failure_mode",
+        "overflow",
+        "timing_fault",
+        "fuzzing",
+        "penetration",
+        "misuse_case",
+        "vulnerability_scan"
+      ]
+    },
+    "level": {
+      "type": "string",
+      "description": "Test level: hw_sw_integration (HLR-based, on target), sw_integration (HLR/LLR interaction, data and control coupling), low_level (LLR-based) or validation (system-level, built the right thing). Tests are requirements-based at every level; the requirements verified are listed in 'requirements'.",
+      "enum": [
+        "hw_sw_integration",
+        "sw_integration",
+        "low_level",
+        "validation"
+      ]
+    },
+    "objective": {
+      "type": "string",
+      "description": "The single objective this test case demonstrates (inputs, conditions and expected results serve one objective)."
+    },
+    "version": {
+      "type": "string",
+      "description": "Test case version; runs and results record which version they executed"
+    },
+    "status": {
+      "type": "string",
+      "description": "Life-cycle status; changes are gated by reviews",
+      "enum": [
+        "draft",
+        "in_review",
+        "approved",
+        "obsolete"
+      ]
+    },
+    "environment": {
+      "type": "string",
+      "description": "Test environment required to run the procedure (target, simulator, tool versions)."
+    },
+    "pass_fail_criteria": {
+      "type": "string",
+      "description": "Procedure-level pass/fail criteria, in addition to per-step 'expected'."
+    },
+    "author": {
+      "type": "string",
+      "description": "Person who wrote the test case. Used by independence checks: the reviewer of this test case and of its results must not be the author when independence_required is true."
+    },
+    "independence_required": {
+      "type": "boolean",
+      "description": "True if the review of this test case and of its results must be done by someone other than 'author' (see independence-assignment and test-run.reviewer)."
+    },
+    "external_refs": {
+      "type": "array",
+      "description": "Jira Test / Xray Test / Zephyr test case created for this test case",
+      "items": {
+        "type": "object",
+        "properties": {
+          "system": {
+            "type": "string",
+            "description": "External system",
+            "enum": [
+              "jira",
+              "xray",
+              "zephyr_scale",
+              "zephyr_squad",
+              "strictdoc",
+              "gitlab",
+              "other"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "description": "Identifier in that system (Jira issue key, Xray test key, Zephyr key, StrictDoc UID, Fix Version id)"
+          },
+          "url": {
+            "type": "string",
+            "description": "Resolved URL; the resolver derives it from integration-config when absent",
+            "format": "uri"
+          },
+          "synced_at": {
+            "type": "string",
+            "description": "Last successful sync of this record to that system",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "system",
+          "key"
+        ]
+      }
+    }
+  },
+  "required": [
+    "requirement",
+    "item",
+    "tc",
+    "id",
+    "description",
+    "general_initial_conditions",
+    "initial_conditions",
+    "test_sequences"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "test_type": {
+            "const": "normal_range"
+          }
+        },
+        "required": [
+          "test_type",
+          "test_category"
+        ]
+      },
+      "then": {
+        "properties": {
+          "test_category": {
+            "enum": [
+              "equivalence_class",
+              "boundary_value",
+              "state_transition"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "test_type": {
+            "const": "robustness"
+          }
+        },
+        "required": [
+          "test_type",
+          "test_category"
+        ]
+      },
+      "then": {
+        "properties": {
+          "test_category": {
+            "enum": [
+              "invalid_value",
+              "out_of_range",
+              "failure_mode",
+              "overflow",
+              "timing_fault"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "test_type": {
+            "const": "security"
+          }
+        },
+        "required": [
+          "test_type",
+          "test_category"
+        ]
+      },
+      "then": {
+        "properties": {
+          "test_category": {
+            "enum": [
+              "fuzzing",
+              "penetration",
+              "misuse_case",
+              "vulnerability_scan"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

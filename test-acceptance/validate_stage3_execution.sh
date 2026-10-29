@@ -189,7 +189,7 @@ find_yaml_for_script() {
     local test_id
     test_id=$(get_test_case_id "$script_file")
     
-    # Search for YAML file in test_cases directory
+    # Search for YAML file in 00_test_cases directory
     local yaml_file
     yaml_file=$(find "$TEST_CASES_DIR" -type f \( -name "${test_id}.yaml" -o -name "${test_id}.yml" \) | head -1)
     

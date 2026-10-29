@@ -33,6 +33,7 @@ fn test_test_case_verification_result_metadata_fields() {
         item: Some(42),
         tc: Some(99),
         source_yaml_sha256: None,
+        run: Default::default(),
     };
 
     assert_eq!(result.requirement, Some("REQ-001".to_string()));
@@ -55,6 +56,7 @@ fn test_test_case_verification_result_metadata_optional() {
         item: None,
         tc: None,
         source_yaml_sha256: None,
+        run: Default::default(),
     };
 
     assert_eq!(result.requirement, None);
@@ -77,6 +79,7 @@ fn test_test_case_verification_result_serialization_with_metadata() {
         item: Some(10),
         tc: Some(20),
         source_yaml_sha256: None,
+        run: Default::default(),
     };
 
     // Test JSON serialization
@@ -109,6 +112,7 @@ fn test_test_case_verification_result_yaml_serialization_with_metadata() {
         item: Some(15),
         tc: Some(25),
         source_yaml_sha256: None,
+        run: Default::default(),
     };
 
     // Test YAML serialization
@@ -139,6 +143,7 @@ fn test_test_case_verification_result_serialization_without_metadata() {
         item: None,
         tc: None,
         source_yaml_sha256: None,
+        run: Default::default(),
     };
 
     // Test JSON serialization - optional fields should be omitted
@@ -728,6 +733,7 @@ fn test_metadata_propagation_from_test_case_to_results() {
         item: Some(test_case.item),
         tc: Some(test_case.tc),
         source_yaml_sha256: None,
+        run: Default::default(),
     };
 
     // Verify metadata is propagated at all levels
@@ -810,6 +816,7 @@ fn test_complete_verification_result_serialization_roundtrip_json() {
         item: Some(50),
         tc: Some(100),
         source_yaml_sha256: None,
+        run: Default::default(),
     };
 
     // Serialize to JSON
@@ -898,6 +905,7 @@ fn test_complete_verification_result_serialization_roundtrip_yaml() {
         item: Some(60),
         tc: Some(120),
         source_yaml_sha256: None,
+        run: Default::default(),
     };
 
     // Serialize to YAML
@@ -970,6 +978,7 @@ fn test_mixed_metadata_presence_serialization() {
         item: Some(1),
         tc: Some(1),
         source_yaml_sha256: None,
+        run: Default::default(),
     };
 
     // JSON roundtrip

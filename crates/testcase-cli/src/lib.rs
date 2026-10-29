@@ -175,8 +175,8 @@ pub enum Commands {
 
     /// Complete interactive workflow: metadata, conditions, sequences, steps with git commits
     Complete {
-        /// Output file path (default: testcases/gsma_4.4.2.3_TC.yml)
-        #[arg(short, long, default_value = "testcases/gsma_4.4.2.3_TC.yml")]
+        /// Output file path (default: testcases/GSMA_4_4_2_3_TC_001.yml)
+        #[arg(short, long, default_value = "testcases/GSMA_4_4_2_3_TC_001.yml")]
         output: String,
 
         /// Commit message prefix (default: empty)

@@ -17,7 +17,7 @@ fn test_deserialize_dependencies_example_1() {
     yaml_path.push("testcases");
     yaml_path.push("examples");
     yaml_path.push("dependencies");
-    yaml_path.push("1.yaml");
+    yaml_path.push("TC_VAR_001.yml");
 
     assert!(
         yaml_path.exists(),
@@ -106,7 +106,7 @@ fn test_deserialize_dependencies_example_2() {
     yaml_path.push("testcases");
     yaml_path.push("examples");
     yaml_path.push("dependencies");
-    yaml_path.push("2.yaml");
+    yaml_path.push("TC_VAR_002.yml");
 
     assert!(
         yaml_path.exists(),

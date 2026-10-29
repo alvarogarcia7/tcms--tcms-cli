@@ -1,0 +1,7 @@
+id: AI-001
+source_type: review
+source_id: REV-001
+description: Add a robustness test case for out-of-range metadata
+owner: alvaro.garcia
+status: open
+due_date: '2026-11-03'

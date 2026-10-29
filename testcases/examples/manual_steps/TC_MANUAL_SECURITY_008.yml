@@ -1,0 +1,86 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: MANUAL_SECURITY
+item: 1
+tc: 8
+id: TC_MANUAL_SECURITY_008
+description: Test case for security certificate verification with manual inspection
+general_initial_conditions:
+  security:
+  - HTTPS server is configured with SSL certificate
+  - Certificate authority chain is available
+  system:
+  - OpenSSL tools are installed
+initial_conditions:
+  certificates:
+  - Server certificate is installed
+  network:
+  - Server is accessible on port 443
+test_sequences:
+- id: 1
+  name: SSL Certificate Validation
+  description: 'This test sequence verifies SSL certificate installation,
+
+    manual inspection of certificate details, and trust chain validation.
+
+    '
+  initial_conditions:
+    security:
+    - SSL certificate is ready for validation
+  steps:
+  - step: 1
+    description: Check if HTTPS port is listening
+    command: nc -zv localhost 443 2>&1 | grep -i 'succeeded\|open' || echo "HTTPS
+      port check"
+    expected:
+      success: true
+      result: 0
+      output: HTTPS port check
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'
+  - step: 2
+    description: Retrieve certificate information
+    command: echo "Certificate retrieved" && openssl version || echo "OpenSSL available"
+    expected:
+      success: true
+      result: 0
+      output: OpenSSL
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'
+  - step: 3
+    manual: true
+    description: Manually inspect certificate in browser
+    command: Navigate to https://localhost and click padlock icon to view certificate
+    expected:
+      success: true
+      result: 0
+      output: Certificate details displayed
+    verification:
+      result: 'true'
+      output: Verify certificate shows valid issuer, correct domain name, and future
+        expiration date
+  - step: 4
+    manual: true
+    description: Verify certificate chain of trust
+    command: Inspect certificate chain in browser security info
+    expected:
+      success: true
+      result: 0
+      output: Certificate chain is valid and trusted
+    verification:
+      result: 'true'
+      output: Confirm complete chain from leaf certificate to trusted root CA with
+        no warnings
+  - step: 5
+    manual: true
+    description: Check certificate expiration date
+    command: View certificate expiration in security details
+    expected:
+      success: true
+      result: 0
+      output: Certificate valid for at least 30 days
+    verification:
+      result: 'true'
+      output: Verify expiration date is at least 30 days in the future from today

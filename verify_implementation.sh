@@ -32,24 +32,24 @@ FAILURES=0
 echo "=== 1. Checking Test Case Directories ==="
 echo ""
 
-if [ -d "test-acceptance/test_cases/dependencies" ]; then
-    count=$(find test-acceptance/test_cases/dependencies -name "*.yaml" | wc -l)
+if [ -d "test-acceptance/00_test_cases/dependencies" ]; then
+    count=$(find test-acceptance/00_test_cases/dependencies -name "*.yaml" | wc -l)
     pass "Dependencies directory exists ($count test cases)"
 else
     fail "Dependencies directory missing"
     ((FAILURES++))
 fi
 
-if [ -d "test-acceptance/test_cases/prerequisites" ]; then
-    count=$(find test-acceptance/test_cases/prerequisites -name "*.yaml" | wc -l)
+if [ -d "test-acceptance/00_test_cases/prerequisites" ]; then
+    count=$(find test-acceptance/00_test_cases/prerequisites -name "*.yaml" | wc -l)
     pass "Prerequisites directory exists ($count test cases)"
 else
     fail "Prerequisites directory missing"
     ((FAILURES++))
 fi
 
-if [ -d "test-acceptance/test_cases/complex" ]; then
-    count=$(find test-acceptance/test_cases/complex -name "*.yaml" | wc -l)
+if [ -d "test-acceptance/00_test_cases/complex" ]; then
+    count=$(find test-acceptance/00_test_cases/complex -name "*.yaml" | wc -l)
     pass "Complex directory exists ($count test cases)"
 else
     fail "Complex directory missing"
@@ -130,7 +130,7 @@ echo "=== 4. Checking Documentation ==="
 echo ""
 
 DOCS=(
-    "test-acceptance/test_cases/dependencies/DEPENDENCY_RESOLUTION_STATUS.md"
+    "test-acceptance/00_test_cases/dependencies/DEPENDENCY_RESOLUTION_STATUS.md"
     "test-acceptance/DEPENDENCIES_PREREQUISITES_COMPLEX_STATUS.md"
     "CHANGELOG_DEPENDENCIES_PREREQUISITES_COMPLEX.md"
 )
@@ -174,11 +174,11 @@ echo "=== 6. Test Generation Sample ==="
 echo ""
 
 # Try generating a dependency test case
-if [ -f "test-acceptance/test_cases/dependencies/TC_DEPENDENCY_SIMPLE_001.yaml" ]; then
+if [ -f "test-acceptance/00_test_cases/dependencies/TC_DEPENDENCY_SIMPLE_001.yml" ]; then
     if target/debug/test-executor generate \
-        --test-case-dir test-acceptance/test_cases \
+        --test-case-dir test-acceptance/00_test_cases \
         --output /tmp/test_dep_verify.sh \
-        test-acceptance/test_cases/dependencies/TC_DEPENDENCY_SIMPLE_001.yaml \
+        test-acceptance/00_test_cases/dependencies/TC_DEPENDENCY_SIMPLE_001.yml \
         > /dev/null 2>&1; then
         pass "TC_DEPENDENCY_SIMPLE_001 generates successfully"
         rm -f /tmp/test_dep_verify.sh
@@ -189,11 +189,11 @@ if [ -f "test-acceptance/test_cases/dependencies/TC_DEPENDENCY_SIMPLE_001.yaml" 
 fi
 
 # Try generating a prerequisite test case
-if [ -f "test-acceptance/test_cases/prerequisites/PREREQ_AUTO_PASS_001.yaml" ]; then
+if [ -f "test-acceptance/00_test_cases/prerequisites/PREREQ_AUTO_PASS_001.yml" ]; then
     if target/debug/test-executor generate \
-        --test-case-dir test-acceptance/test_cases \
+        --test-case-dir test-acceptance/00_test_cases \
         --output /tmp/test_prereq_verify.sh \
-        test-acceptance/test_cases/prerequisites/PREREQ_AUTO_PASS_001.yaml \
+        test-acceptance/00_test_cases/prerequisites/PREREQ_AUTO_PASS_001.yml \
         > /dev/null 2>&1; then
         pass "PREREQ_AUTO_PASS_001 generates successfully"
         rm -f /tmp/test_prereq_verify.sh
@@ -204,11 +204,11 @@ if [ -f "test-acceptance/test_cases/prerequisites/PREREQ_AUTO_PASS_001.yaml" ]; 
 fi
 
 # Try generating a complex test case
-if [ -f "test-acceptance/test_cases/complex/TC_COMPLEX_BDD_HOOKS_VARS_001.yaml" ]; then
+if [ -f "test-acceptance/00_test_cases/complex/TC_COMPLEX_BDD_HOOKS_VARS_001.yml" ]; then
     if target/debug/test-executor generate \
-        --test-case-dir test-acceptance/test_cases \
+        --test-case-dir test-acceptance/00_test_cases \
         --output /tmp/test_complex_verify.sh \
-        test-acceptance/test_cases/complex/TC_COMPLEX_BDD_HOOKS_VARS_001.yaml \
+        test-acceptance/00_test_cases/complex/TC_COMPLEX_BDD_HOOKS_VARS_001.yml \
         > /dev/null 2>&1; then
         pass "TC_COMPLEX_BDD_HOOKS_VARS_001 generates successfully"
         rm -f /tmp/test_complex_verify.sh

@@ -1,0 +1,46 @@
+test_case_id: '4.2.2.3 ANOTHER ONE'
+test_case_version: '2'
+description: ES6.UpdateMetadata nominal and error cases
+run_id: RUN-001
+build_id: build-2026.10.27+a1b2c3d
+environment: eUICC simulator v2.3
+environment_id: ENV-SIM-23
+tester: alvaro.garcia
+executor: ci-runner-07
+date: '2026-10-27T09:12:00Z'
+requirements:
+  - REQ-ES6-001
+problem_report_ids:
+  - PR-57
+execution_log_ref: samples/execution-log/log_001.yml
+signature:
+  signer: alvaro.garcia
+  signed_at: '2026-10-27T09:30:00Z'
+  method: git-commit
+  value: 6c29a5cd36c157dfef844b1f38eead2083fc73d1
+sequences:
+  - sequence_id: 1
+    name: 'Test Sequence #01 Nominal: Unset PPR1'
+    all_steps_passed: false
+    step_results:
+      - Pass:
+          step: 1
+          description: Send REMOVE_PPR1 script
+      - Fail:
+          step: 2
+          description: Read back metadata
+          expected:
+            success: true
+            result: '0'
+            output: PPR1 unset
+          actual_result: '0x6A88'
+          actual_output: Referenced data not found
+          reason: Status word differs from expected
+      - NotExecuted:
+          step: 3
+          description: Verify PPR1 is cleared
+total_steps: 3
+passed_steps: 1
+failed_steps: 1
+not_executed_steps: 1
+overall_pass: false

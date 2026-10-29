@@ -593,7 +593,7 @@ fn verification_contains(expr: &testcase_manager::VerificationExpression, text: 
 
 #[test]
 fn test_tc_manual_verify_001_example_schema_validation() -> Result<()> {
-    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_001.yaml";
+    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_001.yml";
 
     validate_yaml_schema(path)?;
 
@@ -603,7 +603,7 @@ fn test_tc_manual_verify_001_example_schema_validation() -> Result<()> {
 
 #[test]
 fn test_tc_manual_verify_001_example_deserialization() -> Result<()> {
-    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_001.yaml";
+    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_001.yml";
     let test_case = load_test_case_from_file(path)?;
 
     // Validate metadata
@@ -666,7 +666,7 @@ fn test_tc_manual_verify_001_example_deserialization() -> Result<()> {
 
 #[test]
 fn test_tc_manual_verify_001_example_bash_script_generation() -> Result<()> {
-    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_001.yaml";
+    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_001.yml";
     let test_case = load_test_case_from_file(path)?;
 
     let executor = TestExecutor::new();
@@ -732,7 +732,7 @@ fn test_tc_manual_verify_001_example_bash_script_generation() -> Result<()> {
 
 #[test]
 fn test_tc_manual_verify_002_example_schema_validation() -> Result<()> {
-    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_002.yaml";
+    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_002.yml";
 
     validate_yaml_schema(path)?;
 
@@ -742,7 +742,7 @@ fn test_tc_manual_verify_002_example_schema_validation() -> Result<()> {
 
 #[test]
 fn test_tc_manual_verify_002_example_deserialization() -> Result<()> {
-    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_002.yaml";
+    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_002.yml";
     let test_case = load_test_case_from_file(path)?;
 
     // Validate metadata
@@ -801,7 +801,7 @@ fn test_tc_manual_verify_002_example_deserialization() -> Result<()> {
 
 #[test]
 fn test_tc_manual_verify_002_example_bash_script_generation() -> Result<()> {
-    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_002.yaml";
+    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_002.yml";
     let test_case = load_test_case_from_file(path)?;
 
     let executor = TestExecutor::new();
@@ -871,7 +871,7 @@ fn test_tc_manual_verify_002_example_bash_script_generation() -> Result<()> {
 
 #[test]
 fn test_tc_manual_verify_003_example_schema_validation() -> Result<()> {
-    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_003.yaml";
+    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_003.yml";
 
     validate_yaml_schema(path)?;
 
@@ -881,7 +881,7 @@ fn test_tc_manual_verify_003_example_schema_validation() -> Result<()> {
 
 #[test]
 fn test_tc_manual_verify_003_example_deserialization() -> Result<()> {
-    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_003.yaml";
+    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_003.yml";
     let test_case = load_test_case_from_file(path)?;
 
     // Validate metadata
@@ -969,7 +969,7 @@ fn test_tc_manual_verify_003_example_deserialization() -> Result<()> {
 
 #[test]
 fn test_tc_manual_verify_003_example_bash_script_generation() -> Result<()> {
-    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_003.yaml";
+    let path = "testcases/examples/manual_steps/TC_MANUAL_VERIFY_003.yml";
     let test_case = load_test_case_from_file(path)?;
 
     let executor = TestExecutor::new();
@@ -1053,11 +1053,11 @@ fn test_tc_manual_verify_003_example_bash_script_generation() -> Result<()> {
 
 #[test]
 fn test_all_manual_verify_examples_have_read_true_false_helper() -> Result<()> {
-    // NOTE: TC_MANUAL_VERIFY_001.yaml has invalid YAML (output: true instead of a string at line 143)
+    // NOTE: TC_MANUAL_VERIFY_001.yml has invalid YAML (output: true instead of a string at line 143)
     // so we skip it in this test
     let examples = vec![
-        "testcases/examples/manual_steps/TC_MANUAL_VERIFY_002.yaml",
-        "testcases/examples/manual_steps/TC_MANUAL_VERIFY_003.yaml",
+        "testcases/examples/manual_steps/TC_MANUAL_VERIFY_002.yml",
+        "testcases/examples/manual_steps/TC_MANUAL_VERIFY_003.yml",
     ];
 
     let executor = TestExecutor::new();
@@ -1087,15 +1087,15 @@ fn test_all_manual_verify_examples_have_read_true_false_helper() -> Result<()> {
 
 #[test]
 fn test_all_manual_verify_examples_have_manual_step_markers() -> Result<()> {
-    // NOTE: TC_MANUAL_VERIFY_001.yaml has invalid YAML (output: true instead of a string at line 143)
+    // NOTE: TC_MANUAL_VERIFY_001.yml has invalid YAML (output: true instead of a string at line 143)
     // so we skip it in this test
     let examples = vec![
         (
-            "testcases/examples/manual_steps/TC_MANUAL_VERIFY_002.yaml",
+            "testcases/examples/manual_steps/TC_MANUAL_VERIFY_002.yml",
             12,
         ),
         (
-            "testcases/examples/manual_steps/TC_MANUAL_VERIFY_003.yaml",
+            "testcases/examples/manual_steps/TC_MANUAL_VERIFY_003.yml",
             21,
         ),
     ];
@@ -1122,11 +1122,11 @@ fn test_all_manual_verify_examples_have_manual_step_markers() -> Result<()> {
 
 #[test]
 fn test_manual_verify_examples_verification_prompts_format() -> Result<()> {
-    // NOTE: TC_MANUAL_VERIFY_001.yaml has invalid YAML (output: true instead of a string at line 143)
+    // NOTE: TC_MANUAL_VERIFY_001.yml has invalid YAML (output: true instead of a string at line 143)
     // so we skip it in this test
     let examples = vec![
-        "testcases/examples/manual_steps/TC_MANUAL_VERIFY_002.yaml",
-        "testcases/examples/manual_steps/TC_MANUAL_VERIFY_003.yaml",
+        "testcases/examples/manual_steps/TC_MANUAL_VERIFY_002.yml",
+        "testcases/examples/manual_steps/TC_MANUAL_VERIFY_003.yml",
     ];
 
     for path in examples {
@@ -1368,7 +1368,7 @@ fn test_execution_stops_at_first_failure() -> Result<()> {
 
 #[test]
 fn test_tc_var_001_example_schema_validation() -> Result<()> {
-    let path = "testcases/examples/variables/1.yaml";
+    let path = "testcases/examples/variables/TC_VAR_001.yml";
 
     validate_yaml_schema(path)?;
 
@@ -1378,7 +1378,7 @@ fn test_tc_var_001_example_schema_validation() -> Result<()> {
 
 #[test]
 fn test_tc_var_001_example_deserialization() -> Result<()> {
-    let path = "testcases/examples/variables/1.yaml";
+    let path = "testcases/examples/variables/TC_VAR_001.yml";
     let test_case = load_test_case_from_file(path)?;
 
     // Validate metadata
@@ -1423,7 +1423,7 @@ fn test_tc_var_001_example_deserialization() -> Result<()> {
 
 #[test]
 fn test_tc_var_001_example_bash_script_generation() -> Result<()> {
-    let path = "testcases/examples/variables/1.yaml";
+    let path = "testcases/examples/variables/TC_VAR_001.yml";
     let test_case = load_test_case_from_file(path)?;
 
     let executor = TestExecutor::new();
@@ -1495,7 +1495,7 @@ fn test_tc_var_001_example_bash_script_generation() -> Result<()> {
 
 #[test]
 fn test_tc_var_001_capture_vars_format() -> Result<()> {
-    let path = "testcases/examples/variables/1.yaml";
+    let path = "testcases/examples/variables/TC_VAR_001.yml";
     let test_case = load_test_case_from_file(path)?;
 
     let seq = &test_case.test_sequences[0];
@@ -1555,7 +1555,7 @@ fn test_tc_var_001_capture_vars_format() -> Result<()> {
 
 #[test]
 fn test_tc_var_001_general_verification_conditions() -> Result<()> {
-    let path = "testcases/examples/variables/1.yaml";
+    let path = "testcases/examples/variables/TC_VAR_001.yml";
     let test_case = load_test_case_from_file(path)?;
 
     let seq = &test_case.test_sequences[0];

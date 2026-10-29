@@ -42,7 +42,7 @@ The `generate_acceptance_tpdg_container.sh` script executes the `convert_verific
 4. **Runs Conversion**
    - Executes `convert_verification_to_tpdg.py` with flags:
      ```
-     --test-case-dir test-acceptance/test_cases
+     --test-case-dir test-acceptance/00_test_cases
      --logs-dir test-acceptance/execution_logs
      --recursive
      --output test-acceptance/results/acceptance_test_results_container.yaml
@@ -75,7 +75,7 @@ Started: Wed Mar 26 21:06:45 UTC 2026
 [2026-03-26 21:06:45] [INFO] Using Python: /usr/bin/python3
 [2026-03-26 21:06:45] [SUCCESS] Prerequisites verified
 [2026-03-26 21:06:45] [INFO] Running conversion script in dual-source mode...
-[2026-03-26 21:06:45] [INFO]   Test cases: /path/to/test-acceptance/test_cases
+[2026-03-26 21:06:45] [INFO]   Test cases: /path/to/test-acceptance/00_test_cases
 [2026-03-26 21:06:45] [INFO]   Logs: /path/to/test-acceptance/execution_logs
 [2026-03-26 21:06:45] [INFO]   Output: /path/to/test-acceptance/results/acceptance_test_results_container.yaml
 [2026-03-26 21:06:45] [INFO]   Log file: /path/to/test-acceptance/results/generation.log
@@ -195,7 +195,7 @@ python3 --version
 ## Related Files
 
 - **Conversion Script**: `scripts/convert_verification_to_tpdg.py`
-- **Test Cases**: `test-acceptance/test_cases/` (recursive)
+- **Test Cases**: `test-acceptance/00_test_cases/` (recursive)
 - **Execution Logs**: `test-acceptance/execution_logs/`
 - **Results Directory**: `test-acceptance/results/`
 - **Documentation**: `test-acceptance/results/README.md`

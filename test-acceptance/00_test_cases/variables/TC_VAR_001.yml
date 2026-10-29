@@ -1,0 +1,113 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: VAR_001
+item: 1
+tc: 1
+id: TC_VAR_001
+description: Test command-based and regex-based variable captures with general verification
+  conditions
+general_initial_conditions:
+  system:
+  - Bash shell is available
+  - Common Unix utilities (wc, cat, echo) are installed
+initial_conditions:
+  filesystem:
+  - Temporary directory /tmp is writable
+test_sequences:
+- id: 1
+  name: Variable Capture Test
+  description: 'Test both command-based and regex-based variable capture
+
+    methods with general verification conditions
+
+    '
+  initial_conditions:
+    system:
+    - Test environment is ready
+  steps:
+  - step: 1
+    description: Create test file and capture byte count with command
+    command: echo "HELLO" > /tmp/hello.txt
+    capture_vars:
+    - name: output_len
+      command: cat /tmp/hello.txt | wc -c | awk '{$1=$1;print}'
+    expected:
+      success: true
+      result: '0'
+      output: ''
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'
+      general:
+      - name: verify output_len is numeric
+        condition: '[[ $output_len =~ ^[0-9]+$ ]]'
+      - name: verify output_len value
+        condition: '[[ $output_len -ge 5 ]]'
+  - step: 2
+    description: Echo JSON and capture token with regex pattern
+    command: 'echo ''{"status":"success","token":"abc123xyz","user_id":12345}''
+
+      '
+    capture_vars:
+    - name: token
+      capture: '"token":"([^"]+)"'
+    - name: user_id
+      capture: '"user_id":([0-9]+)'
+    expected:
+      success: true
+      result: '0'
+      output: success
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'success' <<< "$COMMAND_OUTPUT"
+      general:
+      - name: verify token format
+        condition: '[[ $token =~ ^[a-zA-Z0-9]+$ ]]'
+      - name: verify token not empty
+        condition: '[[ -n "$token" ]]'
+      - name: verify user_id is numeric
+        condition: '[[ $user_id =~ ^[0-9]+$ ]]'
+      - name: verify user_id value
+        condition: '[[ $user_id -eq 12345 ]]'
+  - step: 3
+    description: Mix command-based and regex-based captures
+    command: 'cat > /tmp/test_data.txt << ''EOF''
+
+      Transaction: TXN-2024-001
+
+      Amount: 1500
+
+      Status: COMPLETED
+
+      EOF
+
+      cat /tmp/test_data.txt
+
+      '
+    capture_vars:
+    - name: transaction_id
+      capture: 'Transaction: (TXN-[0-9][0-9][0-9][0-9]-[0-9]+)'
+    - name: amount
+      capture: 'Amount: ([0-9]+)'
+    - name: status
+      capture: 'Status: ([A-Z]+)'
+    - name: line_count
+      command: wc -l /tmp/test_data.txt | awk '{print $1}'
+    expected:
+      success: true
+      result: '0'
+      output: Transaction
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'Transaction' <<< "$COMMAND_OUTPUT"
+      general:
+      - name: verify transaction_id format
+        condition: '[[ $transaction_id =~ ^TXN-[0-9][0-9][0-9][0-9]-[0-9]+$ ]]'
+      - name: verify amount is numeric
+        condition: '[[ $amount =~ ^[0-9]+$ ]]'
+      - name: verify amount range
+        condition: '[[ $amount -ge 1000 && $amount -le 2000 ]]'
+      - name: verify status is completed
+        condition: '[[ "$status" = "COMPLETED" ]]'
+      - name: verify line_count
+        condition: '[[ $line_count -eq 3 ]]'

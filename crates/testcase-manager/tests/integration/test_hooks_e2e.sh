@@ -20,7 +20,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 SCHEMA_FILE="$PROJECT_ROOT/schemas/test-case.schema.json"
-HOOKS_YAML="$PROJECT_ROOT/testcases/examples/hooks/TC_HOOKS_001.yaml"
+HOOKS_YAML="$PROJECT_ROOT/testcases/examples/hooks/TC_HOOKS_001.yml"
 
 # Source shared libraries
 source "$PROJECT_ROOT/scripts/lib/find-binary.sh" || exit 1
@@ -88,10 +88,10 @@ fi
 pass "Schema file found"
 
 if [[ ! -f "$HOOKS_YAML" ]]; then
-    fail "TC_HOOKS_001.yaml not found at $HOOKS_YAML"
+    fail "TC_HOOKS_001.yml not found at $HOOKS_YAML"
     exit 1
 fi
-pass "TC_HOOKS_001.yaml found"
+pass "TC_HOOKS_001.yml found"
 
 if ! command -v bash &> /dev/null; then
     fail "bash not found"
@@ -130,13 +130,13 @@ fi
 
 info "Using temporary directory: $TEMP_DIR"
 
-# Test 1: Validate TC_HOOKS_001.yaml against schema
+# Test 1: Validate TC_HOOKS_001.yml against schema
 section "Test 1: YAML Schema Validation"
 
 if "$VALIDATE_YAML_BIN" --schema "$SCHEMA_FILE" "$HOOKS_YAML" > /dev/null 2>&1; then
-    pass "TC_HOOKS_001.yaml validates against schema"
+    pass "TC_HOOKS_001.yml validates against schema"
 else
-    fail "TC_HOOKS_001.yaml failed schema validation"
+    fail "TC_HOOKS_001.yml failed schema validation"
     exit 1
 fi
 
@@ -145,9 +145,9 @@ section "Test 2: Script Generation with All Eight Hooks"
 
 GENERATED_SCRIPT="$TEMP_DIR/tc_hooks_001.sh"
 if "$TEST_EXECUTOR_BIN" generate "$HOOKS_YAML" -o "$GENERATED_SCRIPT" > /dev/null 2>&1; then
-    pass "Generated script from TC_HOOKS_001.yaml"
+    pass "Generated script from TC_HOOKS_001.yml"
 else
-    fail "Failed to generate script from TC_HOOKS_001.yaml"
+    fail "Failed to generate script from TC_HOOKS_001.yml"
     exit 1
 fi
 
@@ -654,7 +654,7 @@ section "Test Summary"
 echo ""
 pass "All hooks tests passed!"
 echo ""
-echo "✓ TC_HOOKS_001.yaml validated against schema"
+echo "✓ TC_HOOKS_001.yml validated against schema"
 echo "✓ All eight hook execution points present in generated script"
 echo "✓ Hook scripts properly sourced/executed"
 echo "✓ Hooks execute in correct order"

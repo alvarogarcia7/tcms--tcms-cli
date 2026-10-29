@@ -1,0 +1,86 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: MANUAL_UI
+item: 1
+tc: 3
+id: TC_MANUAL_UI_003
+description: Test case for user interface verification with manual visual inspection
+general_initial_conditions:
+  application:
+  - Web application is deployed and accessible
+  - Test browser is installed
+  system:
+  - Display resolution is set to 1920x1080
+initial_conditions:
+  application:
+  - Application server is running
+  browser:
+  - Browser cache is cleared
+test_sequences:
+- id: 1
+  name: UI Layout and Element Verification
+  description: 'This test sequence verifies UI elements are correctly displayed
+
+    and functional through manual inspection and automated checks.
+
+    '
+  initial_conditions:
+    application:
+    - UI is ready for testing
+  steps:
+  - step: 1
+    description: Verify application server is responding
+    command: curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health
+    expected:
+      success: true
+      result: 0
+      output: '200'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '200' <<< "$COMMAND_OUTPUT"
+      output_file: grep -q '200' "$LOG_FILE"
+  - step: 2
+    manual: true
+    description: Open browser and navigate to application homepage
+    command: Navigate to http://localhost:8080
+    expected:
+      success: true
+      result: 0
+      output: Homepage loads successfully
+    verification:
+      result: 'true'
+      output: Verify homepage displays within 3 seconds with no console errors
+  - step: 3
+    manual: true
+    description: Verify navigation menu is visible and properly styled
+    command: Visual inspection of navigation menu
+    expected:
+      success: true
+      result: 0
+      output: Navigation menu displays correctly
+    verification:
+      result: 'true'
+      output: Confirm menu items are aligned, text is readable, and hover effects
+        work
+  - step: 4
+    manual: true
+    description: Click on Settings button and verify modal opens
+    command: Click Settings button
+    expected:
+      success: true
+      result: 0
+      output: Settings modal opens
+    verification:
+      result: 'true'
+      output: Verify modal appears centered, overlay dims background, close button
+        visible
+  - step: 5
+    description: Check browser console logs for errors
+    command: echo "Console log check - automated via browser developer tools API"
+    expected:
+      success: true
+      result: 0
+      output: Console log check
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'

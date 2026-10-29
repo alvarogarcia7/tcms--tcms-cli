@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Independence Assignment",
+  "description": "Records who authored and who verified an artifact for an objective requiring independence, and whether the verifier is independent",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Assignment identifier"
+    },
+    "objective": {
+      "type": "string",
+      "description": "Objective/Annex A item requiring independence"
+    },
+    "objective_id": {
+      "type": "string",
+      "description": "Objective record (objective.id), when the objective is catalogued"
+    },
+    "artifact": {
+      "type": "string",
+      "description": "Artifact under verification"
+    },
+    "author": {
+      "type": "string",
+      "description": "Author"
+    },
+    "verifier": {
+      "type": "string",
+      "description": "Independent verifier"
+    },
+    "verifier_is_independent": {
+      "type": "boolean",
+      "description": "True only if verifier differs from author; a record claiming independence with verifier equal to author is invalid (checked by the CLI, not by JSON Schema)"
+    },
+    "date": {
+      "type": "string",
+      "description": "Date",
+      "format": "date"
+    }
+  },
+  "required": [
+    "id",
+    "objective",
+    "artifact",
+    "author",
+    "verifier",
+    "verifier_is_independent"
+  ]
+}

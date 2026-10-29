@@ -59,17 +59,17 @@ create_test_environment() {
     # Copy a subset of test cases (5 success, 3 failure, 2 hooks)
     # Success cases
     local success_tests=(
-        "TC_SUCCESS_CMD_CHAIN_001.yaml"
-        "TC_SUCCESS_COMPLEX_DATA_001.yaml"
-        "TC_SUCCESS_CONDITIONAL_001.yaml"
-        "TC_SUCCESS_EMPTY_OUTPUT_001.yaml"
-        "TC_SUCCESS_ENV_VARS_001.yaml"
+        "TC_SUCCESS_CMD_CHAIN_001.yml"
+        "TC_SUCCESS_COMPLEX_DATA_001.yml"
+        "TC_SUCCESS_CONDITIONAL_001.yml"
+        "TC_SUCCESS_EMPTY_OUTPUT_001.yml"
+        "TC_SUCCESS_ENV_VARS_001.yml"
     )
     
     mkdir -p "$test_dir/00_test_cases/success"
     for test in "${success_tests[@]}"; do
-        if [[ -f "$ACCEPTANCE_DIR/test_cases/success/$test" ]]; then
-            cp "$ACCEPTANCE_DIR/test_cases/success/$test" "$test_dir/00_test_cases/success/"
+        if [[ -f "$ACCEPTANCE_DIR/00_test_cases/success/$test" ]]; then
+            cp "$ACCEPTANCE_DIR/00_test_cases/success/$test" "$test_dir/00_test_cases/success/"
         fi
     done
     
@@ -82,8 +82,8 @@ create_test_environment() {
     
     mkdir -p "$test_dir/00_test_cases/failure"
     for test in "${failure_tests[@]}"; do
-        if [[ -f "$ACCEPTANCE_DIR/test_cases/failure/$test" ]]; then
-            cp "$ACCEPTANCE_DIR/test_cases/failure/$test" "$test_dir/00_test_cases/failure/"
+        if [[ -f "$ACCEPTANCE_DIR/00_test_cases/failure/$test" ]]; then
+            cp "$ACCEPTANCE_DIR/00_test_cases/failure/$test" "$test_dir/00_test_cases/failure/"
         fi
     done
     
@@ -95,14 +95,14 @@ create_test_environment() {
     
     mkdir -p "$test_dir/00_test_cases/hooks"
     for test in "${hook_tests[@]}"; do
-        if [[ -f "$ACCEPTANCE_DIR/test_cases/hooks/$test" ]]; then
+        if [[ -f "$ACCEPTANCE_DIR/00_test_cases/hooks/$test" ]]; then
             # Copy YAML and any associated hook scripts
-            cp "$ACCEPTANCE_DIR/test_cases/hooks/$test" "$test_dir/00_test_cases/hooks/"
+            cp "$ACCEPTANCE_DIR/00_test_cases/hooks/$test" "$test_dir/00_test_cases/hooks/"
             
             # Copy hook script directories if they exist
             local test_base=$(basename "$test" .yaml)
-            if [[ -d "$ACCEPTANCE_DIR/test_cases/hooks/${test_base}_scripts" ]]; then
-                cp -r "$ACCEPTANCE_DIR/test_cases/hooks/${test_base}_scripts" "$test_dir/00_test_cases/hooks/"
+            if [[ -d "$ACCEPTANCE_DIR/00_test_cases/hooks/${test_base}_scripts" ]]; then
+                cp -r "$ACCEPTANCE_DIR/00_test_cases/hooks/${test_base}_scripts" "$test_dir/00_test_cases/hooks/"
             fi
         fi
     done

@@ -1,0 +1,137 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Requirement",
+  "description": "Snapshot of a requirement as exported from the requirements tool (StrictDoc), which remains the source of truth. Kept so traceability, coverage and reviews can be computed and audited against a fixed version",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Requirement identifier (as in StrictDoc)"
+    },
+    "source_system": {
+      "type": "string",
+      "description": "Where the requirement is authored: a Jira feature/story or a StrictDoc item. A product uses one source system, never both",
+      "enum": [
+        "jira",
+        "strictdoc"
+      ]
+    },
+    "type": {
+      "type": "string",
+      "description": "Requirement type",
+      "enum": [
+        "system",
+        "HLR",
+        "LLR",
+        "derived",
+        "SFR",
+        "TSFI",
+        "threat",
+        "objective",
+        "assumption"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "text": {
+      "type": "string",
+      "description": "Structured requirement text"
+    },
+    "version": {
+      "type": "string",
+      "description": "Version: the git commit of the StrictDoc document, or the Jira issue's updated timestamp"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "in_review",
+        "approved",
+        "obsolete"
+      ]
+    },
+    "validation_status": {
+      "type": "string",
+      "description": "Validation (built the right thing) status",
+      "enum": [
+        "not_validated",
+        "validated",
+        "rejected"
+      ]
+    },
+    "safety_related": {
+      "type": "boolean"
+    },
+    "security_related": {
+      "type": "boolean"
+    },
+    "parent_ids": {
+      "type": "array",
+      "description": "Requirements this one is derived from or refines",
+      "items": {
+        "type": "string"
+      }
+    },
+    "verified_by_test_case_ids": {
+      "type": "array",
+      "description": "Test cases that verify it (derivable from trace-matrix)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source": {
+      "type": "string",
+      "description": "Source locator: StrictDoc document path and UID (docs/srs.sdoc#HLR-12) or Jira issue key (PAY-2231)"
+    },
+    "rationale": {
+      "type": "string",
+      "description": "Rationale, mandatory for derived requirements"
+    },
+    "external_refs": {
+      "type": "array",
+      "description": "The Jira feature issue or the StrictDoc item this requirement is; exactly one source system per product",
+      "items": {
+        "type": "object",
+        "properties": {
+          "system": {
+            "type": "string",
+            "description": "External system",
+            "enum": [
+              "jira",
+              "xray",
+              "zephyr_scale",
+              "zephyr_squad",
+              "strictdoc",
+              "gitlab",
+              "other"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "description": "Identifier in that system (Jira issue key, Xray test key, Zephyr key, StrictDoc UID, Fix Version id)"
+          },
+          "url": {
+            "type": "string",
+            "description": "Resolved URL; the resolver derives it from integration-config when absent",
+            "format": "uri"
+          },
+          "synced_at": {
+            "type": "string",
+            "description": "Last successful sync of this record to that system",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "system",
+          "key"
+        ]
+      }
+    }
+  },
+  "required": [
+    "id",
+    "source_system",
+    "source"
+  ]
+}

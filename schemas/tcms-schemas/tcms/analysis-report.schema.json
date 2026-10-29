@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Analysis Report",
+  "description": "A methodical, repeatable (often tool-assisted) examination: timing, stack, coupling, configuration",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Report identifier"
+    },
+    "analysis_type": {
+      "type": "string",
+      "description": "Kind of analysis. Coverage analysis is recorded in coverage-report, not here.",
+      "enum": [
+        "timing",
+        "stack",
+        "data_coupling",
+        "control_coupling",
+        "configuration",
+        "other"
+      ]
+    },
+    "baseline_id": {
+      "type": "string",
+      "description": "Baseline analysed"
+    },
+    "tool": {
+      "type": "string",
+      "description": "Tool and version used, if any"
+    },
+    "date": {
+      "type": "string",
+      "description": "Date performed",
+      "format": "date"
+    },
+    "performed_by": {
+      "type": "string",
+      "description": "Analyst"
+    },
+    "independent": {
+      "type": "boolean",
+      "description": "True if performed_by is not the author of the item analysed"
+    },
+    "method": {
+      "type": "string",
+      "description": "Description of the method so it can be repeated"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "type": "string",
+            "description": "Component, path or element"
+          },
+          "value": {
+            "type": "string",
+            "description": "Measured value or finding"
+          },
+          "within_limits": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "item"
+        ]
+      }
+    },
+    "conclusion": {
+      "type": "string",
+      "description": "Overall conclusion",
+      "enum": [
+        "satisfactory",
+        "unsatisfactory",
+        "inconclusive"
+      ]
+    },
+    "action_item_ids": {
+      "type": "array",
+      "description": "Action items raised",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "id",
+    "analysis_type",
+    "date",
+    "conclusion"
+  ]
+}

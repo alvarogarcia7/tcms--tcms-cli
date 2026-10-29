@@ -1,0 +1,21 @@
+id: SVP-001
+type: SVP
+title: Software Verification Plan, eUICC ES6
+version: '1.2'
+product_id: PROD-001
+status: approved
+approval:
+  approved_by: qa.lead
+  date: '2026-10-20'
+  signature:
+    signer: qa.lead
+    signed_at: '2026-10-20T15:00:00Z'
+    method: pgp
+rules:
+  software_level: B
+  coverage_goals:
+    requirements_based: true
+    structural: [statement, decision]
+    coupling: true
+  independence_rules: [A-7.4]
+document_ref: docs/plans/svp-1.2.pdf

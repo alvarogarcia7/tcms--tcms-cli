@@ -1,0 +1,170 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Objective",
+  "description": "A certification objective (DO-178C Annex A item or Common Criteria component) and the evidence records that satisfy it",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Objective identifier, e.g. A-7.4 or ATE_DPT.3"
+    },
+    "standard": {
+      "type": "string",
+      "enum": [
+        "DO-178C",
+        "DO-330",
+        "DO-331",
+        "DO-332",
+        "DO-333",
+        "CC",
+        "ARP4754B",
+        "other"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "applicability": {
+      "type": "object",
+      "description": "Levels at which the objective applies",
+      "properties": {
+        "dal": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E"
+            ]
+          }
+        },
+        "eal": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "EAL1",
+              "EAL2",
+              "EAL3",
+              "EAL4",
+              "EAL5",
+              "EAL6",
+              "EAL7"
+            ]
+          }
+        }
+      }
+    },
+    "independence_required": {
+      "type": "boolean",
+      "description": "Filled circle in Annex A: the checker must not be the author"
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Records that satisfy the objective",
+      "items": {
+        "type": "object",
+        "description": "Reference to any TCMS record",
+        "properties": {
+          "entity_type": {
+            "type": "string",
+            "description": "Schema name of the referenced record",
+            "enum": [
+              "product",
+              "plan-document",
+              "requirement",
+              "design-element",
+              "code-unit",
+              "test-case",
+              "test-plan",
+              "baseline",
+              "environment",
+              "test-run",
+              "verification-result",
+              "execution-log",
+              "coverage-report",
+              "review",
+              "action-item",
+              "problem-report",
+              "change-request",
+              "qa-record",
+              "objective",
+              "independence-assignment",
+              "analysis-report",
+              "trace-matrix"
+            ]
+          },
+          "entity_id": {
+            "type": "string",
+            "description": "ID of the referenced record"
+          },
+          "version": {
+            "type": "string",
+            "description": "Version of the referenced record, when versioned"
+          }
+        },
+        "required": [
+          "entity_type",
+          "entity_id"
+        ]
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "in_progress",
+        "satisfied",
+        "not_applicable"
+      ]
+    },
+    "external_refs": {
+      "type": "array",
+      "description": "Jira issue tracking the objective, if any",
+      "items": {
+        "type": "object",
+        "properties": {
+          "system": {
+            "type": "string",
+            "description": "External system",
+            "enum": [
+              "jira",
+              "xray",
+              "zephyr_scale",
+              "zephyr_squad",
+              "strictdoc",
+              "gitlab",
+              "other"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "description": "Identifier in that system (Jira issue key, Xray test key, Zephyr key, StrictDoc UID, Fix Version id)"
+          },
+          "url": {
+            "type": "string",
+            "description": "Resolved URL; the resolver derives it from integration-config when absent",
+            "format": "uri"
+          },
+          "synced_at": {
+            "type": "string",
+            "description": "Last successful sync of this record to that system",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "system",
+          "key"
+        ]
+      }
+    }
+  },
+  "required": [
+    "id",
+    "standard",
+    "description"
+  ]
+}

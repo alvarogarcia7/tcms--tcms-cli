@@ -193,13 +193,13 @@ To run these test cases:
 
 ```bash
 # Validate schema compliance
-cargo run --bin verifier -- test-acceptance/test_cases/success/TC_SUCCESS_SIMPLE_001.yaml
+cargo run --bin verifier -- test-acceptance/00_test_cases/success/TC_SUCCESS_SIMPLE_001.yaml
 
 # Generate test script
-cargo run -- test-acceptance/test_cases/success/TC_SUCCESS_SIMPLE_001.yaml
+cargo run -- test-acceptance/00_test_cases/success/TC_SUCCESS_SIMPLE_001.yaml
 
 # Execute generated script
-./test-acceptance/test_cases/success/TC_SUCCESS_SIMPLE_001.sh
+./test-acceptance/00_test_cases/success/TC_SUCCESS_SIMPLE_001.sh
 ```
 
 ## Directory Structure

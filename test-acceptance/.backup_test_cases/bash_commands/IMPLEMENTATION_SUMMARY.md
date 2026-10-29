@@ -154,7 +154,7 @@ All test cases are compatible with:
 
 ### Validate All Test Cases
 ```bash
-for file in test-acceptance/test_cases/bash_commands/*.yaml; do
+for file in test-acceptance/00_test_cases/bash_commands/*.yaml; do
   cargo run --bin verifier -- "$file"
 done
 ```
@@ -167,12 +167,12 @@ cargo test bash_commands
 ### Generate and Execute Scripts
 ```bash
 # Generate scripts
-for file in test-acceptance/test_cases/bash_commands/TC_*.yaml; do
+for file in test-acceptance/00_test_cases/bash_commands/TC_*.yaml; do
   cargo run -- "$file"
 done
 
 # Execute scripts
-for file in test-acceptance/test_cases/bash_commands/TC_*.sh; do
+for file in test-acceptance/00_test_cases/bash_commands/TC_*.sh; do
   bash "$file"
 done
 ```
@@ -212,7 +212,7 @@ capture_vars:
 
 **Command**:
 ```bash
-for file in test-acceptance/test_cases/bash_commands/TC_*.yaml; do
+for file in test-acceptance/00_test_cases/bash_commands/TC_*.yaml; do
   cargo run --bin validate-yaml -- "$file" schemas/test-case.schema.json
 done
 ```

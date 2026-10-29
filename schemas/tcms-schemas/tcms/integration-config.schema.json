@@ -1,0 +1,326 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Integration Config",
+  "description": "Configuration of the external systems a product connects to (Jira, test management apps, StrictDoc, GitLab): how identifiers resolve to URLs and back, which adapter is used, which fields and statuses are written, and what the sync may write",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string",
+      "description": "Product this configuration applies to"
+    },
+    "requirement_source": {
+      "type": "string",
+      "description": "The one requirement source for the product",
+      "enum": [
+        "jira",
+        "strictdoc"
+      ]
+    },
+    "systems": {
+      "type": "array",
+      "description": "External systems; at least the requirement source",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Local name of the system, referenced by product.external_refs"
+          },
+          "type": {
+            "type": "string",
+            "description": "Adapter",
+            "enum": [
+              "jira_cloud",
+              "jira_datacenter",
+              "strictdoc_html",
+              "strictdoc_server",
+              "gitlab"
+            ]
+          },
+          "base_url": {
+            "type": "string",
+            "description": "Site base URL",
+            "format": "uri"
+          },
+          "auth": {
+            "type": "object",
+            "description": "Authentication; a service account by default",
+            "properties": {
+              "method": {
+                "type": "string",
+                "enum": [
+                  "service_account_token",
+                  "oauth2",
+                  "pat",
+                  "none"
+                ]
+              },
+              "secret_ref": {
+                "type": "string",
+                "description": "Environment variable or secret store key; never the secret itself"
+              }
+            },
+            "required": [
+              "method"
+            ]
+          },
+          "id_pattern": {
+            "type": "string",
+            "description": "Regex an identifier of this system matches, e.g. ^(PAY|AUTH)-[0-9]+$ or ^(HLR|LLR|SYS)-[0-9.]+$"
+          },
+          "url_template": {
+            "type": "string",
+            "description": "URL for an id; {id} is replaced, e.g. {base_url}/browse/{id} or {base_url}/{doc}.html#{id}"
+          },
+          "url_pattern": {
+            "type": "string",
+            "description": "Regex extracting the id from a URL of this system; named group 'id'"
+          },
+          "document_map": {
+            "type": "object",
+            "description": "StrictDoc only: UID prefix or document name to document path/HTML page, used to fill {doc}",
+            "properties": {},
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "project_keys": {
+            "type": "array",
+            "description": "Jira only: project keys in scope",
+            "items": {
+              "type": "string"
+            }
+          },
+          "feature_issue_types": {
+            "type": "array",
+            "description": "Jira only: issue types treated as features/requirements (Epic, Story, Feature)",
+            "items": {
+              "type": "string"
+            }
+          },
+          "defect_issue_type": {
+            "type": "string",
+            "description": "Jira only: issue type for problem reports (Bug)"
+          },
+          "severity_to_priority": {
+            "type": "object",
+            "description": "Jira priority name written for each problem-report severity. Defaults: critical Highest, major High, minor Medium, cosmetic Low",
+            "properties": {
+              "critical": {
+                "type": "string"
+              },
+              "major": {
+                "type": "string"
+              },
+              "minor": {
+                "type": "string"
+              },
+              "cosmetic": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "test_backend": {
+            "type": "string",
+            "description": "Jira only: where tests live",
+            "enum": [
+              "none",
+              "xray",
+              "zephyr_scale",
+              "zephyr_squad"
+            ]
+          },
+          "tcms_issue_types": {
+            "type": "object",
+            "description": "Dedicated TCMS issues (write policy 3)",
+            "properties": {
+              "test": {
+                "type": "string",
+                "description": "Issue type for dedicated per-test-case issues when test_backend is none"
+              },
+              "test_run": {
+                "type": "string",
+                "description": "Issue type for dedicated run issues, if used"
+              },
+              "link_type": {
+                "type": "string",
+                "description": "Issue link type from test to feature, e.g. 'tests'"
+              }
+            }
+          },
+          "fields": {
+            "type": "object",
+            "description": "Jira custom field ids written by the sync; unset fields are not written",
+            "properties": {
+              "verification_status": {
+                "type": "string",
+                "description": "Custom field id on the feature issue, e.g. customfield_10101"
+              },
+              "validation_status": {
+                "type": "string",
+                "description": "Custom field id on the feature issue"
+              },
+              "coverage": {
+                "type": "string",
+                "description": "Custom field id holding requirements-based coverage percent"
+              },
+              "test_lifecycle_status": {
+                "type": "string",
+                "description": "Custom field on the test issue for test-case-main.status"
+              },
+              "latest_verdict": {
+                "type": "string",
+                "description": "Custom field on the test issue for the latest verdict"
+              },
+              "baseline": {
+                "type": "string",
+                "description": "Custom field holding the baseline id the status refers to"
+              },
+              "tcms_id": {
+                "type": "string",
+                "description": "Custom field holding the TCMS record id, used to find the issue again"
+              }
+            }
+          },
+          "status_values": {
+            "type": "object",
+            "description": "Jira option names for the five TCMS status values",
+            "properties": {
+              "not_started": {
+                "type": "string",
+                "description": "Jira value written for TCMS 'not_started'"
+              },
+              "in_progress": {
+                "type": "string",
+                "description": "Jira value written for TCMS 'in_progress'"
+              },
+              "passed": {
+                "type": "string",
+                "description": "Jira value written for TCMS 'passed'"
+              },
+              "failed": {
+                "type": "string",
+                "description": "Jira value written for TCMS 'failed'"
+              },
+              "blocked": {
+                "type": "string",
+                "description": "Jira value written for TCMS 'blocked'"
+              }
+            },
+            "additionalProperties": false
+          },
+          "milestone": {
+            "type": "object",
+            "description": "How a test-plan maps to a Jira milestone",
+            "properties": {
+              "target": {
+                "type": "string",
+                "enum": [
+                  "fix_version",
+                  "epic",
+                  "issue"
+                ]
+              },
+              "release_on_plan_complete": {
+                "type": "boolean",
+                "description": "Mark the Fix Version released when the plan is complete"
+              }
+            },
+            "required": [
+              "target"
+            ]
+          },
+          "write_policy": {
+            "type": "object",
+            "description": "Which writes the sync may perform; everything else is read-only",
+            "properties": {
+              "feature_fields": {
+                "type": "boolean",
+                "description": "Allow writing custom fields on feature issues"
+              },
+              "feature_transitions": {
+                "type": "boolean",
+                "description": "Allow workflow transitions on feature issues"
+              },
+              "dedicated_issues": {
+                "type": "boolean",
+                "description": "Allow creating and updating TCMS-owned issues"
+              },
+              "comments": {
+                "type": "boolean",
+                "description": "Allow posting status comments"
+              },
+              "defects": {
+                "type": "boolean",
+                "description": "Allow creating defect issues"
+              }
+            }
+          },
+          "transitions": {
+            "type": "object",
+            "description": "Optional feature transitions per verification status",
+            "properties": {
+              "not_started": {
+                "type": "string",
+                "description": "Workflow transition name applied to a feature when verification becomes 'not_started'"
+              },
+              "in_progress": {
+                "type": "string",
+                "description": "Workflow transition name applied to a feature when verification becomes 'in_progress'"
+              },
+              "passed": {
+                "type": "string",
+                "description": "Workflow transition name applied to a feature when verification becomes 'passed'"
+              },
+              "failed": {
+                "type": "string",
+                "description": "Workflow transition name applied to a feature when verification becomes 'failed'"
+              },
+              "blocked": {
+                "type": "string",
+                "description": "Workflow transition name applied to a feature when verification becomes 'blocked'"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "base_url",
+          "id_pattern",
+          "url_template"
+        ]
+      }
+    },
+    "sync": {
+      "type": "object",
+      "description": "How and as whom the sync runs",
+      "properties": {
+        "trigger": {
+          "type": "string",
+          "enum": [
+            "cli",
+            "ci",
+            "web",
+            "webhook"
+          ]
+        },
+        "identity": {
+          "type": "string",
+          "description": "Service account name shown in Jira"
+        },
+        "record_actor": {
+          "type": "boolean",
+          "description": "Write the TCMS user who ran the sync into the Jira comment and the audit trail"
+        }
+      }
+    }
+  },
+  "required": [
+    "product_id",
+    "requirement_source",
+    "systems"
+  ]
+}

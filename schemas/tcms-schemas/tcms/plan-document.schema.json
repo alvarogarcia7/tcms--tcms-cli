@@ -1,0 +1,145 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Plan Document",
+  "description": "A life-cycle plan (PSAC, SDP, SVP, SCMP, SQAP, Security Target) with its version and approval; its rules configure coverage and independence for the product",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Plan document identifier"
+    },
+    "type": {
+      "type": "string",
+      "description": "Plan type",
+      "enum": [
+        "PSAC",
+        "SDP",
+        "SVP",
+        "SCMP",
+        "SQAP",
+        "ST",
+        "other"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "description": "Document version"
+    },
+    "product_id": {
+      "type": "string",
+      "description": "Product the plan belongs to"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "in_review",
+        "approved",
+        "obsolete"
+      ]
+    },
+    "approval": {
+      "type": "object",
+      "description": "Approval of this version",
+      "properties": {
+        "approved_by": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "signature": {
+          "type": "object",
+          "description": "Electronic signature of the record",
+          "properties": {
+            "signer": {
+              "type": "string",
+              "description": "Person signing"
+            },
+            "signed_at": {
+              "type": "string",
+              "description": "When signed",
+              "format": "date-time"
+            },
+            "method": {
+              "type": "string",
+              "description": "How the signature was produced (e.g. git-commit, pgp, tool login)"
+            },
+            "value": {
+              "type": "string",
+              "description": "Signature value or hash"
+            }
+          },
+          "required": [
+            "signer",
+            "signed_at"
+          ]
+        }
+      },
+      "required": [
+        "approved_by",
+        "date"
+      ]
+    },
+    "rules": {
+      "type": "object",
+      "description": "Rules the plan imposes; test-plan and coverage-report must conform to them",
+      "properties": {
+        "software_level": {
+          "type": "string",
+          "enum": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E"
+          ]
+        },
+        "coverage_goals": {
+          "type": "object",
+          "properties": {
+            "requirements_based": {
+              "type": "boolean"
+            },
+            "structural": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "statement",
+                  "decision",
+                  "mcdc"
+                ]
+              }
+            },
+            "coupling": {
+              "type": "boolean",
+              "description": "Data and control coupling coverage required"
+            }
+          }
+        },
+        "independence_rules": {
+          "type": "array",
+          "description": "Objectives (objective.id) or rules requiring the checker to differ from the author",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "document_ref": {
+      "type": "string",
+      "description": "Path or URL of the document itself"
+    }
+  },
+  "required": [
+    "id",
+    "type",
+    "version",
+    "status"
+  ]
+}

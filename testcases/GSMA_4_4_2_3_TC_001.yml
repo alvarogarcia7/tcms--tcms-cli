@@ -1,0 +1,30 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: res1
+item: 1
+tc: 1
+id: GSMA_4_4_2_3_TC_001
+description: '1'
+general_initial_conditions:
+  eUICC:
+  - Condition 1
+initial_conditions:
+  eUICC:
+  - condition on
+test_sequences:
+- id: 1
+  name: name
+  description: "his test case verifies that the eUICC correctly processes an ES6.UpdateMetadata\
+    \ command to unset PPR1\n                   when the profile is in the operational\
+    \ state and PPR1 is currently set."
+  initial_conditions:
+    eUICC:
+    - The PROFILE_OPERATIONAL3 is Enabled.
+  steps:
+  - step: 1
+    description: step1
+    command: sshe hel
+    expected:
+      success: true
+      result: 0
+      output: '1'

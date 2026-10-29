@@ -1213,3 +1213,286 @@ RELATIONS:
   VALUE: HLR-INT-001
 
 [[/SECTION]]
+
+[[SECTION]]
+TITLE: Verification Evidence, Traceability and Integration Design
+
+[REQUIREMENT]
+UID: LLR-VEV-001
+TITLE: Exit Status Mapping
+STATEMENT: >>>
+The verifier binary shall map its outcome to the exit status: 1 for a failed or errored test
+case, an unverifiable log, an empty folder or an unknown test case; 0 otherwise, or for
+failed test cases only when success on completion is requested.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-VEV-001
+- TYPE: Parent
+  VALUE: HLR-VEV-002
+- TYPE: Parent
+  VALUE: HLR-VEV-003
+- TYPE: Parent
+  VALUE: HLR-VEV-004
+
+[REQUIREMENT]
+UID: LLR-VEV-002
+TITLE: Failed Hook Log Entry
+STATEMENT: >>>
+generate_hook_execution in testcase-execution shall write the failure of a hook as a log
+entry with test_sequence, step, command, exit_code, output, hook_type, hook_path and the
+test case and run IDs, escaping the hook command for JSON.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-VEV-005
+
+[REQUIREMENT]
+UID: LLR-RUN-001
+TITLE: Log Identity In Generated Scripts
+STATEMENT: >>>
+The generated script shall define TEST_CASE_ID and RUN_ID (TCMS_RUN_ID at run time, else the
+value given to generate) and escape them with the configured JSON escaping method before
+writing them to each log entry.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-RUN-001
+
+[REQUIREMENT]
+UID: LLR-RUN-002
+TITLE: Run Info Stamping
+STATEMENT: >>>
+RunInfo in testcase-verification shall hold run ID, build ID, environment, tester and date,
+drop blank values, and be stamped on each result with configured values first, the result's
+own second and the report's environment and generation time last.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-RUN-002
+
+[REQUIREMENT]
+UID: LLR-RUN-003
+TITLE: Test Run Record Builder
+STATEMENT: >>>
+TestRunRecord::build shall derive the verdict of each test case, require run ID, build ID,
+environment and tester, check that problem reports name failed or errored test cases of the
+run, and the verifier shall write it next to the report unless told not to.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-RUN-003
+
+[REQUIREMENT]
+UID: LLR-RUN-004
+TITLE: Classification Types
+STATEMENT: >>>
+testcase-models shall define the test type, test category, level and status enumerations and
+TestCase::validate_classification, which names the field and the allowed categories; storage
+and the executor shall call it when loading.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-RUN-004
+
+[REQUIREMENT]
+UID: LLR-TRC-001
+TITLE: Trace Matrix Builder
+STATEMENT: >>>
+build_matrix in testcase-verification shall compute for each requirement the linked test
+case IDs, normal_range_covered, robustness_covered and the IDs of runs with a result other
+than not_executed, ignoring obsolete test cases and the legacy requirement field.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-TRC-001
+- TYPE: Parent
+  VALUE: HLR-TRC-002
+
+[REQUIREMENT]
+UID: LLR-TRC-002
+TITLE: Regression Selector
+STATEMENT: >>>
+The regression module in testcase-verification shall select test cases from the change
+impact of a baseline and the requirements it names, honouring the regression block of a test
+plan, and return an error for a missing or invalid baseline.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-TRC-003
+
+[REQUIREMENT]
+UID: LLR-TRC-003
+TITLE: Coverage Importer
+STATEMENT: >>>
+The coverage module in testcase-verification shall read LCOV and an MC/DC side file, apply
+gap annotations by location, and keep unclassified gaps out of the report while listing
+them.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-TRC-004
+
+[REQUIREMENT]
+UID: LLR-TRC-004
+TITLE: Requirement Readers
+STATEMENT: >>>
+read_requirements shall read identifier lists and requirement records, the StrictDoc export
+shall be read through the requirement-import crate, and the trace-matrix command shall fail
+when a test case below the directory does not load.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-TRC-005
+
+[REQUIREMENT]
+UID: LLR-IND-001
+TITLE: Independence Checker
+STATEMENT: >>>
+check_run_independence and IndependenceAssignment in testcase-verification shall compare
+reviewer and author ignoring case and surrounding spaces, and shall validate that a record
+declaring independence names a different verifier.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-IND-001
+- TYPE: Parent
+  VALUE: HLR-IND-002
+
+[REQUIREMENT]
+UID: LLR-PIN-001
+TITLE: Schema Vendoring Script
+STATEMENT: >>>
+scripts/sync-tcms-schemas.sh shall copy the schemas and samples of a given tcms-schemas
+commit into schemas/tcms-schemas and record the full commit in TCMS_SCHEMAS_VERSION.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-PIN-001
+
+[REQUIREMENT]
+UID: LLR-PIN-002
+TITLE: Schema URI Fallback
+STATEMENT: >>>
+resolve_schema_uri in testcase-common shall look for the schema URI under the schemas root
+first and under schemas/tcms-schemas second, and shall keep the first path when neither
+exists so that the error names it.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-PIN-002
+
+[REQUIREMENT]
+UID: LLR-PIN-003
+TITLE: YAML Output Helper
+STATEMENT: >>>
+testcase_common::to_yaml_string shall convert enum tags to single-key maps and prefix
+strings that match a YAML 1.1 date, boolean, number or null with a marker that forces double
+quotes and is removed after serialisation; step results shall be read in both map and tag
+form.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-PIN-003
+
+[REQUIREMENT]
+UID: LLR-JIRA-001
+TITLE: Identifier Resolver
+STATEMENT: >>>
+The id-resolver crate shall load the systems of an integration configuration, reject
+overlapping id patterns, resolve identifiers and URLs in both directions, and fill empty
+external reference URLs.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-JIRA-001
+
+[REQUIREMENT]
+UID: LLR-JIRA-002
+TITLE: Write Guard
+STATEMENT: >>>
+check_write in jira-client shall be called before every write request, refuse writes outside
+the write policy and fields outside the configured field list, and refuse the summary and
+description of an existing issue.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-JIRA-002
+- TYPE: Parent
+  VALUE: HLR-JIRA-004
+
+[REQUIREMENT]
+UID: LLR-JIRA-003
+TITLE: Audit Entries
+STATEMENT: >>>
+jira-client shall create an audit-trail entry for each write naming the acting user, and the
+comment body shall name the same user; the token shall be read from the environment variable
+named in the configuration and never formatted into errors or debug output.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-JIRA-003
+- TYPE: Parent
+  VALUE: HLR-JIRA-004
+
+[REQUIREMENT]
+UID: LLR-JIRA-004
+TITLE: Requirement Adapters
+STATEMENT: >>>
+The requirement-import crate shall turn Jira feature issues and a StrictDoc JSON export into
+requirement records in a stable order without import timestamps, and reject a configuration
+that names both sources.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-JIRA-005
+
+[REQUIREMENT]
+UID: LLR-JIRA-005
+TITLE: Test Backend Trait
+STATEMENT: >>>
+The test-backends crate shall define one TestBackend trait implemented for plain Jira, Xray,
+Zephyr Scale and Zephyr Squad, whose writes all go through one guarded context, and whose
+run recording reuses the execution of the same run.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-JIRA-006
+
+[REQUIREMENT]
+UID: LLR-JIRA-006
+TITLE: Status And Roll-Up Writers
+STATEMENT: >>>
+The statuses and rollup modules shall map lifecycle and verdict to the configured fields,
+log a value changed by hand as an overwrite, and compute the feature status with an open
+linked defect blocking a pass.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-JIRA-007
+
+[REQUIREMENT]
+UID: LLR-JIRA-007
+TITLE: Milestone And Defect Writers
+STATEMENT: >>>
+The milestone module shall create a Fix Version once per plan and release it on completion;
+the defects module shall find an existing issue by the label tcms-pr-<id> before creating
+one and refuse a push that matches more than one.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-JIRA-008
+
+[REQUIREMENT]
+UID: LLR-JIRA-008
+TITLE: Sync Command
+STATEMENT: >>>
+tcms jira sync shall run import, tests, features, milestones and defects in that order,
+preview by default and write only with the apply option, persist issue keys in the external
+references of the records and in a state file, and write an audit file per run.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-JIRA-009
+
+[[/SECTION]]

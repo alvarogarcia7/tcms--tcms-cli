@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Code Unit",
+  "description": "A file or function at a given commit; implements low-level requirements and is the unit structural coverage is measured on",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "file": {
+      "type": "string",
+      "description": "Path in the repository"
+    },
+    "function": {
+      "type": "string",
+      "description": "Function or symbol, if the unit is finer than a file"
+    },
+    "commit": {
+      "type": "string",
+      "description": "VCS commit hash"
+    },
+    "version": {
+      "type": "string",
+      "description": "Tag or version label"
+    },
+    "language": {
+      "type": "string"
+    },
+    "design_element_id": {
+      "type": "string"
+    },
+    "implements_requirement_ids": {
+      "type": "array",
+      "description": "LLRs implemented",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "id",
+    "file",
+    "commit"
+  ]
+}

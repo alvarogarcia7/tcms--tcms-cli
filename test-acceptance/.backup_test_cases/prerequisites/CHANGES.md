@@ -24,7 +24,7 @@ Fixed all 7 prerequisite test cases to ensure proper validation, execution, and 
 Verified against `schemas/test-case.schema.json`:
 ```bash
 ./target/debug/validate-yaml --schema schemas/test-case.schema.json \
-  test-acceptance/test_cases/prerequisites/*.yaml
+  test-acceptance/00_test_cases/prerequisites/*.yaml
 ```
 
 Result: **7 Passed, 0 Failed**
@@ -86,7 +86,7 @@ All files include:
 ### 1. Schema Validation
 ```bash
 ./target/debug/validate-yaml --schema schemas/test-case.schema.json \
-  test-acceptance/test_cases/prerequisites/*.yaml
+  test-acceptance/00_test_cases/prerequisites/*.yaml
 ```
 **Result**: All files valid ✓
 
@@ -94,7 +94,7 @@ All files include:
 ```bash
 ./target/debug/test-executor generate --json-log \
   --output /tmp/test_script.sh \
-  test-acceptance/test_cases/prerequisites/PREREQ_AUTO_PASS_001.yaml
+  test-acceptance/00_test_cases/prerequisites/PREREQ_AUTO_PASS_001.yaml
 ```
 **Result**: Scripts generate successfully ✓
 
@@ -143,9 +143,9 @@ make acceptance-test
 # Or run individual stages
 make build                     # Build binaries
 ./target/debug/validate-yaml --schema schemas/test-case.schema.json \
-  test-acceptance/test_cases/prerequisites/*.yaml
+  test-acceptance/00_test_cases/prerequisites/*.yaml
 ./target/debug/test-executor generate --json-log \
   --output /tmp/prereq_test.sh \
-  test-acceptance/test_cases/prerequisites/PREREQ_AUTO_PASS_001.yaml
+  test-acceptance/00_test_cases/prerequisites/PREREQ_AUTO_PASS_001.yaml
 bash /tmp/prereq_test.sh
 ```

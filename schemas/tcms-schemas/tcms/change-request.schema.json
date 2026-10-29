@@ -1,0 +1,171 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Change Request",
+  "description": "A requested change with its impact analysis and CCB decision; produces a new baseline and triggers a regression run",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string",
+      "description": "What changes"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "raised",
+        "analysed",
+        "approved",
+        "rejected",
+        "deferred",
+        "implemented",
+        "verified",
+        "closed"
+      ]
+    },
+    "raised_by": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "problem_report_ids": {
+      "type": "array",
+      "description": "Problem reports addressed",
+      "items": {
+        "type": "string"
+      }
+    },
+    "impact_analysis": {
+      "type": "object",
+      "description": "Change impact analysis; copied to baseline.change_impact of the resulting baseline",
+      "properties": {
+        "changed_items": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "impacted_requirements": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "impacted_design_elements": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "impacted_test_cases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "regression_test_cases": {
+          "type": "array",
+          "description": "Test cases to re-run",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rationale": {
+          "type": "string",
+          "description": "Why this scope is sufficient"
+        }
+      }
+    },
+    "ccb_decision": {
+      "type": "object",
+      "description": "Change control board decision",
+      "properties": {
+        "decision": {
+          "type": "string",
+          "enum": [
+            "approved",
+            "rejected",
+            "deferred"
+          ]
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "minutes_ref": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "decision",
+        "date"
+      ]
+    },
+    "resulting_baseline_id": {
+      "type": "string",
+      "description": "Baseline produced by implementing the change"
+    },
+    "regression_run_id": {
+      "type": "string",
+      "description": "Regression run triggered by the change"
+    },
+    "external_refs": {
+      "type": "array",
+      "description": "Jira issue for the change request",
+      "items": {
+        "type": "object",
+        "properties": {
+          "system": {
+            "type": "string",
+            "description": "External system",
+            "enum": [
+              "jira",
+              "xray",
+              "zephyr_scale",
+              "zephyr_squad",
+              "strictdoc",
+              "gitlab",
+              "other"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "description": "Identifier in that system (Jira issue key, Xray test key, Zephyr key, StrictDoc UID, Fix Version id)"
+          },
+          "url": {
+            "type": "string",
+            "description": "Resolved URL; the resolver derives it from integration-config when absent",
+            "format": "uri"
+          },
+          "synced_at": {
+            "type": "string",
+            "description": "Last successful sync of this record to that system",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "system",
+          "key"
+        ]
+      }
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "scope",
+    "status"
+  ]
+}
