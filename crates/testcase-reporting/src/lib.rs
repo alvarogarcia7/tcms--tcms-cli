@@ -4,6 +4,7 @@
 pub mod legacy;
 pub mod load;
 pub mod model;
+pub mod render_markdown;
 pub mod rollup;
 pub mod run;
 pub mod select;
