@@ -2691,6 +2691,7 @@ dependencies = [
  "testcase-common",
  "testcase-execution",
  "testcase-models",
+ "testcase-reporting",
  "testcase-storage",
  "testcase-validation",
  "testcase-verification",
@@ -2875,6 +2876,19 @@ dependencies = [
  "testcase-execution",
  "testcase-models",
  "testcase-storage",
+ "testcase-verification",
+]
+
+[[package]]
+name = "testcase-reporting"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "serde_yaml",
+ "tempfile",
+ "testcase-common",
+ "testcase-models",
  "testcase-verification",
 ]
 

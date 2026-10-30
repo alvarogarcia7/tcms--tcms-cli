@@ -1,0 +1,16 @@
+[package]
+name = "testcase-reporting"
+version = "0.1.0"
+edition = "2021"
+description = "Traceability reports: strict input loading, run selection, report model and renderers"
+
+[dependencies]
+testcase-models = { path = "../testcase-models" }
+testcase-common = { path = "../testcase-common" }
+testcase-verification = { path = "../testcase-verification" }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+serde_yaml = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
