@@ -7,6 +7,8 @@
 //! Test cases that no requirement links are not known to the model, so they cannot be listed.
 
 use crate::model::{Header, ReportModel};
+use crate::non_blank;
+use crate::render_markdown::{cell, header_markdown};
 use crate::rollup::{CaseOutcome, VerificationStatus};
 use crate::view::{linked_cases, ViewInput};
 use testcase_verification::RequirementLevel;
@@ -94,6 +96,86 @@ pub fn build_gaps(input: ViewInput) -> GapsReport {
         missing_robustness,
         no_result,
     }
+}
+
+const NONE: &str = "None";
+const NOT_RECORDED: &str = "not recorded";
+
+/// Render the gaps report as Markdown ending with exactly one newline. Every empty list prints
+/// `None` under its heading, and the heading always shows the count (D-03, T-03-07).
+pub fn render_gaps_markdown(report: &GapsReport) -> String {
+    let blocks = [
+        "# Coverage Gaps".to_string(),
+        header_markdown(&report.header),
+        requirement_block("Requirements with no test cases", &report.no_tests),
+        requirement_block(
+            "Requirements missing a normal-range test",
+            &report.missing_normal_range,
+        ),
+        requirement_block(
+            "Requirements missing a robustness test",
+            &report.missing_robustness,
+        ),
+        case_block("Test cases with no recorded result", &report.no_result),
+    ];
+    let mut out = blocks.join("\n\n");
+    out.push('\n');
+    out
+}
+
+fn heading(title: &str, count: usize) -> String {
+    format!("## {title} ({count})")
+}
+
+fn requirement_block(title: &str, items: &[GapRequirement]) -> String {
+    let heading = heading(title, items.len());
+    if items.is_empty() {
+        return format!("{heading}\n\n{NONE}");
+    }
+    let mut lines = vec![
+        heading,
+        String::new(),
+        "| Requirement | Level | Document |".to_string(),
+        "| --- | --- | --- |".to_string(),
+    ];
+    for item in items {
+        let document =
+            non_blank(item.document.as_deref()).map_or_else(|| NOT_RECORDED.to_string(), cell);
+        lines.push(format!(
+            "| {} | {} | {} |",
+            cell(&item.requirement_id),
+            item.level,
+            document
+        ));
+    }
+    lines.join("\n")
+}
+
+fn case_block(title: &str, items: &[GapCase]) -> String {
+    let heading = heading(title, items.len());
+    if items.is_empty() {
+        return format!("{heading}\n\n{NONE}");
+    }
+    let mut lines = vec![
+        heading,
+        String::new(),
+        "| Test case | Requirements |".to_string(),
+        "| --- | --- |".to_string(),
+    ];
+    for item in items {
+        let requirements = item
+            .requirement_ids
+            .iter()
+            .map(|id| cell(id))
+            .collect::<Vec<_>>()
+            .join(", ");
+        lines.push(format!(
+            "| {} | {} |",
+            cell(&item.test_case_id),
+            requirements
+        ));
+    }
+    lines.join("\n")
 }
 
 #[cfg(test)]
@@ -420,5 +502,112 @@ mod tests {
         );
         let report = gaps_of(&model, &selection);
         assert!(report.no_result.is_empty(), "{:?}", report.no_result);
+    }
+
+    mod render {
+        use super::*;
+
+        fn gaps_fixture() -> GapsReport {
+            let (model, selection) = fixture();
+            gaps_of(&model, &selection)
+        }
+
+        #[test]
+        fn golden_gaps_markdown_matches_exact_text() {
+            let expected = r#"# Coverage Gaps
+
+## Report header
+
+| Field | Value |
+| --- | --- |
+| Matrix | TM-1 |
+| Baseline | not recorded |
+| Runs | RUN-1, RUN-2 |
+| Builds | b1, b2 |
+| Environments | e |
+| Testers | t |
+| Obsolete test cases excluded | not recorded |
+| Generated | 2026-10-31T09:00:00Z |
+
+## Requirements with no test cases (1)
+
+| Requirement | Level | Document |
+| --- | --- | --- |
+| HLR-3 | HLR | not recorded |
+
+## Requirements missing a normal-range test (2)
+
+| Requirement | Level | Document |
+| --- | --- | --- |
+| HLR-3 | HLR | not recorded |
+| LLR-4 | LLR | not recorded |
+
+## Requirements missing a robustness test (2)
+
+| Requirement | Level | Document |
+| --- | --- | --- |
+| HLR-3 | HLR | not recorded |
+| LLR-2 | LLR | not recorded |
+
+## Test cases with no recorded result (1)
+
+| Test case | Requirements |
+| --- | --- |
+| T4 | LLR-4 |
+"#;
+            assert_eq!(render_gaps_markdown(&gaps_fixture()), expected);
+        }
+
+        #[test]
+        fn empty_report_prints_none_four_times_with_zero_counts() {
+            let (model, selection) = pipeline(Vec::new(), Vec::new(), None, None);
+            let text = render_gaps_markdown(&gaps_of(&model, &selection));
+            assert_eq!(text.matches("\n\nNone").count(), 4, "{text}");
+            for heading in [
+                "## Requirements with no test cases (0)",
+                "## Requirements missing a normal-range test (0)",
+                "## Requirements missing a robustness test (0)",
+                "## Test cases with no recorded result (0)",
+            ] {
+                assert!(text.contains(heading), "{text}");
+            }
+            assert!(!text.contains("| Requirement |"), "{text}");
+        }
+
+        #[test]
+        fn identical_inputs_render_byte_identically() {
+            let first = render_gaps_markdown(&gaps_fixture());
+            let second = render_gaps_markdown(&gaps_fixture());
+            assert_eq!(first, second);
+        }
+
+        #[test]
+        fn output_ends_with_exactly_one_newline() {
+            let text = render_gaps_markdown(&gaps_fixture());
+            assert!(text.ends_with('\n'));
+            assert!(!text.ends_with("\n\n"));
+        }
+
+        #[test]
+        fn hostile_ids_stay_on_one_line_with_pipe_escaped() {
+            let (model, selection) = pipeline(
+                vec![link(
+                    "HLR|1\nforged",
+                    RequirementLevel::Hlr,
+                    &[],
+                    false,
+                    false,
+                )],
+                Vec::new(),
+                None,
+                None,
+            );
+            let text = render_gaps_markdown(&gaps_of(&model, &selection));
+            let row = text
+                .lines()
+                .find(|line| line.contains("forged"))
+                .expect("row present");
+            assert_eq!(row, "| HLR\\|1 forged | HLR | not recorded |");
+        }
     }
 }
