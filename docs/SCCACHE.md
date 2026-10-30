@@ -757,6 +757,10 @@ build:
 
 #### GitHub Actions
 
+> **Do not use this section for the GitHub Actions workflow.** sccache was measured slower than
+> the existing cargo-cache setup there. See [GITHUB_CI_CACHING.md](GITHUB_CI_CACHING.md) for the
+> measurements and the rule. The example below is kept for reference only.
+
 ```yaml
 jobs:
   build:
