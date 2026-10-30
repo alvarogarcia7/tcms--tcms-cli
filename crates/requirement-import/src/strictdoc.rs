@@ -96,6 +96,37 @@ pub fn export_levels(json: &str) -> Result<Vec<(String, String)>> {
         .collect())
 }
 
+/// One item of an export, as `tcms requirements locate` shows it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExportItem {
+    pub uid: String,
+    pub level: String,
+    pub title: Option<String>,
+    pub status: Option<String>,
+    /// Document path the item is in.
+    pub path: String,
+}
+
+/// Every item of an export, in document order, with the checks of [`parse_export`]. No filter on
+/// level: every item counts as found, whatever its level (D-05). Duplicate UIDs are returned as
+/// they are; the caller decides. The layout is this module's assumption (D-09).
+pub fn export_items(json: &str) -> Result<Vec<ExportItem>> {
+    let export = read_export(json)?;
+    Ok(export
+        .documents
+        .iter()
+        .flat_map(|doc| {
+            doc.requirements.iter().map(move |item| ExportItem {
+                uid: item.uid.clone(),
+                level: item.level.clone(),
+                title: item.title.clone(),
+                status: item.status.clone(),
+                path: doc.path.clone(),
+            })
+        })
+        .collect())
+}
+
 /// Parse the assumed layout and check every item (level and status), so both entry points refuse
 /// the same exports.
 fn read_export(json: &str) -> Result<Export> {
@@ -170,6 +201,60 @@ mod tests {
     #[test]
     fn wrong_layout_is_refused_with_the_assumption_named() {
         let err = parse_export("[1,2]", "abc").unwrap_err();
+        assert!(format!("{err:#}").contains("assumed layout"), "{err:#}");
+    }
+
+    const FIXTURE: &str = include_str!("../tests/fixtures/strictdoc_export.json");
+
+    #[test]
+    fn export_items_lists_every_level_in_document_order() {
+        let items = export_items(FIXTURE).unwrap();
+        assert_eq!(items.len(), 3);
+        assert_eq!(items[0].uid, "SYS-4");
+        assert_eq!(items[0].level, "system");
+        assert_eq!(items[0].path, "docs/system.sdoc");
+        assert_eq!(items[0].title.as_deref(), Some("Remote profile management"));
+        assert_eq!(items[0].status.as_deref(), Some("approved"));
+        assert_eq!(items[1].uid, "HLR-12");
+        assert_eq!(items[1].level, "HLR");
+        assert_eq!(items[1].path, "docs/srs.sdoc");
+        assert_eq!(items[2].uid, "HLR-3");
+        assert_eq!(items[2].status.as_deref(), Some("in_review"));
+    }
+
+    #[test]
+    fn export_items_keeps_missing_title_and_status_as_none() {
+        let json =
+            r#"{"documents":[{"path":"d.sdoc","requirements":[{"uid":"LLR-1","level":"LLR"}]}]}"#;
+        let items = export_items(json).unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].title, None);
+        assert_eq!(items[0].status, None);
+    }
+
+    #[test]
+    fn export_items_refuses_a_level_the_importer_refuses() {
+        let json = r#"{"documents":[{"path":"d.sdoc","requirements":[{"uid":"CH-1","level":"chapter"}]}]}"#;
+        let err = export_items(json).unwrap_err();
+        assert!(
+            format!("{err:#}").contains("is not a requirement type"),
+            "{err:#}"
+        );
+    }
+
+    #[test]
+    fn export_items_refuses_a_bad_status() {
+        let json = r#"{"documents":[{"path":"d.sdoc","requirements":[{"uid":"HLR-1","level":"HLR","status":"draft-ish"}]}]}"#;
+        let err = export_items(json).unwrap_err();
+        assert!(
+            format!("{err:#}").contains("is not a requirement status"),
+            "{err:#}"
+        );
+    }
+
+    #[test]
+    fn export_items_refuses_the_wrong_layout() {
+        let err = export_items("[1,2]").unwrap_err();
         assert!(format!("{err:#}").contains("assumed layout"), "{err:#}");
     }
 
