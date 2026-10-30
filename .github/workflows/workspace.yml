@@ -23,6 +23,7 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Do not replace with sccache: measured slower on this pipeline. See docs/GITHUB_CI_CACHING.md
       - uses: RustCrypto/actions/cargo-cache@master
 
       - uses: dtolnay/rust-toolchain@master
