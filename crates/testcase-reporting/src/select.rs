@@ -75,7 +75,59 @@ impl RunSelection {
 
 impl fmt::Display for RunSelection {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let _ = f;
+        writeln!(
+            f,
+            "Run selection (per test case, the latest run with an executed result decides)"
+        )?;
+
+        if self.builds.is_empty() {
+            writeln!(f, "  Builds used: none")?;
+        } else {
+            let builds: Vec<&str> = self.builds.iter().map(String::as_str).collect();
+            writeln!(f, "  Builds used: {}", builds.join(", "))?;
+        }
+
+        let used: Vec<&RunReport> = self.used().collect();
+        writeln!(f, "  Runs used: {}", used.len())?;
+        for r in used {
+            writeln!(
+                f,
+                "    {}  build {}  started {}  decided {}, superseded {}, not_executed {}",
+                r.run_id, r.build_id, r.started_at, r.decided, r.superseded, r.not_executed
+            )?;
+        }
+
+        let excluded: Vec<&RunReport> = self.excluded().collect();
+        writeln!(f, "  Runs excluded: {}", excluded.len())?;
+        for r in excluded {
+            if let RunUse::Excluded(reason) = &r.use_ {
+                writeln!(
+                    f,
+                    "    {}  build {}  started {}: {}",
+                    r.run_id, r.build_id, r.started_at, reason
+                )?;
+            }
+        }
+
+        writeln!(f, "  Selected results: {}", self.results.len())?;
+        for r in self.results.values() {
+            writeln!(
+                f,
+                "    {}  {}  {}",
+                r.test_case_id,
+                r.verdict.as_str(),
+                r.run_id
+            )?;
+        }
+
+        if self.notes.is_empty() {
+            writeln!(f, "  Notes: none")?;
+        } else {
+            writeln!(f, "  Notes:")?;
+            for note in &self.notes {
+                writeln!(f, "    - {note}")?;
+            }
+        }
         Ok(())
     }
 }
