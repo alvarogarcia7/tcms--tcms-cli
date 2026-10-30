@@ -41,3 +41,5 @@ Requirements: SUM-01, GAP-01, PRB-01, PRB-02. Goal: run summary, coverage-gaps r
 - Still open: plans 03-02 to 03-05, phase gates, E2E subtask tcms-43.3.4, pipeline run.
 - Plan 03-02 done (run summary view): commits a4defbb, fa7d96d; summary 22f9476. Review PASS.
 - Non-blocking follow-up from review: the requirement and linked-case bucket-sum assertion is tautological (view.rs sets total = outcomes.len()). Fix in a later pass by comparing against an independently computed total.
+- Plan 03-03 done (coverage gaps): commits 8f8d60c, 0dd4ec1; summary ea43f9e. Review PASS.
+- Non-blocking from 03-03 review: golden fixture never renders a real document name; whitespace-only document name is untested. Follow up in a later pass.
