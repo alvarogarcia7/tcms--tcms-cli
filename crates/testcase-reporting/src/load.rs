@@ -68,6 +68,14 @@ impl Reconciliation {
     }
 }
 
+impl std::fmt::Display for Reconciliation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // GREEN step: the reconciliation block layout
+        let _ = f;
+        Ok(())
+    }
+}
+
 /// Everything `report` loads, all of it validated
 #[derive(Debug, Clone)]
 pub struct LoadedInputs {
@@ -625,6 +633,114 @@ mod tests {
         assert!(
             e.contains(&missing.display().to_string()) && e.contains("not found"),
             "{e}"
+        );
+    }
+
+    #[test]
+    fn matrix_referencing_unloaded_run_gets_a_note() {
+        let dir = tempfile::tempdir().unwrap();
+        let matrix = write(dir.path(), "matrix.yaml", &matrix_text(&["RUN-1", "RUN-9"]));
+        let runs = dir.path().join("runs");
+        fs::create_dir(&runs).unwrap();
+        write(&runs, "run.yaml", &valid_run("RUN-1"));
+        let loaded = load_inputs(&matrix, &[runs], SCHEMAS).unwrap();
+        assert!(
+            loaded
+                .reconciliation
+                .notes
+                .contains(&"matrix references run RUN-9, which was not loaded".to_string()),
+            "{:?}",
+            loaded.reconciliation.notes
+        );
+    }
+
+    #[test]
+    fn results_outside_the_matrix_get_a_note() {
+        let (_dir, matrix, runs) = setup();
+        write(
+            &runs,
+            "run.yaml",
+            &run_text("RUN-1", "2026-10-28T10:00:00Z", &["T1", "T8", "T9"]),
+        );
+        let loaded = load_inputs(&matrix, &[runs], SCHEMAS).unwrap();
+        assert!(
+            loaded.reconciliation.notes.contains(
+                &"run RUN-1 has 2 result(s) for test cases not in the matrix: T8, T9".to_string()
+            ),
+            "{:?}",
+            loaded.reconciliation.notes
+        );
+    }
+
+    #[test]
+    fn notes_never_fail_the_load() {
+        let (_dir, matrix, runs) = setup();
+        write(
+            &runs,
+            "run.yaml",
+            &run_text("RUN-1", "2026-10-28T10:00:00Z", &["T1", "T8"]),
+        );
+        assert!(load_inputs(&matrix, &[runs], SCHEMAS).is_ok());
+    }
+
+    #[test]
+    fn reconciliation_block_layout_is_fixed() {
+        let rec = Reconciliation {
+            inputs: vec![
+                InputEntry {
+                    path: PathBuf::from("/tmp/x/matrix.yaml"),
+                    kind: InputKind::Matrix,
+                    status: InputStatus::Loaded,
+                    run_id: None,
+                },
+                InputEntry {
+                    path: PathBuf::from("/tmp/x/runs/run.yaml"),
+                    kind: InputKind::Run,
+                    status: InputStatus::Loaded,
+                    run_id: Some("RUN-1".to_string()),
+                },
+                InputEntry {
+                    path: PathBuf::from("/tmp/x/runs/notes.yaml"),
+                    kind: InputKind::Run,
+                    status: InputStatus::Skipped("no `type` field".to_string()),
+                    run_id: None,
+                },
+                InputEntry {
+                    path: PathBuf::from("/tmp/x/runs/readme.txt"),
+                    kind: InputKind::Run,
+                    status: InputStatus::Skipped("not a YAML file".to_string()),
+                    run_id: None,
+                },
+            ],
+            notes: vec!["matrix references run RUN-9, which was not loaded".to_string()],
+        };
+        let expected = "Reconciliation
+  Inputs discovered: 4 (loaded: 2, skipped: 2)
+  loaded   matrix  /tmp/x/matrix.yaml
+  loaded   run     /tmp/x/runs/run.yaml (RUN-1)
+  skipped  run     /tmp/x/runs/notes.yaml: no `type` field
+  skipped  run     /tmp/x/runs/readme.txt: not a YAML file
+  Notes:
+    - matrix references run RUN-9, which was not loaded
+";
+        assert_eq!(rec.to_string(), expected);
+    }
+
+    #[test]
+    fn reconciliation_without_notes_says_none() {
+        let rec = Reconciliation {
+            inputs: vec![InputEntry {
+                path: PathBuf::from("m.yaml"),
+                kind: InputKind::Matrix,
+                status: InputStatus::Loaded,
+                run_id: None,
+            }],
+            notes: Vec::new(),
+        };
+        assert!(
+            rec.to_string().ends_with("  Notes: none\n"),
+            "{}",
+            rec.to_string()
         );
     }
 }
