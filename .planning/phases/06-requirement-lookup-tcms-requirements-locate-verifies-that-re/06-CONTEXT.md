@@ -46,7 +46,8 @@ found and exits non-zero when any ID is missing. It does not import, write or ch
 - **D-11 (export-ids input):** `tcms requirements export-ids` reads `requirements.json` in the
   current directory by default, or the file named by `--requirements <FILE>`. Shape:
   `{ "product_id": "<text>", "requirements": [ { "id": "<text>" }, ... ] }`. A file that does not
-  parse, or whose `product_id` differs from the configured `product_id`, fails with exit 2.
+  parse, whose `product_id` differs from the configured `product_id`, or that has any field
+  not in the shape above (strict mode, confirmed by the owner), fails with exit 2.
 - **D-12 (export-ids validity):** "Valid" means the source finds the ID, using the same batch
   lookup as `locate` (D-03 to D-05). An ID repeated in the file is checked and reported once.
   (Confirmed by the owner: valid means the source finds the ID.)
