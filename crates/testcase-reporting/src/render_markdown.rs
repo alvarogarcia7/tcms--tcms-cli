@@ -17,7 +17,7 @@ pub fn render_markdown(model: &ReportModel) -> String {
     let mut blocks: Vec<String> = vec![
         "# Traceability Report".to_string(),
         inputs_block(&model.inputs.details),
-        header_block(&model.header),
+        header_markdown(&model.header),
     ];
     blocks.extend(model.documents.iter().map(document_block));
 
@@ -49,7 +49,8 @@ fn fence_len(text: &str) -> usize {
     (longest + 1).max(3)
 }
 
-fn header_block(header: &Header) -> String {
+/// The `## Report header` section (D-06): shared by the traceability report and the Phase 3 views.
+pub fn header_markdown(header: &Header) -> String {
     let rows = [
         (
             "Matrix",
@@ -164,7 +165,7 @@ fn list(values: &[String]) -> String {
 
 /// Make one model-derived value safe inside a table cell: `|` is escaped, and line breaks become
 /// a space so a value cannot forge extra columns or rows (T-02-06). This is table safety only.
-fn cell(text: &str) -> String {
+pub fn cell(text: &str) -> String {
     text.replace("\r\n", " ")
         .replace(['\r', '\n'], " ")
         .replace('|', "\\|")
@@ -295,11 +296,38 @@ No traceable content
             let mut header = golden_model().header;
             header.matrix_id = blank.to_string();
             header.baseline_id = Some(blank.to_string());
-            let block = header_block(&header);
+            let block = header_markdown(&header);
             assert!(block.contains("| Matrix | not recorded |"), "{block}");
             assert!(block.contains("| Baseline | not recorded |"), "{block}");
             assert!(!block.contains("| Baseline |  |"), "{block}");
         }
+    }
+
+    #[test]
+    fn header_markdown_has_exact_eight_rows() {
+        let header = Header {
+            matrix_id: "TM-9".to_string(),
+            baseline_id: None,
+            run_ids: vec!["RUN-1".to_string()],
+            build_ids: Vec::new(),
+            environments: vec!["lab|1".to_string()],
+            testers: Vec::new(),
+            generated_at: "2026-10-31T09:00:00Z".to_string(),
+            obsolete_excluded: None,
+        };
+        let expected = "## Report header
+
+| Field | Value |
+| --- | --- |
+| Matrix | TM-9 |
+| Baseline | not recorded |
+| Runs | RUN-1 |
+| Builds | not recorded |
+| Environments | lab\\|1 |
+| Testers | not recorded |
+| Obsolete test cases excluded | not recorded |
+| Generated | 2026-10-31T09:00:00Z |";
+        assert_eq!(header_markdown(&header), expected);
     }
 
     mod pipeline {
