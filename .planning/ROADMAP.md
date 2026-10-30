@@ -44,7 +44,13 @@ Plans:
   3. Test coverage (normal-range, robustness present) is displayed separately from verification status, and a linked test case with no result shows NOT RUN
   4. Obsolete test cases are excluded from the roll-up and counted in the header
   5. Running twice with the same inputs and `--generated-at` gives byte-identical output; the header shows matrix, baseline, run, build, environment, tester and generation time, with "not recorded" for missing values
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Verification status roll-up rule and case outcome mapping, table-driven tests (wave 1, TDD)
+- [ ] 02-02-PLAN.md — ReportModel: header, document sections, rows, obsolete handling, deterministic order (wave 2)
+- [ ] 02-03-PLAN.md — Markdown renderer with golden and byte-identical snapshot tests (wave 3)
+- [ ] 02-04-PLAN.md — `test-executor report` traceability wiring, CLI tests, docs (wave 4)
 **Notes**: Roll-up rule must be documented and covered by table-driven tests. Research flag: staleness (verifier output and `verification_result_ref` versioning) is deferred to v2 (STALE-01); do not block this phase on it. Sort all collections and inject the clock for determinism.
 
 ### Phase 3: Summary, Gaps and Problem Reports
