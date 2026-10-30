@@ -85,9 +85,15 @@ test-executor report --matrix trace-matrix.yaml --runs test-runs/ --kind traceab
 | `--runs PATH` | Test run record file or directory of them. Repeatable. Required |
 | `--kind KIND` | Report kind: `traceability`, `summary`, `gaps` or `problems`. Repeatable. Default: all four |
 | `--output FILE` | Write the text to a file instead of stdout |
+| `--test-cases DIR` | Test cases, searched recursively. Supplies each case's test type (the report columns) and obsolete status. Without it every case is shown in the `other` column and the obsolete count is `not recorded` |
+| `--requirements-export FILE` | StrictDoc JSON export (same assumed layout as the matrix's `.json` requirements). Supplies the source document of each requirement. Without it every row sits under `## Document: not recorded` |
+| `--generated-at TIMESTAMP` | Generation time, RFC 3339 (for example `2026-10-31T09:00:00Z`), written into the report header. Without it the current UTC time is used |
 
-Report bodies are not rendered yet. Each selected kind prints
-`<kind>: renderer not yet available`.
+The traceability kind is rendered as one Markdown document (see
+[Traceability report](#traceability-report-markdown)). Its first section, `## Inputs`, holds the
+input and run-selection details described below. The summary, gaps and problems kinds print
+`<kind>: renderer not yet available` until their renderers arrive in a later phase. AsciiDoc,
+JSON and YAML output are not available yet.
 
 ### Inputs are strict
 
@@ -154,9 +160,77 @@ Notes never fail the command:
 - Results for test cases that are not in the matrix.
 - Ties on `started_at`.
 
+### Traceability report (Markdown)
+
+`--kind traceability` prints one Markdown document. Line 1 is `# Traceability Report`; nothing
+comes before it.
+
+1. `## Inputs`: the matrix line, the reconciliation and the run selection from above, verbatim,
+   inside a fenced block.
+2. `## Report header`: a `Field | Value` table with these rows in this order: Matrix, Baseline,
+   Runs, Builds, Environments, Testers, Obsolete test cases excluded, Generated. A value that is
+   not recorded reads `not recorded`. Runs, builds, environments and testers list only the runs
+   the selection used, sorted and without duplicates.
+3. One `## Document: <path>` section per source document, in path order.
+
+Each document section holds a table with one row per requirement link in the matrix. Only HLR
+and LLR requirements have rows. The columns are:
+
+| Column | Content |
+|--------|---------|
+| Requirement | Requirement ID |
+| Level | `HLR` or `LLR` |
+| Status | The verification status (table below) |
+| Normal-range test, Robustness test | `yes` or `no`: the coverage flags from the matrix, separate from the status |
+| normal_range, robustness, other | The live linked cases of that test type, in that fixed order |
+
+A case cell reads `<test case ID> (<verdict>, <run ID>)`, for example `T1 (pass, RUN-2)`. Several
+cases in one cell are separated by `<br>`. A case with no executed result reads
+`T1 (NOT RUN, no result)`. An empty test-type column shows `-`.
+
+Grouping and order:
+
+- Documents come from `--requirements-export`. A document with no HLR or LLR rows shows
+  `No traceable content`. Without the export every row is under `## Document: not recorded`.
+- Sections are sorted by document path. Rows are sorted by requirement ID, and the cases in a
+  cell by test case ID.
+- Obsolete test cases are not shown in any cell. They are counted in the header.
+
+**Determinism:** the same inputs and the same `--generated-at` give identical bytes. The only
+clock read is the default generation time, the current UTC time, used when `--generated-at` is
+absent.
+
+### Verification status rule
+
+A requirement's status is computed over its linked live test cases. Each case's verdict is the
+one chosen by the run selection, and a case with no executed result counts as `NOT RUN`. The
+rules are checked in this order:
+
+| Status | Condition |
+|--------|-----------|
+| `NO TESTS` | No live test case is linked to the requirement |
+| `ERRORED` | At least one linked case has an `error` result. This ranks above `FAILED` |
+| `FAILED` | At least one linked case has a `fail` result, and none has `error` |
+| `VERIFIED` | Every linked live case has an executed result, and all are `pass` |
+| `NOT RUN` | Linked cases exist, and none has an executed result |
+| `PARTIAL` | Some linked cases have a `pass` result and the rest have no executed result. None has `fail` or `error` |
+
+Consequences:
+
+- A `fail` with a missing run is `FAILED`, never `PARTIAL`.
+- A linked case with no executed result is shown as `NOT RUN` on its own row. It is never shown
+  as a pass.
+- Coverage (the normal-range and robustness flags) does not change the status. A requirement can
+  be `VERIFIED` and still show `no` in the robustness column.
+- Obsolete cases do not count toward the status. The header shows how many were excluded.
+
+These rules were confirmed by the project owner on 2026-10-31.
+
 ### Exit status
 
-0 on success. 1 when any input is invalid, a `run_id` repeats, or the output cannot be
-written. The three-state exit code is a later phase.
+0 on success. 1 when any input is invalid, a `run_id` repeats, `--generated-at` is not an
+RFC 3339 timestamp, `--test-cases` or `--requirements-export` cannot be read, or the output cannot
+be written. An error names the input at fault and nothing is written. The three-state exit code is
+a later phase.
 
 `trace-matrix --runs` keeps its previous lenient behaviour. It does not use the strict loader.
