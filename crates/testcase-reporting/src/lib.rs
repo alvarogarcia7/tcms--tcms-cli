@@ -3,6 +3,7 @@
 
 pub mod legacy;
 pub mod load;
+pub mod rollup;
 pub mod run;
 pub mod select;
 
