@@ -2028,3 +2028,238 @@ RELATIONS:
   VALUE: SYS-JIRA-001
 
 [[/SECTION]]
+
+[[SECTION]]
+TITLE: Traceability Report Requirements
+
+[REQUIREMENT]
+UID: HLR-REP-LOAD-01
+TITLE: Validated Report Inputs
+STATEMENT: >>>
+The system shall read the trace matrix and the test run records through schema validation, and shall fail the report run, naming the file, when an input does not validate.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-003
+
+[REQUIREMENT]
+UID: HLR-REP-LOAD-02
+TITLE: Input Reconciliation
+STATEMENT: >>>
+The system shall show a reconciliation block that lists the inputs discovered, loaded and skipped with a reason, and shall not drop an input silently.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-003
+
+[REQUIREMENT]
+UID: HLR-REP-LOAD-03
+TITLE: Latest Run Selection
+STATEMENT: >>>
+When several runs contain a result for the same test case, the system shall use the run with the latest start time and shall list the runs it excluded.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-003
+
+[REQUIREMENT]
+UID: HLR-REP-LOAD-04
+TITLE: Duplicate Run Identity
+STATEMENT: >>>
+The system shall fail the report run when two test run records share a run ID.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-003
+
+[REQUIREMENT]
+UID: HLR-REP-ROLL-01
+TITLE: Coverage Separate From Status
+STATEMENT: >>>
+The system shall show, for each requirement, test coverage (normal-range and robustness tests present) separately from its verification status.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-002
+
+[REQUIREMENT]
+UID: HLR-REP-ROLL-02
+TITLE: Verification Status Rule
+STATEMENT: >>>
+The system shall derive the verification status of a requirement from its linked test case verdicts by a documented rule, and shall report a requirement as verified only when every linked test case has verdict pass.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-002
+
+[REQUIREMENT]
+UID: HLR-REP-ROLL-03
+TITLE: Obsolete Test Cases
+STATEMENT: >>>
+The system shall exclude obsolete test cases from the verification roll-up and shall count them in the report header.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-002
+
+[REQUIREMENT]
+UID: HLR-REP-ROLL-04
+TITLE: Missing Result Is Not Passed
+STATEMENT: >>>
+The system shall report a linked test case without a result in the selected runs as not run, and never as passed.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-002
+
+[REQUIREMENT]
+UID: HLR-REP-TRC-01
+TITLE: Traceability View
+STATEMENT: >>>
+The system shall list each requirement with its linked test cases, the verdict of each test case, and the run it came from.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-001
+
+[REQUIREMENT]
+UID: HLR-REP-TRC-02
+TITLE: Requirement Levels
+STATEMENT: >>>
+The system shall take requirement IDs and levels from the trace matrix and shall keep high-level and low-level requirements distinct in the report.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-001
+
+[REQUIREMENT]
+UID: HLR-REP-TRC-03
+TITLE: Matrix Rows
+STATEMENT: >>>
+The system shall list only normative requirements as traceability matrix rows, grouped under a heading for their source document, and shall show a document without normative requirements as having no traceable content.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-001
+
+[REQUIREMENT]
+UID: HLR-REP-TRC-04
+TITLE: Matrix Columns
+STATEMENT: >>>
+The system shall use the test types normal_range, robustness and other as traceability matrix columns in a fixed order, shall list the linked test cases with their verdicts in each cell, and shall show a column even when it is empty.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-001
+
+[REQUIREMENT]
+UID: HLR-REP-TRC-05
+TITLE: Deterministic Order
+STATEMENT: >>>
+The system shall order traceability matrix rows and columns deterministically by document, requirement ID and test case ID.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-003
+
+[REQUIREMENT]
+UID: HLR-REP-SUM-01
+TITLE: Run Summary Counts
+STATEMENT: >>>
+The system shall show, per run and per requirement, the counts of pass, fail, not_executed and error results and their total, with the counts summing to the total.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-001
+
+[REQUIREMENT]
+UID: HLR-REP-GAP-01
+TITLE: Coverage Gaps
+STATEMENT: >>>
+The system shall list the requirements with no test cases, the requirements missing a normal-range test, the requirements missing a robustness test, and the test cases with no recorded result.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-001
+
+[REQUIREMENT]
+UID: HLR-REP-PRB-01
+TITLE: Problem Report List
+STATEMENT: >>>
+The system shall list each failed and errored result with its problem report ID.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-001
+
+[REQUIREMENT]
+UID: HLR-REP-PRB-02
+TITLE: Missing Problem Report
+STATEMENT: >>>
+The system shall flag each failed or errored result that has no problem report ID.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-001
+
+[REQUIREMENT]
+UID: HLR-REP-OUT-01
+TITLE: Markdown And AsciiDoc Output
+STATEMENT: >>>
+The system shall render every report in Markdown and in AsciiDoc, with characters that break table cells escaped.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-001
+
+[REQUIREMENT]
+UID: HLR-REP-OUT-02
+TITLE: Machine-Readable Output
+STATEMENT: >>>
+The system shall write every report as JSON or YAML that validates against a local report schema, and shall write no file when that validation fails.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-PIN-001
+
+[REQUIREMENT]
+UID: HLR-REP-OUT-03
+TITLE: Deterministic Output
+STATEMENT: >>>
+The system shall produce byte-identical output for the same inputs and the same generation time.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-003
+
+[REQUIREMENT]
+UID: HLR-REP-OUT-04
+TITLE: Report Header
+STATEMENT: >>>
+The system shall record in each report header the matrix ID, baseline ID, run IDs, build IDs, environments, testers and generation time, and shall show a missing value as not recorded.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-003
+
+[REQUIREMENT]
+UID: HLR-REP-CLI-01
+TITLE: Report Command
+STATEMENT: >>>
+The system shall produce the selected report kinds from a trace matrix and test run records through a report command.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-001
+
+[REQUIREMENT]
+UID: HLR-REP-CLI-02
+TITLE: Report Exit Status
+STATEMENT: >>>
+The system shall exit with status 0 on success, 1 on an input or validation error, and 2 when gaps or failed results exist and the fail-on-gaps option is given.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-REP-004
+
+[[/SECTION]]
