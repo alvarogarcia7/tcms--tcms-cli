@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-10-30T16:21:00Z'
+updated_date: '2026-10-30T16:32:00Z'
 labels: []
 milestone: m-0
 dependencies: []
@@ -18,7 +19,7 @@ ordinal: 42000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Requirements: TRC-01, TRC-02. Markdown rendering of the traceability view. Each requirement lists its linked test cases, verdicts and source run. IDs and levels from the trace matrix; HLR and LLR kept distinct.
+Requirements: TRC-01, TRC-02. Markdown traceability view. Each requirement lists its linked test cases, verdicts and source run. Rows and columns follow TRC-03..TRC-05 (normative rows, test-type columns, deterministic order). IDs and levels from the trace matrix; HLR and LLR kept distinct.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

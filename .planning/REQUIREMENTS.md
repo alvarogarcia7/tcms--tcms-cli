@@ -25,6 +25,9 @@ Requirements for this milestone. Each maps to a roadmap phase.
 
 - [ ] **TRC-01**: Traceability report lists each requirement with its linked test cases, each test case's verdict, and the run it came from (REQ → test cases → PASS/FAIL)
 - [ ] **TRC-02**: Requirement IDs and levels come from the trace matrix, and HLR and LLR requirements are kept distinct in the report
+- [ ] **TRC-03**: Traceability matrix rows are the normative requirements only (sections and free text are not rows), grouped under a heading for their source document; a document with no normative requirements is shown as "No traceable content" (as in StrictDoc's traceability matrix screen)
+- [ ] **TRC-04**: Matrix columns are the test types (normal_range, robustness, other) in a fixed order; each cell lists the linked test cases with their verdicts, and a column is shown even when empty so gaps are visible
+- [ ] **TRC-05**: Matrix row and column order is deterministic (documents, then requirement IDs, then test case IDs), so the same inputs always produce the same table
 
 ### Run Summary (SUM)
 
@@ -95,6 +98,9 @@ Deferred to a future release. Tracked but not in the current roadmap.
 | ROLL-04 | Phase 2 | Pending |
 | TRC-01 | Phase 2 | Pending |
 | TRC-02 | Phase 2 | Pending |
+| TRC-03 | Phase 2 | Pending |
+| TRC-04 | Phase 2 | Pending |
+| TRC-05 | Phase 2 | Pending |
 | SUM-01 | Phase 3 | Pending |
 | GAP-01 | Phase 3 | Pending |
 | PRB-01 | Phase 3 | Pending |
@@ -107,8 +113,8 @@ Deferred to a future release. Tracked but not in the current roadmap.
 | CLI-02 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 20 total
-- Mapped to phases: 20
+- v1 requirements: 23 total
+- Mapped to phases: 23
 - Unmapped: 0
 
 ---

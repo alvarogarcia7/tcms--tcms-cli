@@ -31,7 +31,7 @@ This milestone adds a `test-executor report` command that turns the existing tra
 **Goal**: A user can generate a Markdown traceability report showing, for every requirement, its test cases, their verdicts, and an honest verification status.
 **Mode:** mvp
 **Depends on**: Phase 1
-**Requirements**: ROLL-01, ROLL-02, ROLL-03, ROLL-04, TRC-01, TRC-02, OUT-03, OUT-04
+**Requirements**: ROLL-01, ROLL-02, ROLL-03, ROLL-04, TRC-01, TRC-02, TRC-03, TRC-04, TRC-05, OUT-03, OUT-04
 **Success Criteria** (what must be TRUE):
   1. Report lists each requirement with its linked test cases, each case's verdict, and the run it came from; HLR and LLR requirements appear distinctly
   2. A requirement shows VERIFIED only if every linked test case has verdict `pass`; otherwise it shows FAILED, ERRORED, NOT RUN, PARTIAL or NO TESTS per the documented rule
