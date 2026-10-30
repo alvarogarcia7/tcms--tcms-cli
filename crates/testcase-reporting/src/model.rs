@@ -626,6 +626,26 @@ mod tests {
     }
 
     #[test]
+    fn blank_baseline_is_not_recorded_in_header() {
+        for blank in ["", "  "] {
+            let inputs = inputs(
+                vec![link("R1", RequirementLevel::Hlr, &[], false, false)],
+                Some(blank),
+                Vec::new(),
+            );
+            let model = build(&inputs, None);
+            assert_eq!(model.header.baseline_id, None, "baseline {blank:?}");
+        }
+        let inputs = inputs(
+            vec![link("R1", RequirementLevel::Hlr, &[], false, false)],
+            Some("B-1"),
+            Vec::new(),
+        );
+        let model = build(&inputs, None);
+        assert_eq!(model.header.baseline_id, Some("B-1".to_string()));
+    }
+
+    #[test]
     fn one_row_per_link() {
         let inputs = inputs(
             vec![

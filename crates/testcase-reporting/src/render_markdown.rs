@@ -288,6 +288,19 @@ No traceable content
         assert_eq!(render_markdown(&golden_model()), expected);
     }
 
+    #[test]
+    fn blank_matrix_id_and_baseline_render_not_recorded() {
+        for blank in ["", "   "] {
+            let mut header = golden_model().header;
+            header.matrix_id = blank.to_string();
+            header.baseline_id = Some(blank.to_string());
+            let block = header_block(&header);
+            assert!(block.contains("| Matrix | not recorded |"), "{block}");
+            assert!(block.contains("| Baseline | not recorded |"), "{block}");
+            assert!(!block.contains("| Baseline |  |"), "{block}");
+        }
+    }
+
     mod pipeline {
         use super::super::*;
         use crate::load::{LoadedInputs, Reconciliation};
