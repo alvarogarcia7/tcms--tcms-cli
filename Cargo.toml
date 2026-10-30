@@ -17,6 +17,7 @@ members = [
     "crates/testcase-git",
     "crates/testcase-manager",
     "crates/testcase-orchestration",
+    "crates/testcase-reporting",
     "crates/testcase-storage",
     "crates/testcase-ui",
     "crates/testcase-validation",
