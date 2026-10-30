@@ -63,7 +63,14 @@ Plans:
   2. Gaps report lists requirements with no test cases, requirements missing a normal-range test, requirements missing a robustness test, and test cases with no recorded result
   3. Problem report list shows every fail and error result with its `problem_report_id`
   4. A fail or error result lacking a `problem_report_id` is visibly flagged in the list
-**Plans**: TBD
+**Plans:** 5 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Shared foundation: header extraction, ViewInput, ResultCounts, fixture (wave 1)
+- [ ] 03-02-PLAN.md — Run summary view and Markdown (SUM-01) (wave 2)
+- [ ] 03-03-PLAN.md — Coverage gaps view and Markdown (GAP-01) (wave 2)
+- [ ] 03-04-PLAN.md — Problem report list with missing flag (PRB-01, PRB-02) (wave 2)
+- [ ] 03-05-PLAN.md — `report --kind summary|gaps|problems` wiring, CLI tests, docs (wave 3)
 **Notes**: All four report kinds are views over one `ReportModel` so numbers cannot disagree. Depends on the Phase 1 zero-test-requirement finding for "no test cases".
 
 ### Phase 4: AsciiDoc and Machine-Readable Output
