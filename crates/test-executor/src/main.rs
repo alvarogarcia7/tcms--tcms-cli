@@ -5,7 +5,6 @@ use clap::{Parser, Subcommand};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use testcase_common::load_and_validate_yaml;
 use testcase_execution::{AuditLogger, TestExecutor, VarHydrator};
 use testcase_models::TestCase;
 use testcase_storage::{TestCaseFilter, TestCaseFilterer, TestCaseStorage};
@@ -302,15 +301,7 @@ enum AuditLogCommands {
 }
 
 fn load_test_case(yaml_file: &PathBuf) -> Result<TestCase> {
-    let test_case =
-        load_and_validate_yaml::<TestCase, _, _>(yaml_file, "schemas/").context(format!(
-            "Failed to load and validate YAML file: {}",
-            yaml_file.display()
-        ))?;
-    test_case
-        .validate_classification()
-        .map_err(|e| anyhow::anyhow!("{}: {}", yaml_file.display(), e))?;
-    Ok(test_case)
+    testcase_reporting::legacy::load_test_case(yaml_file)
 }
 
 #[derive(Subcommand)]
@@ -488,93 +479,6 @@ fn build_dependency_resolver_from_dir(test_case_dir: &Path) -> Result<Dependency
     Ok(DependencyResolver::new(index))
 }
 
-/// Read test run records from files and directories; other YAML files are skipped
-fn read_test_runs(paths: &[PathBuf]) -> Result<Vec<testcase_verification::TestRunRecord>> {
-    let mut files = Vec::new();
-    for path in paths {
-        if path.is_dir() {
-            for entry in fs::read_dir(path)
-                .context(format!("Failed to read directory: {}", path.display()))?
-            {
-                files.push(entry?.path());
-            }
-        } else {
-            files.push(path.clone());
-        }
-    }
-    files.sort();
-
-    let mut runs = Vec::new();
-    for file in files {
-        let is_yaml = matches!(
-            file.extension().and_then(|e| e.to_str()),
-            Some("yml") | Some("yaml")
-        );
-        if !file.is_file() || !is_yaml {
-            continue;
-        }
-        let content = fs::read_to_string(&file)
-            .context(format!("Failed to read test run: {}", file.display()))?;
-        match serde_yaml::from_str::<testcase_verification::TestRunRecord>(&content) {
-            Ok(run) if run.doc_type == "test_run" => runs.push(run),
-            Ok(_) => {}
-            Err(e) if paths.contains(&file) => {
-                anyhow::bail!("{} is not a test run record: {}", file.display(), e)
-            }
-            Err(_) => {}
-        }
-    }
-    Ok(runs)
-}
-
-/// Load every test case below `dir`. A coverage claim must not rest on test cases that could
-/// not be read, so any file that fails to load fails the whole load, naming each one.
-fn load_test_cases_strict(dir: &Path) -> Result<Vec<TestCase>> {
-    fn walk(dir: &Path, files: &mut Vec<PathBuf>) -> Result<()> {
-        for entry in
-            fs::read_dir(dir).context(format!("Failed to read directory: {}", dir.display()))?
-        {
-            let path = entry?.path();
-            if path.is_dir() {
-                walk(&path, files)?;
-            } else if matches!(
-                path.extension().and_then(|e| e.to_str()),
-                Some("yml") | Some("yaml")
-            ) {
-                files.push(path);
-            }
-        }
-        Ok(())
-    }
-
-    if !dir.is_dir() {
-        anyhow::bail!("Not a directory: {}", dir.display());
-    }
-    let mut files = Vec::new();
-    walk(dir, &mut files)?;
-    files.sort();
-
-    let mut test_cases = Vec::new();
-    let mut failures = Vec::new();
-    for file in &files {
-        match load_test_case(file) {
-            Ok(test_case) => test_cases.push(test_case),
-            Err(e) => failures.push(format!("  {}: {:#}", file.display(), e)),
-        }
-    }
-    if !failures.is_empty() {
-        anyhow::bail!(
-            "{} of {} YAML files below {} are not valid test cases (the directory must hold \
-             test cases only):\n{}",
-            failures.len(),
-            files.len(),
-            dir.display(),
-            failures.join("\n")
-        );
-    }
-    Ok(test_cases)
-}
-
 /// Requirements of the matrix. A `.json` file is a StrictDoc export (its layout is an assumption,
 /// see `requirement_import::strictdoc`); anything else is read by `testcase_verification`.
 fn read_matrix_requirements(path: &Path) -> Result<Vec<testcase_verification::Requirement>> {
@@ -623,8 +527,8 @@ fn trace_matrix(
     if requirements.is_empty() {
         anyhow::bail!("No HLR or LLR found in {}", requirements_path.display());
     }
-    let test_cases = load_test_cases_strict(test_case_dir)?;
-    let runs = read_test_runs(run_paths)?;
+    let test_cases = testcase_reporting::legacy::load_test_cases_strict(test_case_dir)?;
+    let runs = testcase_reporting::legacy::read_test_runs(run_paths)?;
 
     let id = id.unwrap_or_else(|| format!("TM-{}", chrono::Utc::now().format("%Y%m%dT%H%M%SZ")));
     let (matrix, findings) = testcase_verification::build_matrix(
@@ -693,7 +597,7 @@ fn regression_select(
         .map(testcase_verification::read_regression_plan)
         .transpose()?;
     let baseline = testcase_verification::resolve_baseline(&baselines, plan.as_ref())?;
-    let test_cases = load_test_cases_strict(test_case_dir)?;
+    let test_cases = testcase_reporting::legacy::load_test_cases_strict(test_case_dir)?;
     let selection = testcase_verification::select_regression(baseline, &test_cases);
 
     let text = match format {

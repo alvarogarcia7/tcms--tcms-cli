@@ -58,7 +58,7 @@ The workspace follows a **bottom-up dependency hierarchy** where higher-level cr
 │                                                                           │
 │  testcase-validation    testcase-execution    testcase-verification      │
 │  testcase-storage       testcase-ui           testcase-git               │
-│  testcase-cli                                                            │
+│  testcase-cli           testcase-reporting                               │
 │                                                                           │
 └───────────────────────────────┬─────────────────────────────────────────┘
                                 │ depends on
@@ -94,7 +94,7 @@ testcase-common (shared utilities, I/O, configuration)
 ┌───────────────────┬──────────────────────┬─────────────────────┐
 │                   │                      │                     │
 testcase-validation testcase-execution  testcase-verification  testcase-ui
-testcase-storage    testcase-git         testcase-cli
+testcase-storage    testcase-git         testcase-cli  testcase-reporting
 │                   │                      │                     │
 └───────────────────┴──────────────────────┴─────────────────────┘
     ↓
@@ -206,6 +206,18 @@ Library crates provide shared functionality and are organized by layer.
 **Dependencies**: `testcase-models`, `testcase-common`, `bash-eval`, `regex`, `strip-ansi-escapes`, `serde_json`, `serde`, `serde_yaml`, `anyhow`
 
 **Consumers**: `testcase-orchestration`, `testcase-ui`, `test-orchestrator`, `test-verify`, `verifier`, `script-cleanup`
+
+#### `testcase-reporting`
+**Purpose**: Strict input loading, run selection, report model and renderers for `test-executor report`
+
+**Key Functionality**:
+- Lenient loaders shared by `trace-matrix` and `regression-select` (`legacy`)
+- `LoadedRun`: run record with its source file and parsed RFC 3339 start instant
+- Strict loaders and run selection (added in later plans)
+
+**Dependencies**: `testcase-models`, `testcase-common`, `testcase-verification`, `anyhow`, `chrono`, `serde_yaml`
+
+**Consumers**: `test-executor` only, by design
 
 #### `testcase-storage`
 **Purpose**: File system storage and retrieval of test cases
