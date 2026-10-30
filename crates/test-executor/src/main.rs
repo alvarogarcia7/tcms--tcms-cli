@@ -167,6 +167,25 @@ enum Commands {
         #[arg(long)]
         no_coverage_check: bool,
     },
+    /// Load a trace matrix and test run records strictly, select one result per test case, and
+    /// print what was used and skipped (report renderers follow in later phases)
+    Report {
+        /// Trace matrix YAML file
+        #[arg(long, value_name = "FILE")]
+        matrix: PathBuf,
+
+        /// Test run records: YAML files or directories of them (repeatable)
+        #[arg(long = "runs", value_name = "PATH", required = true)]
+        runs: Vec<PathBuf>,
+
+        /// Report kind to print (repeatable; defaults to all kinds)
+        #[arg(long = "kind", value_enum, value_name = "KIND")]
+        kinds: Vec<ReportKind>,
+
+        /// Output file (defaults to stdout)
+        #[arg(short, long, value_name = "OUTPUT_FILE")]
+        output: Option<PathBuf>,
+    },
     /// Select the regression test cases from a baseline's change impact: the test cases the
     /// impact analysis lists plus those tracing to the impacted requirements
     RegressionSelect {
@@ -512,6 +531,69 @@ fn read_matrix_requirements(path: &Path) -> Result<Vec<testcase_verification::Re
         requirements.push(testcase_verification::Requirement { id, level });
     }
     Ok(requirements)
+}
+
+/// Report kinds accepted by `report --kind` (D-19). Renderers arrive in later phases.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum)]
+enum ReportKind {
+    Traceability,
+    Summary,
+    Gaps,
+    Problems,
+}
+
+impl ReportKind {
+    const ALL: [ReportKind; 4] = [
+        ReportKind::Traceability,
+        ReportKind::Summary,
+        ReportKind::Gaps,
+        ReportKind::Problems,
+    ];
+
+    fn as_str(self) -> &'static str {
+        match self {
+            ReportKind::Traceability => "traceability",
+            ReportKind::Summary => "summary",
+            ReportKind::Gaps => "gaps",
+            ReportKind::Problems => "problems",
+        }
+    }
+}
+
+fn report(
+    matrix: &Path,
+    run_paths: &[PathBuf],
+    kinds: &[ReportKind],
+    output: Option<PathBuf>,
+) -> Result<()> {
+    // Any input error returns here, before anything is written (T-01-14)
+    let inputs = testcase_reporting::load::load_inputs(matrix, run_paths, "schemas/")?;
+    let selection = testcase_reporting::select::select_results(&inputs.runs);
+
+    let selected: Vec<ReportKind> = if kinds.is_empty() {
+        ReportKind::ALL.to_vec()
+    } else {
+        let mut sorted: Vec<ReportKind> = kinds.to_vec();
+        sorted.sort();
+        sorted.dedup();
+        sorted
+    };
+
+    let mut text = testcase_reporting::input_summary(&inputs, &selection);
+    text.push_str("\nReport kinds\n");
+    for kind in selected {
+        text.push_str(&format!(
+            "  {}: renderer not yet available\n",
+            kind.as_str()
+        ));
+    }
+
+    match output {
+        Some(path) => fs::write(&path, &text)
+            .context(format!("Failed to write report: {}", path.display()))?,
+        None => print!("{text}"),
+    }
+    Ok(())
 }
 
 fn trace_matrix(
@@ -1195,6 +1277,12 @@ fn main() -> Result<()> {
             output,
             no_coverage_check,
         ),
+        Commands::Report {
+            matrix,
+            runs,
+            kinds,
+            output,
+        } => report(&matrix, &runs, &kinds, output),
         Commands::RegressionSelect {
             test_case_dir,
             baselines,
