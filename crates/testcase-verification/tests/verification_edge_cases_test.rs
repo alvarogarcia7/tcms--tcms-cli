@@ -133,19 +133,36 @@ mod verification_edge_cases_test {
         assert_eq!(result.passed_steps, 2);
     }
 
+    // Decision D-41f: a file with no JSON array and no text-format line is not a log. It used to
+    // parse to "no entries", a failed verdict that --success-on-completion forgave.
     #[test]
-    fn empty_log_content_parses_to_no_entries() {
-        let logs = TestVerifier::with_exact_matching()
+    fn empty_log_content_is_not_a_log() {
+        let err = TestVerifier::with_exact_matching()
             .parse_log_content("", Path::new("empty.log"))
-            .unwrap();
+            .unwrap_err();
 
-        assert!(logs.is_empty());
+        assert!(
+            err.to_string().contains("not a test execution log"),
+            "{err}"
+        );
     }
 
     #[test]
-    fn whitespace_only_log_content_parses_to_no_entries() {
-        let logs = TestVerifier::with_exact_matching()
+    fn whitespace_only_log_content_is_not_a_log() {
+        let err = TestVerifier::with_exact_matching()
             .parse_log_content("\n   \n\t\n", Path::new("blank.log"))
+            .unwrap_err();
+
+        assert!(
+            err.to_string().contains("not a test execution log"),
+            "{err}"
+        );
+    }
+
+    #[test]
+    fn an_empty_json_array_is_still_a_log_with_no_entries() {
+        let logs = TestVerifier::with_exact_matching()
+            .parse_log_content("[]", Path::new("empty-array.log"))
             .unwrap();
 
         assert!(logs.is_empty());

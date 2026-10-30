@@ -1,0 +1,186 @@
+requirement: HYDRATION_EXAMPLE
+item: 1
+tc: 1
+id: TC_HYDRATION_001
+description: API endpoints with different environments - demonstrates hydration placeholders
+  for environment-specific API testing
+general_initial_conditions:
+  network:
+  - Network connectivity to API server is available
+  system:
+  - curl command-line tool is installed
+  text:
+  - ECHO "${#API_BASE_URL}"
+initial_conditions:
+  api:
+  - API server is running and accessible
+  - Test environment is properly configured
+test_sequences:
+- id: 1
+  name: API Health Check
+  description: Verify API health endpoint responds correctly for the environment
+  initial_conditions:
+    api:
+    - API health endpoint is enabled
+  steps:
+  - step: 1
+    description: Check API health endpoint
+    command: curl -s -o /dev/null -w '%{http_code}' ${#API_BASE_URL}/health
+    expected:
+      success: true
+      result: 0
+      output: ${#EXPECTED_HEALTH_STATUS}
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: '[[ "$COMMAND_OUTPUT" == "${#EXPECTED_HEALTH_STATUS}" ]]'
+  - step: 2
+    description: Get API version information
+    command: curl -s ${#API_BASE_URL}/version
+    expected:
+      success: true
+      result: 0
+      output: ${#EXPECTED_VERSION}
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '${#EXPECTED_VERSION}' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: Verify API environment configuration
+    command: curl -s ${#API_BASE_URL}/config/environment
+    expected:
+      success: true
+      result: 0
+      output: ${#ENVIRONMENT_NAME}
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '${#ENVIRONMENT_NAME}' <<< "$COMMAND_OUTPUT"
+- id: 2
+  name: API Authentication Test
+  description: Test authentication flow with environment-specific credentials
+  initial_conditions:
+    authentication:
+    - Test user credentials are configured
+    - Authentication endpoint is available
+  steps:
+  - step: 1
+    description: Authenticate with API using environment credentials
+    command: 'curl -s -X POST ${#API_BASE_URL}/auth/login -H ''Content-Type: application/json''
+      -d ''{"username":"${#API_USERNAME}","password":"${#API_PASSWORD}"}'''
+    capture_vars:
+      auth_token: (?<="token":")[a-zA-Z0-9._-]+
+    expected:
+      success: true
+      result: 0
+      output: token
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'token' <<< "$COMMAND_OUTPUT"
+  - step: 2
+    description: Make authenticated request to protected endpoint
+    command: 'curl -s -H ''Authorization: Bearer ${auth_token}'' ${#API_BASE_URL}/api/user/profile'
+    expected:
+      success: true
+      result: 0
+      output: profile
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'profile' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: Verify API rate limits for environment
+    command: 'curl -s -I -H ''Authorization: Bearer ${auth_token}'' ${#API_BASE_URL}/api/status
+      | grep -i ''x-ratelimit-limit'''
+    expected:
+      success: true
+      result: 0
+      output: ${#EXPECTED_RATE_LIMIT}
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '${#EXPECTED_RATE_LIMIT}' <<< "$COMMAND_OUTPUT"
+- id: 3
+  name: API Data Operations
+  description: Test data operations with environment-specific endpoints
+  initial_conditions:
+    api:
+    - API data endpoints are accessible
+    - Test data exists in the environment
+  steps:
+  - step: 1
+    description: Fetch data from environment-specific endpoint
+    command: curl -s ${#API_BASE_URL}/api/data?limit=${#DATA_FETCH_LIMIT}
+    expected:
+      success: true
+      result: 0
+      output: data
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'data' <<< "$COMMAND_OUTPUT"
+  - step: 2
+    description: Verify response time meets environment SLA
+    command: curl -s -o /dev/null -w '%{time_total}' ${#API_BASE_URL}/api/data
+    expected:
+      success: true
+      result: 0
+      output: .
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: awk '{exit !($1 < ${#MAX_RESPONSE_TIME})}' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: Check API endpoint uses correct protocol
+    command: echo ${#API_BASE_URL} | grep -oE '^https?'
+    expected:
+      success: true
+      result: 0
+      output: ${#EXPECTED_PROTOCOL}
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: '[[ "$COMMAND_OUTPUT" == "${#EXPECTED_PROTOCOL}" ]]'
+hydration_vars:
+  API_BASE_URL:
+    name: API_BASE_URL
+    description: Base URL for the API endpoint (environment-specific)
+    default_value: http://localhost:8080
+    required: true
+  API_USERNAME:
+    name: API_USERNAME
+    description: Username for API authentication
+    default_value: testuser
+    required: true
+  API_PASSWORD:
+    name: API_PASSWORD
+    description: Password for API authentication
+    default_value: testpass123
+    required: true
+  ENVIRONMENT_NAME:
+    name: ENVIRONMENT_NAME
+    description: Environment identifier (development/staging/production)
+    default_value: development
+    required: true
+  EXPECTED_VERSION:
+    name: EXPECTED_VERSION
+    description: Expected API version string
+    default_value: v1.0.0
+    required: true
+  EXPECTED_HEALTH_STATUS:
+    name: EXPECTED_HEALTH_STATUS
+    description: Expected HTTP status code from health endpoint
+    default_value: '200'
+    required: true
+  EXPECTED_RATE_LIMIT:
+    name: EXPECTED_RATE_LIMIT
+    description: Expected rate limit for the environment
+    default_value: '100'
+    required: false
+  DATA_FETCH_LIMIT:
+    name: DATA_FETCH_LIMIT
+    description: Maximum number of data items to fetch
+    default_value: '10'
+    required: false
+  MAX_RESPONSE_TIME:
+    name: MAX_RESPONSE_TIME
+    description: Maximum acceptable response time in seconds
+    default_value: '2.0'
+    required: false
+  EXPECTED_PROTOCOL:
+    name: EXPECTED_PROTOCOL
+    description: Expected protocol (http or https)
+    default_value: http
+    required: true

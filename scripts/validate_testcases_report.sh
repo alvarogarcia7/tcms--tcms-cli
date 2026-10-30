@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Configuration
 # Note: Schema path can be overridden by setting SCHEMA_FILE environment variable
 # Example: SCHEMA_FILE=data/schema.json ./scripts/validate_testcases_report.sh
-SCHEMA_FILE="${SCHEMA_FILE:-schemas/test-case.schema.json}"
+SCHEMA_FILE="${SCHEMA_FILE:-schemas/tcms-schemas/tcms/test-case-main.schema.json}"
 VALIDATE_YAML_BIN="${VALIDATE_YAML_BIN:-./target/debug/validate-yaml}"
 REPORT_DIR="${REPORT_DIR:-reports}"
 REPORT_FILE="${REPORT_DIR}/validation_report.txt"

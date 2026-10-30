@@ -14,26 +14,36 @@ fn get_schema_path() -> PathBuf {
 /// Helper to create a minimal valid test case YAML file
 fn create_test_case_yaml(dir: &std::path::Path, test_case_id: &str) {
     let yaml_content = format!(
-        r#"test_case_id: "{}"
-name: "Test Case"
-sequences:
-  - sequence_id: 1
-    name: "Test Sequence"
+        r#"type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: REQ_CLI
+item: 1
+tc: 1
+id: {}
+description: Test case for the verifier CLI tests
+general_initial_conditions: {{}}
+initial_conditions: {{}}
+test_sequences:
+  - id: 1
+    name: Test Sequence
+    description: Test sequence
+    initial_conditions: {{}}
     steps:
       - step: 1
-        description: "Test step"
-        command: "echo 'test'"
+        description: Test step
+        command: echo test
         expected:
-          result: ""
-          output: "test"
+          success: true
+          result: '0'
+          output: test
         verification:
-          result: "[[ $? -eq 0 ]]"
-          output: "cat $COMMAND_OUTPUT | grep -q 'test'"
+          result: '[[ $? -eq 0 ]]'
+          output: 'true'
 "#,
         test_case_id
     );
     fs::create_dir_all(dir).unwrap();
-    fs::write(dir.join(format!("{}.yaml", test_case_id)), yaml_content).unwrap();
+    fs::write(dir.join(format!("{}.yml", test_case_id)), yaml_content).unwrap();
 }
 
 /// Helper to create a minimal valid execution log JSON file
@@ -42,12 +52,14 @@ fn create_execution_log(path: &std::path::Path, test_case_id: &str) {
         r#"[
   {{
     "test_case_id": "{}",
-    "sequence_id": 1,
-    "step_number": 1,
-    "success": true,
-    "actual_result": "",
-    "actual_output": "test",
-    "timestamp": "2024-01-01T00:00:00Z"
+    "test_sequence": 1,
+    "step": 1,
+    "command": "echo test",
+    "exit_code": 0,
+    "output": "test",
+    "timestamp": "2024-01-01T00:00:00",
+    "result_verification_pass": true,
+    "output_verification_pass": true
   }}
 ]"#,
         test_case_id
@@ -814,12 +826,13 @@ fn test_folder_mode_success_with_logs() {
     // Should find and process log file
     assert!(stderr.contains("Found 1") || stderr.contains("Processing"));
 
-    // Output should contain report (verifier outputs YAML to stderr via log::info!)
+    // The report is on stdout (TCMS-41); stderr carries only log lines
+    let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
-        stderr.contains("test_cases:")
-            || stderr.contains("test_case_id:")
-            || stderr.contains("type:")
+        stdout.contains("test_case_id: TC001"),
+        "report not on stdout: {stdout}\n{stderr}"
     );
+    assert!(output.status.success(), "{stderr}");
 }
 
 // ============================================================================

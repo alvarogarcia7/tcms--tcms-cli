@@ -33,7 +33,7 @@ TEST_EXECUTOR=$(find_binary "test-executor")
 VALIDATE_YAML=$(find_binary "validate-yaml")
 
 # Schema paths
-TEST_CASE_SCHEMA="$PROJECT_ROOT/schemas/test-case.schema.json"
+TEST_CASE_SCHEMA="$PROJECT_ROOT/schemas/tcms-schemas/tcms/test-case-main.schema.json"
 CONTAINER_SCHEMA="$PROJECT_ROOT/data/testcase_results_container/schema.json"
 
 # Log file paths

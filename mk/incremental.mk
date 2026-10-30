@@ -221,6 +221,7 @@ test-from:
 				echo "crates/testcase-manager/tests/integration/test_verifier_e2e.sh" >> $$E2E_TESTS_FILE; \
 				echo "crates/testcase-manager/tests/integration/test_verifier_container_e2e.sh" >> $$E2E_TESTS_FILE; \
 				echo "crates/testcase-manager/tests/integration/test_verifier_edge_cases_e2e.sh" >> $$E2E_TESTS_FILE; \
+				echo "crates/testcase-manager/tests/integration/test_verifier_behaviour_changes_e2e.sh" >> $$E2E_TESTS_FILE; \
 				echo "scripts/run_verifier_and_generate_reports.sh" >> $$E2E_TESTS_FILE; \
 				echo "  verifier binary -> 4 E2E tests"; \
 				;; \

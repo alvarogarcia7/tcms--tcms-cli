@@ -1,0 +1,206 @@
+requirement: PREREQ_EXAMPLE
+item: 1
+tc: 1
+id: TC_PREREQ_EXAMPLE_001
+description: Example test case demonstrating both manual and automatic prerequisites
+  with various verification commands
+prerequisites:
+- type: manual
+  description: Ensure you have administrative access to the test devices
+- type: manual
+  description: Verify that all test devices are powered on and physically connected
+- type: automatic
+  description: Check network connectivity to primary device
+  verification_command: ping -c 3 192.168.1.100 && exit 0 || exit 1
+- type: automatic
+  description: Verify SSH service is running and port 22 is accessible
+  verification_command: nc -z -w 5 192.168.1.100 22 && exit 0 || exit 1
+- type: automatic
+  description: Confirm web service is available on port 8080
+  verification_command: curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/health
+    | grep -q '200' && exit 0 || exit 1
+- type: automatic
+  description: Check that required test data file exists
+  verification_command: test -f /tmp/test_data.json && exit 0 || exit 1
+- type: automatic
+  description: Verify database service is running
+  verification_command: systemctl is-active postgresql || pgrep -x postgres >/dev/null
+    && exit 0 || exit 1
+- type: automatic
+  description: Ensure sufficient disk space (at least 1GB free)
+  verification_command: df -k /tmp | awk 'NR==2 {if ($4 > 1048576) exit 0; else exit
+    1}'
+- type: manual
+  description: Confirm test environment variables are properly configured in your
+    shell
+- type: automatic
+  description: Check that Docker daemon is running
+  verification_command: docker info >/dev/null 2>&1 && exit 0 || exit 1
+general_initial_conditions:
+  system:
+  - Test execution environment is set up with all required tools
+  - Logging is enabled and log directory is writable
+  network:
+  - Network infrastructure is stable with no ongoing maintenance
+initial_conditions:
+  device:
+  - Primary test device (192.168.1.100) is accessible
+  - Device has default configuration loaded
+  services:
+  - All required services are in running state
+test_sequences:
+- id: 1
+  name: Device Connectivity and Service Status Verification
+  description: 'This test sequence verifies that prerequisite checks are working
+
+    and then performs actual connectivity and service status tests.
+
+    '
+  initial_conditions:
+    device:
+    - Device is responding to network requests
+    services:
+    - Services are ready to accept connections
+  steps:
+  - step: 1
+    description: Verify device is reachable via ping
+    command: ping -c 5 192.168.1.100
+    expected:
+      success: true
+      result: 0
+      output: 5 packets transmitted, 5 received
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '5 packets transmitted, 5 received' <<< "$COMMAND_OUTPUT"
+  - step: 2
+    description: Check SSH port connectivity
+    command: nc -zv -w 10 192.168.1.100 22
+    expected:
+      success: true
+      result: 0
+      output: succeeded
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qE '(succeeded|open)' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: Verify web service health endpoint
+    command: curl -s -o /tmp/health_check.txt -w '%{http_code}' http://localhost:8080/health
+    expected:
+      success: true
+      result: 0
+      output: '200'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '200' <<< "$COMMAND_OUTPUT"
+  - step: 4
+    description: Confirm test data file exists and is readable
+    command: test -f /tmp/test_data.json && cat /tmp/test_data.json | head -n 1
+    expected:
+      success: true
+      result: 0
+      output: '{'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '{' <<< "$COMMAND_OUTPUT"
+  - step: 5
+    description: Check database service status
+    command: systemctl is-active postgresql || echo "postgres-running"
+    expected:
+      success: true
+      result: 0
+      output: active
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qE '(active|running)' <<< "$COMMAND_OUTPUT"
+  - step: 6
+    manual: true
+    description: Manually verify that environment variables are correctly set
+    command: echo $TEST_ENV_VAR
+    expected:
+      success: true
+      result: 0
+      output: expected_value
+    verification:
+      result: 'true'
+      output: Confirm that TEST_ENV_VAR displays the expected value
+  - step: 7
+    description: Verify Docker daemon is operational
+    command: docker version --format '{{.Server.Version}}'
+    expected:
+      success: true
+      result: 0
+      output: .
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qE '[0-9]+\.[0-9]+' <<< "$COMMAND_OUTPUT"
+  - step: 8
+    description: Check available disk space in /tmp
+    command: df -h /tmp | awk 'NR==2 {print $4}'
+    expected:
+      success: true
+      result: 0
+      output: G
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qE '[0-9]+.*G' <<< "$COMMAND_OUTPUT"
+- id: 2
+  name: File Operations After Prerequisites
+  description: 'This sequence demonstrates file operations that depend on
+
+    prerequisites being satisfied.
+
+    '
+  initial_conditions:
+    filesystem:
+    - Test directories are accessible
+  steps:
+  - step: 1
+    description: Create a test file
+    command: echo "test content" > /tmp/prereq_test_file.txt
+    expected:
+      success: true
+      result: 0
+      output: ''
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'
+  - step: 2
+    description: Verify test file was created
+    command: test -f /tmp/prereq_test_file.txt && cat /tmp/prereq_test_file.txt
+    expected:
+      success: true
+      result: 0
+      output: test content
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'test content' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: Check file permissions
+    command: ls -l /tmp/prereq_test_file.txt | awk '{print $1}'
+    expected:
+      success: true
+      result: 0
+      output: -rw
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '^-rw' <<< "$COMMAND_OUTPUT"
+  - step: 4
+    description: Clean up test file
+    command: rm -f /tmp/prereq_test_file.txt
+    expected:
+      success: true
+      result: 0
+      output: ''
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'
+  - step: 5
+    description: Verify test file was deleted
+    command: test ! -f /tmp/prereq_test_file.txt && echo "file deleted"
+    expected:
+      success: true
+      result: 0
+      output: file deleted
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'file deleted' <<< "$COMMAND_OUTPUT"

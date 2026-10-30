@@ -1,0 +1,24 @@
+test_case_id: TC_OK
+description: Verification result with the reporting fields of the CLI (requirement, item, tc)
+requirement: REQ-PAY-001
+item: 1
+tc: 1
+sequences:
+  - sequence_id: 1
+    name: Sequence 1
+    all_steps_passed: true
+    requirement: REQ-PAY-001
+    item: 1
+    tc: 1
+    step_results:
+      - Pass:
+          step: 1
+          description: Echo hello
+          requirement: REQ-PAY-001
+          item: 1
+          tc: 1
+total_steps: 1
+passed_steps: 1
+failed_steps: 0
+not_executed_steps: 0
+overall_pass: true

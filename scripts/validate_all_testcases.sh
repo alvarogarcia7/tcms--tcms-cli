@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/logger.sh" || exit 1
 
 # Configuration
-SCHEMA_FILE="${SCHEMA_FILE:-schemas/test-case.schema.json}"
+SCHEMA_FILE="${SCHEMA_FILE:-schemas/tcms-schemas/tcms/test-case-main.schema.json}"
 OUTPUT_FILE="${OUTPUT_FILE:-testcase_validation_report.txt}"
 BACKLOG_FILE="${BACKLOG_FILE:-backlog.md}"
 USE_MCP="${USE_MCP:-true}"
@@ -151,17 +151,17 @@ This test case file failed schema validation and needs to be fixed.
 Run the following command to see the validation error:
 
 \`\`\`bash
-cargo run --bin validate-yaml -- --schema schemas/test-case.schema.json ${file_path}
+cargo run --bin validate-yaml -- --schema schemas/tcms-schemas/tcms/test-case-main.schema.json ${file_path}
 \`\`\`
 
 ### How to Fix
 
 1. Run the validation command above to see specific error messages
-2. Review the schema at \`schemas/test-case.schema.json\`
+2. Review the schema at \`schemas/tcms-schemas/tcms/test-case-main.schema.json\`
 3. Fix the YAML file to conform to the schema
 4. Re-run validation to verify the fix:
    \`\`\`bash
-   cargo run --bin validate-yaml -- --schema schemas/test-case.schema.json ${file_path}
+   cargo run --bin validate-yaml -- --schema schemas/tcms-schemas/tcms/test-case-main.schema.json ${file_path}
    \`\`\`
 5. Once fixed, run full validation:
    \`\`\`bash
@@ -209,7 +209,7 @@ if [ $failed_files -gt 0 ]; then
         echo ""
         echo "To validate a specific file:"
         echo "\`\`\`bash"
-        echo "cargo run --bin validate-yaml -- --schema schemas/test-case.schema.json <file_path>"
+        echo "cargo run --bin validate-yaml -- --schema schemas/tcms-schemas/tcms/test-case-main.schema.json <file_path>"
         echo "\`\`\`"
         echo ""
         echo "## Failed Files"

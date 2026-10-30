@@ -266,7 +266,7 @@ verify_binaries() {
 validate_test_cases() {
     section "Stage 1: Validating Test Case YAMLs"
     
-    local schema="$SCHEMA_DIR/test-case.schema.json"
+    local schema="$SCHEMA_DIR/tcms-schemas/tcms/test-case-main.schema.json"
     
     if [[ ! -f "$schema" ]]; then
         log_error "Schema file not found: $schema"

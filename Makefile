@@ -293,6 +293,13 @@ test-verifier-edge-cases:
 #	./tests/integration/test_verifier_edge_cases_e2e.sh
 .PHONY: test-verifier-edge-cases
 
+# E2E test of the verifier behaviour changes of TCMS-41 (empty folder, unverifiable log, zero steps,
+# failed hook, manual step without log entry, report on stdout)
+test-verifier-behaviour:
+	@${MAKE} build BASE_REF=$(or $(BASE_REF),main)
+	./crates/testcase-manager/tests/integration/test_verifier_behaviour_changes_e2e.sh
+.PHONY: test-verifier-behaviour
+
 test-e2e-failing:
 	@${MAKE} build BASE_REF=$(or $(BASE_REF),main)
 	./tests/integration/run_e2e_test.sh
@@ -339,6 +346,7 @@ test-e2e: build
 					echo "./crates/testcase-manager/tests/integration/test_verifier_e2e.sh" >> $$E2E_TESTS_FILE; \
 					echo "./crates/testcase-manager/tests/integration/test_verifier_container_e2e.sh" >> $$E2E_TESTS_FILE; \
 					echo "./crates/testcase-manager/tests/integration/test_verifier_edge_cases_e2e.sh" >> $$E2E_TESTS_FILE; \
+					echo "./crates/testcase-manager/tests/integration/test_verifier_behaviour_changes_e2e.sh" >> $$E2E_TESTS_FILE; \
 					echo "./scripts/run_verifier_and_generate_reports.sh" >> $$E2E_TESTS_FILE; \
 					;; \
 				audit-verifier) \
@@ -419,6 +427,7 @@ test-e2e-all-no-build:
 	./crates/testcase-manager/tests/integration/test_verifier_e2e.sh
 	./crates/testcase-manager/tests/integration/test_verifier_container_e2e.sh
 	./crates/testcase-manager/tests/integration/test_verifier_edge_cases_e2e.sh
+	./crates/testcase-manager/tests/integration/test_verifier_behaviour_changes_e2e.sh
 	${MAKE} test-verifier-edge-cases
 	./crates/testcase-manager/tests/integration/test_documentation_generation.sh
 # 	BUILD_VARIANT="" ./scripts/run_verifier_and_generate_reports.sh
@@ -624,8 +633,8 @@ shellcheck:
 # - Legacy schemas: schemas/*.schema.json (backward compatible)
 # - Versioned schemas: schemas/tcms/*.schema.v1.json (recommended for new development)
 test-e2e-validate-yaml: build-validate-yaml
-	cargo run --bin validate-yaml -- --schema schemas/test-case.schema.json tests/sample/gsma_4.4.2.2_TC.yml >/dev/null 2>&1
-	! cargo run --bin validate-yaml -- --schema schemas/test-case.schema.json tests/sample/data.yml >/dev/null 2>&1
+	cargo run --bin validate-yaml -- --schema schemas/tcms-schemas/tcms/test-case-main.schema.json tests/sample/gsma_4.4.2.2_TC.yml >/dev/null 2>&1
+	! cargo run --bin validate-yaml -- --schema schemas/tcms-schemas/tcms/test-case-main.schema.json tests/sample/data.yml >/dev/null 2>&1
 	./tests/integration/test_validate_yaml_multi_e2e.sh
 	./tests/integration/test_validate_yaml_watch_e2e.sh
 .PHONY: test-e2e-validate-yaml
@@ -649,9 +658,9 @@ test-verify-sample:
 	./tests/integration/test_verify_e2e.sh
 .PHONY: test-verify-sample
 
-# Uses canonical legacy schema path: schemas/test-case.schema.json
+# Uses canonical legacy schema path: schemas/tcms-schemas/tcms/test-case-main.schema.json
 validate-all-testcases: build-validate-yaml
-	SCHEMA_FILE=schemas/test-case.schema.json ./scripts/validate-files.sh --pattern '\.ya?ml$$' --validator ./scripts/validate-yaml-wrapper.sh
+	SCHEMA_FILE=schemas/tcms-schemas/tcms/test-case-main.schema.json ./scripts/validate-files.sh --pattern '\.ya?ml$$' --validator ./scripts/validate-yaml-wrapper.sh
 .PHONY: validate-all-testcases
 
 # Validates all test case YAML files using their declared schema field.
@@ -685,7 +694,7 @@ verify-testcases: build-validate-yaml
 	fi; \
 	echo ""; \
 	echo "Verifying JSON schema files themselves..."; \
-	cargo run -p validate-json -- schemas/test-case.schema.json >/dev/null 2>&1 || echo "⚠ Schema validation deferred to JSON validator"
+	cargo run -p validate-json -- schemas/tcms-schemas/tcms/test-case-main.schema.json >/dev/null 2>&1 || echo "⚠ Schema validation deferred to JSON validator"
 
 .PHONY: verify-testcases
 
@@ -705,9 +714,9 @@ watch: build-validate-yaml
 	./scripts/watch-yaml-files.sh
 .PHONY: watch
 
-# Uses canonical legacy schema path: schemas/test-case.schema.json
+# Uses canonical legacy schema path: schemas/tcms-schemas/tcms/test-case-main.schema.json
 watch-verbose: build-validate-yaml
-	SCHEMA_FILE=schemas/test-case.schema.json ./scripts/validate-files.sh --pattern '\.ya?ml$$' --validator ./scripts/validate-yaml-wrapper.sh --watch --verbose
+	SCHEMA_FILE=schemas/tcms-schemas/tcms/test-case-main.schema.json ./scripts/validate-files.sh --pattern '\.ya?ml$$' --validator ./scripts/validate-yaml-wrapper.sh --watch --verbose
 .PHONY: watch-verbose
 
 clean-validation-cache:

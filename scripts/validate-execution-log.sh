@@ -17,7 +17,7 @@
 #   directory             Optional directory to search (default: current directory)
 #
 # CONFIGURATION:
-#   SCHEMA_FILE           Path to schema file (default: schemas/execution-log.schema.json)
+#   SCHEMA_FILE           Path to schema file (default: schemas/tcms-schemas/tcms/execution-log.schema.json)
 #   VALIDATE_JSON_BIN     Path to validate-json binary (default: auto-detected)
 #
 # EXIT CODES:
@@ -41,7 +41,7 @@
 set -euo pipefail
 
 # Configuration: Schema file to validate against
-SCHEMA_FILE="${SCHEMA_FILE:-schemas/execution-log.schema.json}"
+SCHEMA_FILE="${SCHEMA_FILE:-schemas/tcms-schemas/tcms/execution-log.schema.json}"
 
 # Auto-detect validate-json binary location
 if [[ -n "${VALIDATE_JSON_BIN:-}" ]]; then

@@ -17,7 +17,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-SCHEMA_FILE="$PROJECT_ROOT/schemas/test-case.schema.json"
+SCHEMA_FILE="$PROJECT_ROOT/schemas/tcms-schemas/tcms/test-case-main.schema.json"
 
 # Source shared libraries
 source "$PROJECT_ROOT/scripts/lib/find-binary.sh" || exit 1

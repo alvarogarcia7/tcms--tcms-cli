@@ -29,8 +29,8 @@ struct Cli {
 
     /// Path to the JSON schema file (optional, auto-resolved from 'schema' field if not provided)
     /// Canonical paths:
-    ///   - Legacy schemas: schemas/*.schema.json (e.g., schemas/test-case.schema.json)
-    ///   - Versioned schemas: schemas/tcms/*.schema.v1.json (e.g., schemas/tcms/test-case.schema.v1.json)
+    ///   - Legacy schemas: schemas/*.schema.json (e.g., schemas/tcms-schemas/tcms/test-case-main.schema.json)
+    ///   - Versioned schemas: schemas/tcms/*.schema.v1.json (e.g., schemas/tcms-schemas/tcms/test-case-main.schema.json)
     #[arg(short, long, value_name = "SCHEMA_FILE")]
     schema: Option<PathBuf>,
 

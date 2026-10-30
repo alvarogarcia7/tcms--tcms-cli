@@ -184,10 +184,17 @@ fn validate_yaml_against_compiled_schema(
     let json_value: serde_json::Value =
         serde_json::to_value(&yaml_value).context("Failed to convert YAML to JSON")?;
 
-    if let Err(errors) = compiled_schema.validate(&json_value) {
+    let envelope_errors = testcase_common::envelope::envelope_violations(&json_value);
+    let schema_errors = compiled_schema.validate(&json_value).err();
+    if schema_errors.is_some() || !envelope_errors.is_empty() {
         let mut error_messages = vec!["Schema constraint violations:".to_string()];
+        for message in &envelope_errors {
+            error_messages.push(format!(
+                "  Error #0: Path 'root'\n    Constraint: {message}"
+            ));
+        }
 
-        for (idx, error) in errors.enumerate() {
+        for (idx, error) in schema_errors.into_iter().flatten().enumerate() {
             let path = if error.instance_path.to_string().is_empty() {
                 "root".to_string()
             } else {

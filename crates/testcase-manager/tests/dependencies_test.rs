@@ -1819,7 +1819,9 @@ fn get_schema_path() -> PathBuf {
     path.push(".."); // Go to crates/
     path.push(".."); // Go to workspace root
     path.push("schemas");
-    path.push("test-case.schema.json");
+    path.push("tcms-schemas");
+    path.push("tcms");
+    path.push("test-case-main.schema.json");
     path
 }
 

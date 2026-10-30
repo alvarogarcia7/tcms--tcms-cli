@@ -9,7 +9,13 @@ use testcase_models::Expected;
 /// - Legacy schemas: schemas/*.schema.json
 /// - Versioned schemas: schemas/tcms/*.schema.v1.json
 fn load_schema(schema_name: &str) -> JSONSchema {
-    let schema_path = format!("schemas/{}", schema_name);
+    // verification-result comes from the vendored tcms-schemas (TCMS-40.1); the CLI keeps no copy
+    let schema_path = match schema_name {
+        "verification-result.schema.json" => {
+            "schemas/tcms-schemas/tcms/verification-result.schema.json".to_string()
+        }
+        other => format!("schemas/{}", other),
+    };
     let schema_content = std::fs::read_to_string(&schema_path)
         .unwrap_or_else(|_| panic!("Failed to read schema file: {}", schema_path));
     let schema_json: serde_json::Value = serde_json::from_str(&schema_content)

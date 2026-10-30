@@ -771,8 +771,8 @@ Modes:
     parser.add_argument(
         '--schema',
         type=str,
-        default='schemas/verification-result.schema.json',
-        help='Schema file for validation (default: schemas/verification-result.schema.json - legacy schema, canonical: schemas/tcms/test-verification.schema.v1.json)'
+        default='schemas/tcms-schemas/tcms/verification-result.schema.json',
+        help='Schema file for validation (default: schemas/tcms-schemas/tcms/verification-result.schema.json - legacy schema, canonical: schemas/tcms-schemas/tcms/verification-result.schema.json)'
     )
     
     parser.add_argument(

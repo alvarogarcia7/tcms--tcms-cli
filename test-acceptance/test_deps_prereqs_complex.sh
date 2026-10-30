@@ -12,7 +12,7 @@ VERIFIER="${PROJECT_ROOT}/target/debug/verifier"
 
 # Schema
 SCHEMA_DIR="$PROJECT_ROOT/schemas"
-TEST_CASE_SCHEMA="$SCHEMA_DIR/test-case.schema.json"
+TEST_CASE_SCHEMA="$SCHEMA_DIR/tcms-schemas/tcms/test-case-main.schema.json"
 
 # Directories to test
 DEPENDENCIES_DIR="$SCRIPT_DIR/00_test_cases/dependencies"

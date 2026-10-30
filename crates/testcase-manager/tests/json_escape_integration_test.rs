@@ -2888,7 +2888,7 @@
 //     let json_value: Value = serde_json::from_str(&json_content)?;
 //
 //     // Load schema
-//     let schema_path = PathBuf::from("schemas/execution-log.schema.json");
+//     let schema_path = PathBuf::from("schemas/tcms-schemas/tcms/execution-log.schema.json");
 //     assert!(
 //         schema_path.exists(),
 //         "Schema file should exist at {:?}",

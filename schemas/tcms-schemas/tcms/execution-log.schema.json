@@ -35,6 +35,33 @@
     "test_case_id": {
       "type": "string",
       "description": "ID of the test case being executed"
+    },
+    "hook_type": {
+      "type": "string",
+      "description": "Type of hook execution (optional)",
+      "enum": [
+        "script_start",
+        "setup_test",
+        "before_sequence",
+        "after_sequence",
+        "before_step",
+        "after_step",
+        "teardown_test",
+        "script_end"
+      ]
+    },
+    "result_verification_pass": {
+      "type": "boolean",
+      "description": "Whether result verification passed"
+    },
+    "output_verification_pass": {
+      "type": "boolean",
+      "description": "Whether output verification passed"
+    },
+    "source_yaml_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 of the test case YAML the script was generated from (verifier --verify-source-hash, audit-verifier)"
     }
   },
   "required": [
