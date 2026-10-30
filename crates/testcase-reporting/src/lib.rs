@@ -1,13 +1,17 @@
 //! Layer 3: load, select (later: model, render) for `test-executor report`.
 //! Only `test-executor` depends on this crate.
 
+pub mod gaps;
 pub mod legacy;
 pub mod load;
 pub mod model;
+pub mod problems;
 pub mod render_markdown;
 pub mod rollup;
 pub mod run;
 pub mod select;
+pub mod summary;
+pub mod view;
 
 pub use run::LoadedRun;
 
