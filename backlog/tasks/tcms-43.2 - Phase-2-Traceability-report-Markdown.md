@@ -33,3 +33,11 @@ Requirements: ROLL-01, ROLL-02, ROLL-03, ROLL-04, TRC-01, TRC-02, OUT-03, OUT-04
 <!-- DOD:BEGIN -->
 - [ ] #1 All tests are passing. Run make test
 <!-- DOD:END -->
+
+## Implementation Notes
+
+- Plan 02-05 (gap closure) done: a blank baseline_id or matrix id now renders as "not recorded" (commits fd3a1f8, 300744f, 330e3ed, 0f75467; summary 9ac6776).
+- Gates run for 02-05: cargo fmt --check, cargo clippy -D warnings, cargo test for testcase-reporting (87 passed) and report_cli (35 passed).
+- Review: first review FAILED on an inlined blank check in model.rs; fixed in 0f75467; re-review PASSED.
+- Still open for Phase 2: phase-level gates (make build, lint, test, coverage-e2e, acceptance-test), E2E subtask tcms-43.2.9, pipeline run.
+- Acceptance criterion #5 (header not recorded) is covered by 02-05; criteria #1-#4 were verified in 02-VERIFICATION.md.
