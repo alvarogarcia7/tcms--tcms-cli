@@ -271,8 +271,7 @@ fn header(input: &ReportInputs, selection: &RunSelection, obsolete_count: usize)
 /// Distinct, non-blank values in sorted order.
 fn sorted_recorded<'a>(values: impl Iterator<Item = &'a str>) -> Vec<String> {
     values
-        .filter(|v| !v.trim().is_empty())
-        .map(str::to_string)
+        .filter_map(|v| non_blank(Some(v)).map(str::to_string))
         .collect::<BTreeSet<String>>()
         .into_iter()
         .collect()
