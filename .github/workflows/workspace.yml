@@ -72,8 +72,13 @@ jobs:
               export CI_MERGE_REQUEST_DIFF_BASE_SHA="${{ github.event.pull_request.base.sha }}"
               export CI_COMMIT_SHA="${{ github.event.pull_request.head.sha }}"
             else
-              # For push events on feature branches
-              export CI_MERGE_REQUEST_DIFF_BASE_SHA="${{ github.event.before }}"
+              # For push events on feature branches. github.event.before is all zeros
+              # for the first push of a new branch, so diff against main instead.
+              BEFORE_SHA="${{ github.event.before }}"
+              if [[ "$BEFORE_SHA" =~ ^0+$ ]]; then
+                BEFORE_SHA="origin/main"
+              fi
+              export CI_MERGE_REQUEST_DIFF_BASE_SHA="$BEFORE_SHA"
               export CI_COMMIT_SHA="${{ github.sha }}"
             fi
             
