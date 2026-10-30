@@ -30,8 +30,9 @@ report kinds (summary, gaps, problems) and AsciiDoc or JSON output are Phases 3 
   - `FAILED`: at least one linked case has a `fail` result, and none is `error`.
   - `PARTIAL`: some linked cases have a `pass` result, and the rest have no executed result (no
   `fail` or `error`).
-  - (Definitions of the mixed cases are the planning assumption; confirm.)
-- **D-03:** `ERRORED` ranks above `FAILED` (carried over from 01-CONTEXT D-13, still unconfirmed).
+  - (Confirmed by the owner, 2026-10-31.)
+- **D-03:** `ERRORED` ranks above `FAILED` (confirmed by the owner, 2026-10-31). A `fail` with a
+  missing run is `FAILED`, never `PARTIAL` (confirmed).
 
 ### Coverage and status (ROLL-01, ROLL-04)
 - **D-04:** Coverage (normal-range present, robustness present) is shown in its own columns, never
@@ -41,6 +42,11 @@ report kinds (summary, gaps, problems) and AsciiDoc or JSON output are Phases 3 
 
 ### Obsolete cases (ROLL-03)
 - **D-06:** Obsolete test cases are excluded from the roll-up and counted in the report header.
+
+### Output document (confirmed 2026-10-31)
+- **D-14:** The report is one Markdown document. The Phase 1 input and run-selection details appear
+  as an "Inputs" section at the top of that document, not as a separate plain-text block before it.
+  The file (or stdout) is valid Markdown from its first line.
 
 ### Report layout (TRC-01..TRC-05, from REQUIREMENTS)
 - **D-07:** Rows are normative requirements only, grouped under a heading per source document;
