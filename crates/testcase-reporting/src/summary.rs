@@ -5,6 +5,7 @@
 //! decided results of the selection, so a superseded result is never counted (D-02).
 
 use crate::model::Header;
+use crate::render_markdown::{cell, header_markdown};
 use crate::rollup::{CaseOutcome, VerificationStatus};
 use crate::select::RunUse;
 use crate::view::{linked_cases, ResultCounts, ViewInput};
@@ -114,6 +115,92 @@ pub fn build_summary(input: ViewInput) -> SummaryReport {
         requirements,
         linked: ResultCounts::from_outcomes(&linked_outcomes),
     }
+}
+
+const RUN_TABLE_HEADER: &str =
+    "| Run | Build | Used | pass | fail | not_executed | error | Total |";
+const REQUIREMENT_TABLE_HEADER: &str =
+    "| Requirement | Level | Status | pass | fail | not_executed | error | Total |";
+const TABLE_RULE: &str = "| --- | --- | --- | --- | --- | --- | --- | --- |";
+const NO_RUNS: &str = "No runs loaded";
+const NO_REQUIREMENTS: &str = "No requirements";
+
+/// Render the summary as Markdown (SUM-01, D-06). Reads the report only: no clock, no hash-ordered
+/// iteration, and every model-derived string goes through `cell`. Ends with exactly one newline.
+pub fn render_summary_markdown(report: &SummaryReport) -> String {
+    let runs_body = table_or(
+        NO_RUNS,
+        RUN_TABLE_HEADER,
+        report.runs.iter().map(run_line).collect(),
+    );
+    let requirements_body = table_or(
+        NO_REQUIREMENTS,
+        REQUIREMENT_TABLE_HEADER,
+        report.requirements.iter().map(requirement_line).collect(),
+    );
+
+    let blocks = [
+        "# Run Summary".to_string(),
+        header_markdown(&report.header),
+        format!("## Results per run\n\n{runs_body}"),
+        format!("## Results per requirement\n\n{requirements_body}"),
+        format!("## Linked test cases\n\n{}", counts_line(&report.linked)),
+    ];
+    let mut out = blocks.join("\n\n");
+    out.push('\n');
+    out
+}
+
+/// A Markdown table with its header and rule, or the placeholder when there are no rows.
+fn table_or(placeholder: &str, header: &str, rows: Vec<String>) -> String {
+    if rows.is_empty() {
+        placeholder.to_string()
+    } else {
+        let mut lines = vec![header.to_string(), TABLE_RULE.to_string()];
+        lines.extend(rows);
+        lines.join("\n")
+    }
+}
+
+fn run_line(row: &RunSummaryRow) -> String {
+    let used = if row.used {
+        "yes".to_string()
+    } else {
+        let reason = row.excluded_reason.as_deref().unwrap_or("excluded");
+        format!("no: {}", cell(reason))
+    };
+    format!(
+        "| {} | {} | {} | {} |",
+        cell(&row.run_id),
+        cell(&row.build_id),
+        used,
+        count_cells(&row.counts)
+    )
+}
+
+fn requirement_line(row: &RequirementSummaryRow) -> String {
+    format!(
+        "| {} | {} | {} | {} |",
+        cell(&row.requirement_id),
+        row.level,
+        row.status.label(),
+        count_cells(&row.counts)
+    )
+}
+
+/// The five count columns in table order: pass, fail, not_executed, error, total.
+fn count_cells(counts: &ResultCounts) -> String {
+    format!(
+        "{} | {} | {} | {} | {}",
+        counts.pass, counts.fail, counts.not_executed, counts.error, counts.total
+    )
+}
+
+fn counts_line(counts: &ResultCounts) -> String {
+    format!(
+        "pass {}, fail {}, not_executed {}, error {}, total {}",
+        counts.pass, counts.fail, counts.not_executed, counts.error, counts.total
+    )
 }
 
 #[cfg(test)]
@@ -261,6 +348,106 @@ mod tests {
         assert!(run_row(&report, "RUN-1").used);
         assert_eq!(run_row(&report, "RUN-1").excluded_reason, None);
         assert_buckets_sum(&report);
+    }
+
+    /// Golden output for the shared fixture. Runs in selection order; requirements in model
+    /// order (document, requirement ID).
+    const FIXTURE_GOLDEN: &str = r#"# Run Summary
+
+## Report header
+
+| Field | Value |
+| --- | --- |
+| Matrix | TM-1 |
+| Baseline | not recorded |
+| Runs | RUN-1, RUN-2 |
+| Builds | b1, b2 |
+| Environments | e |
+| Testers | t |
+| Obsolete test cases excluded | not recorded |
+| Generated | 2026-10-31T09:00:00Z |
+
+## Results per run
+
+| Run | Build | Used | pass | fail | not_executed | error | Total |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| RUN-1 | b1 | yes | 1 | 1 | 0 | 1 | 3 |
+| RUN-2 | b2 | yes | 1 | 0 | 1 | 0 | 2 |
+
+## Results per requirement
+
+| Requirement | Level | Status | pass | fail | not_executed | error | Total |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HLR-1 | HLR | FAILED | 1 | 1 | 0 | 0 | 2 |
+| HLR-3 | HLR | NO TESTS | 0 | 0 | 0 | 0 | 0 |
+| LLR-2 | LLR | ERRORED | 0 | 0 | 0 | 1 | 1 |
+| LLR-4 | LLR | NOT RUN | 0 | 0 | 1 | 0 | 1 |
+
+## Linked test cases
+
+pass 1, fail 1, not_executed 1, error 1, total 4
+"#;
+
+    #[test]
+    fn fixture_renders_the_golden_markdown() {
+        let (model, selection) = fixture();
+        let rendered = render_summary_markdown(&summary_of(&model, &selection));
+        assert_eq!(rendered, FIXTURE_GOLDEN);
+    }
+
+    #[test]
+    fn rendering_is_byte_identical_for_independent_builds() {
+        let (model_a, selection_a) = fixture();
+        let (model_b, selection_b) = fixture();
+        assert_eq!(
+            render_summary_markdown(&summary_of(&model_a, &selection_a)),
+            render_summary_markdown(&summary_of(&model_b, &selection_b))
+        );
+    }
+
+    #[test]
+    fn hostile_run_id_is_escaped_and_stays_on_one_line() {
+        let (model, mut selection) = fixture();
+        for run in selection.runs.iter_mut().filter(|r| r.run_id == "RUN-1") {
+            run.run_id = "R|1\n".to_string();
+        }
+        for result in selection
+            .results
+            .values_mut()
+            .filter(|r| r.run_id == "RUN-1")
+        {
+            result.run_id = "R|1\n".to_string();
+        }
+        let rendered = render_summary_markdown(&summary_of(&model, &selection));
+        assert!(
+            rendered.contains("| R\\|1  | b1 | yes | 1 | 1 | 0 | 1 | 3 |\n"),
+            "{rendered}"
+        );
+        assert!(!rendered.contains("R|1"), "{rendered}");
+    }
+
+    #[test]
+    fn no_runs_prints_the_placeholder_instead_of_the_table() {
+        let (model, mut selection) = fixture();
+        selection.runs.clear();
+        let rendered = render_summary_markdown(&summary_of(&model, &selection));
+        assert!(
+            rendered.contains("## Results per run\n\nNo runs loaded\n\n"),
+            "{rendered}"
+        );
+        assert!(!rendered.contains("| Run | Build |"), "{rendered}");
+    }
+
+    #[test]
+    fn no_requirements_prints_the_placeholder_instead_of_the_table() {
+        let (mut model, selection) = fixture();
+        model.documents.clear();
+        let rendered = render_summary_markdown(&summary_of(&model, &selection));
+        assert!(
+            rendered.contains("## Results per requirement\n\nNo requirements\n\n"),
+            "{rendered}"
+        );
+        assert!(!rendered.contains("| Requirement | Level |"), "{rendered}");
     }
 
     #[test]
