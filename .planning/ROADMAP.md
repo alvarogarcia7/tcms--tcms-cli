@@ -82,7 +82,14 @@ Plans:
   1. User selects Markdown or AsciiDoc and gets all report kinds in that format, with hostile strings (pipes, newlines, markup) escaped in cells
   2. User selects JSON or YAML and gets the same data; the output is validated against a local schema before writing, and a validation failure aborts without writing a bad file
   3. Determinism (same inputs and `--generated-at` give identical bytes) holds for every format
-**Plans**: TBD
+**Plans:** 4 plans (scoped: traceability kind only; summary, gaps and problems formats deferred until Phase 3 is done)
+
+Plans:
+- [ ] 04-01-PLAN.md — AsciiDoc renderer for the traceability model with escaping and hostile-string tests (wave 1)
+- [ ] 04-02-PLAN.md — Local report schema (`type`/`schema`/`kind` envelope), envelope entry, `ReportDocument` and `validate_document` (wave 2)
+- [ ] 04-03-PLAN.md — `render_json` and `render_yaml`, validated before return; round-trip and determinism tests (wave 3)
+- [ ] 04-04-PLAN.md — `--format` on `test-executor report`, validation before write, CLI tests, docs, quality gates (wave 4)
+- [ ] Follow-up plans (after Phase 3): AsciiDoc, JSON and YAML for summary, gaps and problems; OUT-01 and OUT-02 stay open until then
 **UI hint**: yes
 **Notes**: Native in-process renderers are the primary path. HTML via asciidoctor or TPDG is v2 (FOUT-01) pending a TPDG spike; consider updating the "reuse TPDG" Key Decision in PROJECT.md. Local report schema uses the `type`/`schema` envelope; do not modify shared schemas.
 
@@ -121,3 +128,13 @@ Plans:
 - [ ] 06-03-PLAN.md — binary tests: mock Jira Cloud/DC batch and key match, StrictDoc fixture, formats, exit codes (wave 3)
 - [ ] 06-04-PLAN.md — docs in JIRA_INTEGRATION.md and CLAUDE.md quality gates (wave 4)
 - [ ] 06-05-PLAN.md — `tcms requirements export-ids`: read requirements.json, shared batch lookup, valid IDs to stdout/--output, invalid on stderr, exit 0/1/2, binary tests (wave 5)
+
+### Phase 7: E2E tests for locating requirements by ID in StrictDoc
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 6
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 7 to break down)
