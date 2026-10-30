@@ -89,11 +89,14 @@ test-executor report --matrix trace-matrix.yaml --runs test-runs/ --kind traceab
 | `--requirements-export FILE` | StrictDoc JSON export (same assumed layout as the matrix's `.json` requirements). Supplies the source document of each requirement. Without it every row sits under `## Document: not recorded` |
 | `--generated-at TIMESTAMP` | Generation time, RFC 3339 (for example `2026-10-31T09:00:00Z`), written into the report header. Without it the current UTC time is used |
 
-The traceability kind is rendered as one Markdown document (see
-[Traceability report](#traceability-report-markdown)). Its first section, `## Inputs`, holds the
-input and run-selection details described below. The summary, gaps and problems kinds print
-`<kind>: renderer not yet available` until their renderers arrive in a later phase. AsciiDoc,
-JSON and YAML output are not available yet.
+All four kinds are rendered as Markdown, from one model built from the same inputs, so their
+numbers agree. The kinds are printed in the fixed order traceability, summary, gaps, problems,
+whatever order `--kind` was given in. The traceability kind is one Markdown document that starts
+with `# Traceability Report` (see [Traceability report](#traceability-report-markdown)); its
+first section, `## Inputs`, holds the input and run-selection details described below. When
+traceability is not selected, the input block and a `Report kinds` list come first, and each
+selected kind follows as its own Markdown document. AsciiDoc, JSON and YAML output are not
+available yet.
 
 ### Inputs are strict
 
@@ -225,6 +228,70 @@ Consequences:
 - Obsolete cases do not count toward the status. The header shows how many were excluded.
 
 These rules were confirmed by the project owner on 2026-10-31.
+
+### Run summary
+
+`--kind summary` prints `# Run Summary` with two tables and a count line.
+
+**Results per run.** One row per run of the selection, with the columns `Run`, `Build`, `Used`,
+`pass`, `fail`, `not_executed`, `error` and `Total`.
+
+- `pass`, `fail` and `error` count the decided results of that run. A superseded result is not
+  counted.
+- `not_executed` is the run's own `not_executed` records.
+- `Total` is the size of the run's record minus its superseded results.
+
+**Results per requirement.** One row per HLR or LLR, with the columns `Requirement`, `Level`,
+`Status` and the same five count columns. The counts cover the live linked test cases only. A
+linked case with no executed result is counted in `not_executed`. A requirement with no test
+cases shows `NO TESTS` and zeros. The status column uses the rule in
+[Verification status rule](#verification-status-rule).
+
+In both tables the four buckets always sum to `Total`.
+
+**Linked test cases.** A count line for all distinct live linked test cases, each counted once,
+even when several requirements link it.
+
+The per-run table can include test cases that the matrix does not link, while the per-requirement
+table counts only linked live cases. The two tables therefore need not have equal totals.
+
+### Coverage gaps
+
+`--kind gaps` prints `# Coverage Gaps` with four lists. Each heading shows its count:
+
+| Heading | Lists |
+|---------|-------|
+| `## Requirements with no test cases (N)` | HLR and LLR requirements with no linked live test case |
+| `## Requirements missing a normal-range test (N)` | Requirements whose matrix row has no normal-range coverage |
+| `## Requirements missing a robustness test (N)` | Requirements whose matrix row has no robustness coverage |
+| `## Test cases with no recorded result (N)` | Linked live test cases with no executed result in any selected run |
+
+- A requirement with no test cases also appears in both coverage lists. Leaving it out would make
+  those lists look complete when they are not.
+- The coverage flags are read from the matrix as written; the report does not recompute them.
+- A test case that no requirement links is unknown to the report, so it cannot appear in any list.
+- An empty list prints `None` under its heading.
+
+### Problem reports
+
+`--kind problems` prints `# Problem Reports`. It lists every decided `fail` and `error` result:
+
+| Column | Content |
+|--------|---------|
+| Test case | The test case ID |
+| Verdict | `fail` or `error` |
+| Run, Build | The run that decides the result, and its build |
+| Problem report | The `problem_report_id` of the result |
+| Requirements | The HLR and LLR requirements that link the case; empty for a case outside the matrix |
+
+- The list includes test cases that no requirement links. It can therefore be longer than the
+  FAILED and ERRORED rows of the traceability report.
+- A superseded fail or error is not listed.
+- A missing or blank `problem_report_id` is shown as `**MISSING problem_report_id**` in the
+  Problem report cell. The id is trimmed when it is kept.
+- Two count lines come before the table: `Failed or errored results: N` and
+  `Without problem report: N`. When the list is empty the section prints
+  `No failed or errored results` instead of a table.
 
 ### Exit status
 
