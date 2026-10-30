@@ -79,13 +79,286 @@ pub struct LoadedInputs {
 }
 
 /// Load one trace matrix and the run records named by `run_paths` (files or directories).
+///
+/// Every bad input is collected and reported in one error, each failure on its own line starting
+/// with the offending path. A directory is scanned without recursion; YAML files in it that are
+/// not test run records are skipped with a reason, explicitly named files are not.
 pub fn load_inputs(
     matrix: &Path,
     run_paths: &[PathBuf],
     schemas_root: &str,
 ) -> anyhow::Result<LoadedInputs> {
-    let _ = (matrix, run_paths, schemas_root);
-    unimplemented!("load_inputs: implemented in the GREEN step")
+    let mut failures: Vec<String> = Vec::new();
+    let mut inputs = Vec::new();
+
+    let loaded_matrix = match load_matrix(matrix, schemas_root) {
+        Ok(m) => {
+            inputs.push(InputEntry {
+                path: matrix.to_path_buf(),
+                kind: InputKind::Matrix,
+                status: InputStatus::Loaded,
+                run_id: None,
+            });
+            Some(m)
+        }
+        Err(e) => {
+            failures.push(format!("{e:#}"));
+            None
+        }
+    };
+
+    let mut runs = Vec::new();
+    for candidate in discover_runs(run_paths, &mut failures) {
+        match load_run(&candidate.path, candidate.from_dir, schemas_root) {
+            Ok(RunOutcome::Loaded(run)) => {
+                inputs.push(InputEntry {
+                    path: candidate.path.clone(),
+                    kind: InputKind::Run,
+                    status: InputStatus::Loaded,
+                    run_id: Some(run.record.run_id.clone()),
+                });
+                runs.push(*run);
+            }
+            Ok(RunOutcome::Skipped(reason)) => inputs.push(InputEntry {
+                path: candidate.path.clone(),
+                kind: InputKind::Run,
+                status: InputStatus::Skipped(reason),
+                run_id: None,
+            }),
+            Err(e) => failures.push(format!("{e:#}")),
+        }
+    }
+
+    if !failures.is_empty() {
+        let lines: Vec<String> = failures.iter().map(|f| single_line(f)).collect();
+        anyhow::bail!(
+            "{} report input(s) failed to load:\n{}",
+            failures.len(),
+            lines.join("\n")
+        );
+    }
+    let matrix_path = matrix.to_path_buf();
+    let matrix = loaded_matrix.expect("a matrix failure is recorded above");
+
+    check_unique_run_ids(&runs)?;
+
+    Ok(LoadedInputs {
+        matrix_path,
+        matrix,
+        runs,
+        reconciliation: Reconciliation {
+            inputs,
+            notes: Vec::new(),
+        },
+    })
+}
+
+/// D-08: two records with the same `run_id` fail the load, naming every file that carries it
+pub fn check_unique_run_ids(runs: &[LoadedRun]) -> anyhow::Result<()> {
+    let mut by_id: std::collections::BTreeMap<&str, Vec<&Path>> = Default::default();
+    for run in runs {
+        by_id
+            .entry(run.record.run_id.as_str())
+            .or_default()
+            .push(run.path.as_path());
+    }
+    let lines: Vec<String> = by_id
+        .iter()
+        .filter(|(_, paths)| paths.len() > 1)
+        .map(|(id, paths)| {
+            let names: Vec<String> = paths.iter().map(|p| p.display().to_string()).collect();
+            format!("duplicate run_id {id} in {}", names.join(" and "))
+        })
+        .collect();
+    if lines.is_empty() {
+        Ok(())
+    } else {
+        anyhow::bail!("{}", lines.join("\n"))
+    }
+}
+
+/// Collapse a multi-line failure into one line, so that every failure starts with its path
+fn single_line(failure: &str) -> String {
+    failure
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Strict matrix load: the type and schema are checked before the schema-validated parse
+fn load_matrix(path: &Path, schemas_root: &str) -> anyhow::Result<TraceMatrix> {
+    use anyhow::{bail, Context};
+    if !path.is_file() {
+        bail!("{}: trace matrix not found", path.display());
+    }
+    let text = std::fs::read_to_string(path)
+        .with_context(|| format!("{}: cannot read trace matrix", path.display()))?;
+    let value: serde_yaml::Value = serde_yaml::from_str(&text)
+        .with_context(|| format!("{}: YAML syntax error", path.display()))?;
+    match value.get("type").and_then(|v| v.as_str()) {
+        Some("trace_matrix") => {}
+        other => bail!(
+            "{} is not a trace matrix (type '{}')",
+            path.display(),
+            other.unwrap_or("none")
+        ),
+    }
+    let schema = value
+        .get("schema")
+        .and_then(|v| v.as_str())
+        .unwrap_or("none");
+    if schema != MATRIX_SCHEMA {
+        bail!(
+            "{}: declares schema '{schema}', expected {MATRIX_SCHEMA}",
+            path.display()
+        );
+    }
+    testcase_common::load_and_validate_yaml::<TraceMatrix, _, _>(path, schemas_root)
+        .map_err(|e| anyhow::anyhow!("{}: {e:#}", path.display()))
+}
+
+/// A file found by discovery. `from_dir` is true when it came from scanning a directory.
+struct Candidate {
+    path: PathBuf,
+    from_dir: bool,
+}
+
+/// Find the run candidates: named files, and the files of named directories (not recursive).
+/// A file named both directly and through its directory is listed once, as named.
+fn discover_runs(run_paths: &[PathBuf], failures: &mut Vec<String>) -> Vec<Candidate> {
+    use std::collections::BTreeMap;
+    let mut found: BTreeMap<PathBuf, Candidate> = BTreeMap::new();
+
+    fn add(found: &mut BTreeMap<PathBuf, Candidate>, path: PathBuf, from_dir: bool) {
+        let key = std::fs::canonicalize(&path).unwrap_or_else(|_| path.clone());
+        match found.get_mut(&key) {
+            Some(existing) => {
+                if !from_dir {
+                    existing.path = path;
+                    existing.from_dir = false;
+                }
+            }
+            None => {
+                found.insert(key, Candidate { path, from_dir });
+            }
+        }
+    }
+
+    for given in run_paths {
+        if given.is_dir() {
+            match std::fs::read_dir(given) {
+                Ok(entries) => {
+                    for entry in entries {
+                        match entry {
+                            Ok(entry) => add(&mut found, entry.path(), true),
+                            Err(e) => failures.push(format!(
+                                "{}: cannot read runs directory entry: {e}",
+                                given.display()
+                            )),
+                        }
+                    }
+                }
+                Err(e) => failures.push(format!(
+                    "{}: cannot read runs directory: {e}",
+                    given.display()
+                )),
+            }
+        } else if given.exists() {
+            add(&mut found, given.clone(), false);
+        } else {
+            failures.push(format!("{}: run input not found", given.display()));
+        }
+    }
+
+    let mut candidates: Vec<Candidate> = found.into_values().collect();
+    candidates.sort_by(|a, b| a.path.cmp(&b.path));
+    candidates
+}
+
+enum RunOutcome {
+    Loaded(Box<LoadedRun>),
+    Skipped(String),
+}
+
+/// Strict run load (D-06, D-15, D-17). Directory files that are not run records are skipped
+/// with a reason; the same files named explicitly are failures.
+fn load_run(path: &Path, from_dir: bool, schemas_root: &str) -> anyhow::Result<RunOutcome> {
+    use anyhow::{anyhow, bail, Context};
+    use std::collections::BTreeMap;
+
+    if path.is_dir() {
+        return Ok(RunOutcome::Skipped(
+            "directory; runs directories are not searched recursively".to_string(),
+        ));
+    }
+    let is_yaml = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.eq_ignore_ascii_case("yml") || e.eq_ignore_ascii_case("yaml"))
+        .unwrap_or(false);
+    if !is_yaml {
+        if from_dir {
+            return Ok(RunOutcome::Skipped("not a YAML file".to_string()));
+        }
+        bail!("{} is not a YAML file", path.display());
+    }
+
+    let text = std::fs::read_to_string(path)
+        .with_context(|| format!("{}: cannot read run record", path.display()))?;
+    let value: serde_yaml::Value = serde_yaml::from_str(&text)
+        .with_context(|| format!("{}: YAML syntax error", path.display()))?;
+
+    match value.get("type").and_then(|v| v.as_str()) {
+        Some("test_run") => {}
+        Some(other) if from_dir => {
+            return Ok(RunOutcome::Skipped(format!(
+                "type is '{other}', not test_run"
+            )))
+        }
+        Some(other) => bail!(
+            "{} is not a test run record (type '{other}')",
+            path.display()
+        ),
+        None if from_dir => return Ok(RunOutcome::Skipped("no `type` field".to_string())),
+        None => bail!(
+            "{} is not a test run record (no `type` field)",
+            path.display()
+        ),
+    }
+
+    let schema = value
+        .get("schema")
+        .and_then(|v| v.as_str())
+        .unwrap_or("none");
+    if schema != RUN_SCHEMA {
+        bail!(
+            "{}: declares schema '{schema}', expected {RUN_SCHEMA}",
+            path.display()
+        );
+    }
+
+    let record: testcase_verification::TestRunRecord =
+        testcase_common::load_and_validate_yaml(path, schemas_root)
+            .map_err(|e| anyhow!("{}: {e:#}", path.display()))?;
+
+    let mut counts: BTreeMap<&str, usize> = BTreeMap::new();
+    for result in &record.results {
+        *counts.entry(result.test_case_id.as_str()).or_default() += 1;
+    }
+    if let Some((id, n)) = counts.iter().find(|(_, n)| **n > 1) {
+        bail!(
+            "{}: test case {id} appears {n} times in run {}",
+            path.display(),
+            record.run_id
+        );
+    }
+
+    Ok(RunOutcome::Loaded(Box::new(LoadedRun::new(
+        path.to_path_buf(),
+        record,
+    )?)))
 }
 
 #[cfg(test)]
@@ -167,7 +440,7 @@ mod tests {
         );
         write(&runs, "readme.txt", "not yaml");
 
-        let loaded = load_inputs(&matrix, &[runs.clone()], SCHEMAS).unwrap();
+        let loaded = load_inputs(&matrix, std::slice::from_ref(&runs), SCHEMAS).unwrap();
 
         assert_eq!(loaded.runs.len(), 1);
         assert_eq!(loaded.runs[0].record.run_id, "RUN-1");
@@ -202,7 +475,7 @@ mod tests {
             "type: test_run\nschema: tcms/test-run.schema.json\nrun_id: RUN-1\n\
              build_id: b\nenvironment: e\nstarted_at: '2026-10-28T10:00:00Z'\nresults: []\n",
         );
-        let e = err_text(load_inputs(&matrix, &[run.clone()], SCHEMAS));
+        let e = err_text(load_inputs(&matrix, std::slice::from_ref(&run), SCHEMAS));
         assert!(e.contains(&run.display().to_string()), "{e}");
     }
 
@@ -238,7 +511,7 @@ mod tests {
             &valid_run("RUN-1")
                 .replace("tcms/test-run.schema.json", "tcms/trace-matrix.schema.json"),
         );
-        let e = err_text(load_inputs(&matrix, &[run.clone()], SCHEMAS));
+        let e = err_text(load_inputs(&matrix, std::slice::from_ref(&run), SCHEMAS));
         assert!(
             e.contains(&run.display().to_string())
                 && e.contains("expected tcms/test-run.schema.json"),
@@ -281,9 +554,11 @@ mod tests {
     fn non_rfc3339_started_at_fails_naming_the_run() {
         let (_dir, matrix, runs) = setup();
         let run = write(&runs, "run.yaml", &run_text("RUN-1", "yesterday", &["T1"]));
-        let e = err_text(load_inputs(&matrix, &[run.clone()], SCHEMAS));
+        let e = err_text(load_inputs(&matrix, std::slice::from_ref(&run), SCHEMAS));
         assert!(
-            e.contains(&run.display().to_string()) && e.contains("RFC 3339"),
+            // The schema's date-time format rejects the value before LoadedRun::new sees it
+            e.contains(&run.display().to_string())
+                && (e.contains("RFC 3339") || e.contains("date-time")),
             "{e}"
         );
     }
@@ -318,7 +593,7 @@ mod tests {
             "run.yaml",
             &run_text("RUN-1", "2026-10-28T10:00:00Z", &["T1", "T1"]),
         );
-        let e = err_text(load_inputs(&matrix, &[run.clone()], SCHEMAS));
+        let e = err_text(load_inputs(&matrix, std::slice::from_ref(&run), SCHEMAS));
         assert!(
             e.contains(&run.display().to_string())
                 && e.contains("T1")
@@ -331,7 +606,7 @@ mod tests {
     fn explicit_non_run_file_fails() {
         let (_dir, matrix, runs) = setup();
         let notes = write(&runs, "notes.yaml", "just: some other yaml\n");
-        let e = err_text(load_inputs(&matrix, &[notes.clone()], SCHEMAS));
+        let e = err_text(load_inputs(&matrix, std::slice::from_ref(&notes), SCHEMAS));
         assert!(
             e.contains(&notes.display().to_string()) && e.contains("is not a test run record"),
             "{e}"
@@ -342,7 +617,11 @@ mod tests {
     fn missing_run_path_fails() {
         let (dir, matrix, _runs) = setup();
         let missing = dir.path().join("nowhere");
-        let e = err_text(load_inputs(&matrix, &[missing.clone()], SCHEMAS));
+        let e = err_text(load_inputs(
+            &matrix,
+            std::slice::from_ref(&missing),
+            SCHEMAS,
+        ));
         assert!(
             e.contains(&missing.display().to_string()) && e.contains("not found"),
             "{e}"
