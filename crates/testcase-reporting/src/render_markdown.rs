@@ -287,4 +287,267 @@ No traceable content
 "#;
         assert_eq!(render_markdown(&golden_model()), expected);
     }
+
+    mod pipeline {
+        use super::super::*;
+        use crate::load::{LoadedInputs, Reconciliation};
+        use crate::model::{build_model, ReportInputs, ReportModel};
+        use crate::run::{test_support::record, LoadedRun};
+        use crate::select::select_results;
+        use testcase_models::{TestCase, TestType};
+        use testcase_verification::{RequirementLevel, TraceLink, TraceMatrix, Verdict};
+
+        const GENERATED: &str = "2026-10-31T09:00:00Z";
+
+        fn case(id: &str, test_type: Option<TestType>) -> TestCase {
+            let mut tc = TestCase::new("LEGACY".into(), 1, 1, id.into(), "d".into());
+            tc.test_type = test_type;
+            tc
+        }
+
+        fn link(id: &str, cases: &[&str]) -> TraceLink {
+            TraceLink {
+                requirement_id: id.into(),
+                level: RequirementLevel::Hlr,
+                test_case_ids: cases.iter().map(|c| c.to_string()).collect(),
+                normal_range_covered: true,
+                robustness_covered: false,
+                run_ids: Vec::new(),
+            }
+        }
+
+        fn run(run_id: &str, started: &str, results: &[(&str, Verdict)]) -> LoadedRun {
+            let rec = record(run_id, "b1", started, results);
+            LoadedRun::new(format!("{run_id}.yaml").into(), rec).expect("valid run")
+        }
+
+        /// Full pipeline: loaded inputs -> run selection -> model -> Markdown.
+        fn render(
+            links: Vec<TraceLink>,
+            runs: Vec<LoadedRun>,
+            test_cases: Option<&[TestCase]>,
+            generated_at: &str,
+        ) -> String {
+            let inputs = LoadedInputs {
+                matrix_path: "matrix.yaml".into(),
+                matrix: TraceMatrix {
+                    doc_type: "trace_matrix".into(),
+                    schema: "tcms/trace-matrix.schema.json".into(),
+                    id: "TM-1".into(),
+                    baseline_id: None,
+                    links,
+                },
+                runs,
+                reconciliation: Reconciliation::default(),
+            };
+            let selection = select_results(&inputs.runs);
+            let model: ReportModel = build_model(&ReportInputs {
+                inputs: &inputs,
+                selection: &selection,
+                test_cases,
+                documents: None,
+                generated_at,
+            });
+            render_markdown(&model)
+        }
+
+        fn mixed_runs() -> Vec<LoadedRun> {
+            vec![
+                run(
+                    "RUN-1",
+                    "2026-10-28T10:00:00Z",
+                    &[("T1", Verdict::Pass), ("T2", Verdict::Fail)],
+                ),
+                run("RUN-2", "2026-10-28T11:00:00Z", &[("T3", Verdict::Error)]),
+            ]
+        }
+
+        fn mixed_links() -> Vec<TraceLink> {
+            vec![
+                link("HLR-1", &["T1"]),
+                link("HLR-2", &["T1", "T9"]),
+                link("HLR-3", &["T2"]),
+                link("HLR-4", &["T3"]),
+                link("HLR-5", &[]),
+            ]
+        }
+
+        fn line_with<'a>(out: &'a str, needle: &str) -> &'a str {
+            out.lines()
+                .find(|l| l.starts_with("| ") && l.contains(needle))
+                .unwrap_or_else(|| panic!("no row containing {needle}\n{out}"))
+        }
+
+        #[test]
+        fn byte_identical_snapshot_from_separate_pipeline_runs() {
+            let tcs = [case("T1", Some(TestType::NormalRange))];
+            let first = render(
+                vec![link("HLR-1", &["T1"])],
+                mixed_runs(),
+                Some(&tcs),
+                GENERATED,
+            );
+            let second = render(
+                vec![link("HLR-1", &["T1"])],
+                mixed_runs(),
+                Some(&tcs),
+                GENERATED,
+            );
+            assert_eq!(first, second);
+            assert_eq!(first.as_bytes(), second.as_bytes());
+        }
+
+        #[test]
+        fn changed_generated_time_changes_only_the_generated_row() {
+            let a = render(mixed_links(), mixed_runs(), None, GENERATED);
+            let b = render(mixed_links(), mixed_runs(), None, "2026-11-01T00:00:00Z");
+            let (la, lb): (Vec<&str>, Vec<&str>) = (a.lines().collect(), b.lines().collect());
+            assert_eq!(la.len(), lb.len());
+            let differing: Vec<(&str, &str)> = la
+                .iter()
+                .zip(lb.iter())
+                .filter(|(x, y)| x != y)
+                .map(|(x, y)| (*x, *y))
+                .collect();
+            assert_eq!(differing.len(), 1);
+            assert!(differing[0].0.starts_with("| Generated |"));
+            assert!(differing[0].1.starts_with("| Generated |"));
+        }
+
+        #[test]
+        fn inputs_fence_grows_past_backtick_runs() {
+            let model = ReportModel {
+                inputs: crate::model::InputsSection {
+                    details: "line one\n```\nline with ````` five\nend".to_string(),
+                },
+                header: Header {
+                    matrix_id: "TM-1".into(),
+                    baseline_id: None,
+                    run_ids: Vec::new(),
+                    build_ids: Vec::new(),
+                    environments: Vec::new(),
+                    testers: Vec::new(),
+                    generated_at: GENERATED.into(),
+                    obsolete_excluded: None,
+                },
+                documents: Vec::new(),
+            };
+            let out = render_markdown(&model);
+            // Longest run is five backticks, so the fence is six.
+            assert!(out.contains("\n``````\nline one\n```\nline with ````` five\nend\n``````\n"));
+            assert!(out.contains("## Report header"));
+        }
+
+        #[test]
+        fn missing_result_is_not_run_never_pass() {
+            let out = render(
+                vec![link("HLR-1", &["T1", "T2"])],
+                vec![run(
+                    "RUN-1",
+                    "2026-10-28T10:00:00Z",
+                    &[("T1", Verdict::Pass)],
+                )],
+                None,
+                GENERATED,
+            );
+            let row = line_with(&out, "HLR-1");
+            assert!(row.contains("| PARTIAL |"), "{row}");
+            assert!(row.contains("T2 (NOT RUN, no result)"), "{row}");
+            assert!(!row.contains("T2 (pass"), "{row}");
+        }
+
+        #[test]
+        fn all_missing_results_render_not_run_status() {
+            let out = render(vec![link("HLR-1", &["T1"])], Vec::new(), None, GENERATED);
+            let row = line_with(&out, "HLR-1");
+            assert!(row.contains("| NOT RUN |"), "{row}");
+            assert!(row.contains("T1 (NOT RUN, no result)"), "{row}");
+        }
+
+        #[test]
+        fn errored_and_failed_render_their_words() {
+            let out = render(mixed_links(), mixed_runs(), None, GENERATED);
+            assert!(line_with(&out, "HLR-4").contains("| ERRORED |"));
+            assert!(line_with(&out, "HLR-3").contains("| FAILED |"));
+            assert!(line_with(&out, "HLR-3").contains("T2 (fail, RUN-1)"));
+            assert!(line_with(&out, "HLR-4").contains("T3 (error, RUN-2)"));
+        }
+
+        #[test]
+        fn verified_rows_show_only_pass_entries() {
+            let out = render(
+                vec![
+                    link("HLR-1", &["T1"]),
+                    link("HLR-2", &["T1", "T2"]),
+                    link("HLR-3", &["T2"]),
+                ],
+                mixed_runs(),
+                None,
+                GENERATED,
+            );
+            let verified: Vec<&str> = out
+                .lines()
+                .filter(|l| l.starts_with("| ") && l.contains("| VERIFIED |"))
+                .collect();
+            assert_eq!(verified.len(), 1, "{out}");
+            for line in verified {
+                assert!(!line.contains("fail"), "{line}");
+                assert!(!line.contains("error"), "{line}");
+                assert!(!line.contains("NOT RUN"), "{line}");
+                assert!(line.contains("(pass, RUN-1)"), "{line}");
+            }
+        }
+
+        #[test]
+        fn pipe_and_newline_in_requirement_id_stay_on_one_line() {
+            let out = render(
+                vec![link("HLR|1\nx", &["T1"])],
+                mixed_runs(),
+                None,
+                GENERATED,
+            );
+            let matches: Vec<&str> = out.lines().filter(|l| l.contains("HLR\\|1 x")).collect();
+            assert_eq!(matches.len(), 1, "{out}");
+            assert!(matches[0].starts_with("| HLR\\|1 x |"), "{}", matches[0]);
+        }
+
+        #[test]
+        fn requirement_without_cases_is_no_tests_with_dash_cells() {
+            let out = render(vec![link("HLR-5", &[])], Vec::new(), None, GENERATED);
+            let row = line_with(&out, "HLR-5");
+            assert!(row.contains("| NO TESTS |"), "{row}");
+            assert!(row.ends_with("| - | - | - |"), "{row}");
+        }
+
+        #[test]
+        fn shuffled_inputs_render_the_same_bytes() {
+            let tcs_sorted = [
+                case("T1", Some(TestType::NormalRange)),
+                case("T2", Some(TestType::Robustness)),
+            ];
+            let tcs_shuffled = [
+                case("T2", Some(TestType::Robustness)),
+                case("T1", Some(TestType::NormalRange)),
+            ];
+            let sorted = render(
+                vec![link("HLR-1", &["T1", "T2"]), link("HLR-2", &["T2"])],
+                vec![
+                    run("RUN-1", "2026-10-28T10:00:00Z", &[("T1", Verdict::Pass)]),
+                    run("RUN-2", "2026-10-28T11:00:00Z", &[("T2", Verdict::Pass)]),
+                ],
+                Some(&tcs_sorted),
+                GENERATED,
+            );
+            let shuffled = render(
+                vec![link("HLR-2", &["T2"]), link("HLR-1", &["T2", "T1"])],
+                vec![
+                    run("RUN-2", "2026-10-28T11:00:00Z", &[("T2", Verdict::Pass)]),
+                    run("RUN-1", "2026-10-28T10:00:00Z", &[("T1", Verdict::Pass)]),
+                ],
+                Some(&tcs_shuffled),
+                GENERATED,
+            );
+            assert_eq!(sorted, shuffled);
+        }
+    }
 }
