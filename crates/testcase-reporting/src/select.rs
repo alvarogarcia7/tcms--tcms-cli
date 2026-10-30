@@ -6,6 +6,7 @@
 use crate::run::LoadedRun;
 use chrono::{DateTime, Utc};
 use std::collections::{BTreeMap, BTreeSet};
+use std::fmt;
 use std::path::PathBuf;
 use testcase_verification::Verdict;
 
@@ -69,6 +70,13 @@ impl RunSelection {
         self.runs
             .iter()
             .filter(|r| matches!(r.use_, RunUse::Excluded(_)))
+    }
+}
+
+impl fmt::Display for RunSelection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let _ = f;
+        Ok(())
     }
 }
 
@@ -505,5 +513,85 @@ mod tests {
         assert_eq!(r2.use_, RunUse::Used);
         assert_eq!(r2.decided, 1);
         assert_eq!(sel.results["T2"].run_id, "RUN-2");
+    }
+
+    fn demo_runs() -> Vec<LoadedRun> {
+        vec![
+            run(
+                "RUN-1",
+                "b1",
+                "2026-10-28T10:00:00Z",
+                &[("T1", Verdict::Pass)],
+            ),
+            run(
+                "RUN-2",
+                "b2",
+                "2026-10-28T11:00:00Z",
+                &[("T1", Verdict::Fail)],
+            ),
+            run(
+                "RUN-3",
+                "b3",
+                "2026-10-28T12:00:00Z",
+                &[("T1", Verdict::NotExecuted)],
+            ),
+        ]
+    }
+
+    #[test]
+    fn demo_display_matches_layout() {
+        let sel = select_results(&demo_runs());
+        let expected = [
+            "Run selection (per test case, the latest run with an executed result decides)",
+            "  Builds used: b2",
+            "  Runs used: 1",
+            "    RUN-2  build b2  started 2026-10-28T11:00:00Z  decided 1, superseded 0, not_executed 0",
+            "  Runs excluded: 2",
+            "    RUN-1  build b1  started 2026-10-28T10:00:00Z: every executed result superseded by a later run",
+            "    RUN-3  build b3  started 2026-10-28T12:00:00Z: only not_executed results",
+            "  Selected results: 1",
+            "    T1  fail  RUN-2",
+            "  Notes: none",
+        ]
+        .join("\n")
+            + "\n";
+        assert_eq!(sel.to_string(), expected);
+    }
+
+    #[test]
+    fn empty_selection_renders_none_and_zero_counts() {
+        let expected = [
+            "Run selection (per test case, the latest run with an executed result decides)",
+            "  Builds used: none",
+            "  Runs used: 0",
+            "  Runs excluded: 0",
+            "  Selected results: 0",
+            "  Notes: none",
+        ]
+        .join("\n")
+            + "\n";
+        assert_eq!(RunSelection::default().to_string(), expected);
+    }
+
+    #[test]
+    fn tie_note_is_rendered_as_a_block_entry() {
+        let runs = vec![
+            run(
+                "RUN-A",
+                "b1",
+                "2026-10-28T10:00:00Z",
+                &[("T1", Verdict::Pass)],
+            ),
+            run(
+                "RUN-B",
+                "b2",
+                "2026-10-28T10:00:00Z",
+                &[("T1", Verdict::Fail)],
+            ),
+        ];
+        let text = select_results(&runs).to_string();
+        assert!(text.contains(
+            "  Notes:\n    - T1: runs RUN-A and RUN-B share started_at 2026-10-28T10:00:00Z; RUN-B wins by run_id order\n"
+        ));
     }
 }
