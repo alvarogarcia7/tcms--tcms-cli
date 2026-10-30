@@ -102,7 +102,12 @@ Plans:
   1. Command exits 0 on success, 1 on input or validation error, and 2 when `--fail-on-gaps` is given and gaps or failed results exist
   2. The report file is written before any non-zero exit caused by gaps or failures
   3. A bash 3.2 and BSD/GNU safe E2E script exercises the exit codes and is mapped in `mk/incremental.mk` and the acceptance suite
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — `findings` in `testcase-reporting`: gaps or failed results decided from the gaps and problems views (wave 1, TDD)
+- [ ] 05-02-PLAN.md — `--fail-on-gaps`, exit 2 after the write, `report` usage errors exit 1, real-binary tests (wave 2)
+- [ ] 05-03-PLAN.md — Bash E2E, `mk/incremental.mk` and Makefile wiring, acceptance Stage 10, docs, quality gates (wave 3)
 **Notes**: Add Make target and E2E mapping; record which of `make build`, `lint`, `test`, coverage (>= 70% with E2E) and acceptance could run in this environment.
 
 ## Progress
