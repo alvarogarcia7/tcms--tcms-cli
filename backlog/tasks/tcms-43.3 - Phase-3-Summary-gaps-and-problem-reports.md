@@ -43,3 +43,5 @@ Requirements: SUM-01, GAP-01, PRB-01, PRB-02. Goal: run summary, coverage-gaps r
 - Non-blocking follow-up from review: the requirement and linked-case bucket-sum assertion is tautological (view.rs sets total = outcomes.len()). Fix in a later pass by comparing against an independently computed total.
 - Plan 03-03 done (coverage gaps): commits 8f8d60c, 0dd4ec1; summary ea43f9e. Review PASS.
 - Non-blocking from 03-03 review: golden fixture never renders a real document name; whitespace-only document name is untested. Follow up in a later pass.
+- Plan 03-04 done (problem report list): commits 6be87b4, bc6ba27; summary ea00cb3. Review PASS.
+- Non-blocking from 03-04 review: plan's clippy --all-targets and cargo fmt --check gates were not run for testcase-reporting in the executor pass; 03-05 runs them.
