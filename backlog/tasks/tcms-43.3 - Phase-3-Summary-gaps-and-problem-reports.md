@@ -32,3 +32,10 @@ Requirements: SUM-01, GAP-01, PRB-01, PRB-02. Goal: run summary, coverage-gaps r
 <!-- DOD:BEGIN -->
 - [ ] #1 All tests are passing. Run make test
 <!-- DOD:END -->
+
+## Implementation Notes
+
+- Plan 03-01 done (shared foundation): header_markdown and cell made public with byte-identical output (deab74b); ViewInput, ResultCounts, linked_cases and shared fixture (5a15353); summary 3-01 SUMMARY at efd1502.
+- Gates: fmt and clippy clean; cargo test for testcase-reporting and test-executor: 149 passed.
+- Review: PASS (fresh Haiku reviewer, no findings).
+- Still open: plans 03-02 to 03-05, phase gates, E2E subtask tcms-43.3.4, pipeline run.
