@@ -1,0 +1,11 @@
+test_sequence: 0
+step: 0
+command: hooks/script_start.sh
+exit_code: 7
+output: script_start hook failed with exit code 7
+timestamp: '2026-10-29T13:31:29Z'
+hook_type: script_start
+result_verification_pass: false
+output_verification_pass: false
+run_id: RUN-001
+test_case_id: TC_HOOKS_001

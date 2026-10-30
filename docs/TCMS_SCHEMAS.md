@@ -29,9 +29,22 @@ type: test_run
 schema: tcms/test-run.schema.json
 ```
 
-`resolve_schema_uri` looks for the URI under the schemas root first (the CLI's own versioned
-schemas, `tcms/test-case.schema.v1.json`) and then under `schemas/tcms-schemas/`
-(`tcms/test-run.schema.json`). The CLI's own schema wins when both exist.
+`resolve_schema_uri` resolves the URI in this order:
+
+1. The three **versioned URIs** are aliases of vendored files. The CLI keeps no copy of these
+   schemas (TCMS-40.1):
+
+   | URI in the document | Vendored file |
+   |---------------------|---------------|
+   | `tcms/test-case.schema.v1.json` | `schemas/tcms-schemas/tcms/test-case-main.schema.json` |
+   | `tcms/test-execution.schema.v1.json` | `schemas/tcms-schemas/tcms/execution-log.schema.json` |
+   | `tcms/test-verification.schema.v1.json` | `schemas/tcms-schemas/tcms/verification-result.schema.json` |
+
+   A file that exists at the URI under the given `--schemas-root` still wins, so a schemas root of
+   its own (tests, projects) can define them.
+2. Any other URI is looked up under the schemas root (the CLI's own `tcms/*.schema.v1.json` such
+   as `test-result`, `test-results-container`, `container-config`), and then under
+   `schemas/tcms-schemas/` (`tcms/test-run.schema.json`).
 
 ### The envelope
 
@@ -47,16 +60,22 @@ The tcms-schemas samples carry no envelope. Validate them with an explicit schem
 (`validate-yaml FILE --schema schemas/tcms-schemas/tcms/<name>.schema.json`) or add the
 `schema:` line.
 
-## Not yet unified (TCMS-40.1, criterion "no duplicate local copy")
+## What is still the CLI's own
 
-The CLI still keeps its own `test-case`, `execution-log` and `verification-result` schemas
-because the tcms-schemas versions are **less strict** than the CLI needs. Replacing them now
-would silently drop validation. tcms-schemas must first absorb:
+`test-case`, `execution-log` and `verification-result` come from tcms-schemas since SCH-006 (merge
+request !11 of tcms-schemas, pinned at the head of its branch until it is merged). The CLI still
+owns `test-result`, `test-results-container`, `container-config`, `verification-output`, the
+`verification_methods` and the envelope meta-schema. TCMS-40.12 decides for each whether it moves
+upstream or stays CLI-only.
 
-| Schema | Missing in tcms-schemas |
-|--------|-------------------------|
-| `test-case-main` | `hooks`, `hydration_vars`, `prerequisites`; the `include:` dependency list (`{id, test_sequence}`) under `general_initial_conditions` / `initial_conditions`, which today must be strings; boolean `verification.output` (manual steps) |
-| `execution-log` | `hook_type`, `hook_path`, `result_verification_pass`, `output_verification_pass` (the CLI requires the two flags) |
-| `verification-result` | `requirement`, `item`, `tc`, `source_yaml_sha256` as documented properties |
+## Two things that changed with the move
 
-Until then both sets coexist; the outputs of the CLI validate against both.
+- **The envelope is no longer part of the test-case, execution-log and verification-result
+  schemas.** The CLI copies required `type` and `schema` inside the schema; the upstream schemas
+  are envelope-free (SCH-006.07). The envelope is checked where the schema is chosen:
+  `schema:` must be present to resolve a schema, and `tcms-envelope.schema.json` accepts the
+  `type` values.
+- **`result_verification_pass` and `output_verification_pass` are optional** in the upstream
+  execution-log schema (the CLI copy required them). The generated scripts always write them.
+
+Invalid samples in tcms-schemas (`samples-invalid/`) keep the new constraints from being lost.

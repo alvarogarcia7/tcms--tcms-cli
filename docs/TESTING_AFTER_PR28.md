@@ -72,11 +72,16 @@ These changed on purpose; confirm they suit your pipelines (`verifier`, TCMS-41)
 | Case | New result |
 |------|-----------|
 | Empty logs folder | non-zero exit |
-| Log that cannot be verified | non-zero exit, even with `--success-on-completion` |
+| Log that cannot be verified (unknown test case, wrong or missing source hash, a file that is not a log) | non-zero exit, even with `--success-on-completion` |
 | Test case with zero steps | not a pass |
 | Failed hook | non-zero exit |
 | Manual step without a log entry | counts as failed |
 | Output without `--output` | report goes to stdout |
+
+Automated: `make test-verifier-behaviour` (or run
+`crates/testcase-manager/tests/integration/test_verifier_behaviour_changes_e2e.sh`). It covers every row with
+the real binaries, plus a control for each. A file that is not a JSON array and has no text-format line is
+unverifiable (decision D-41f); a valid `[]` is still a failed verdict, which the flag forgives.
 
 ```bash
 mkdir -p /tmp/empty-logs

@@ -13,10 +13,10 @@ pub struct SchemaValidator {
 
 impl SchemaValidator {
     /// Create a new SchemaValidator
-    /// Uses canonical schema path: schemas/test-case.schema.json (legacy, backward compatible)
-    /// For new development, consider using: schemas/tcms/test-case.schema.v1.json
+    /// Uses canonical schema path: schemas/tcms-schemas/tcms/test-case-main.schema.json (legacy, backward compatible)
+    /// For new development, consider using: schemas/tcms-schemas/tcms/test-case-main.schema.json
     pub fn new() -> Result<Self> {
-        let schema_path = Path::new("schemas/test-case.schema.json");
+        let schema_path = Path::new("schemas/tcms-schemas/tcms/test-case-main.schema.json");
         let schema_content =
             fs::read_to_string(schema_path).context(format!("Failed to read {:?}", schema_path))?;
 

@@ -13,14 +13,14 @@ pub struct SchemaValidator {
 
 /// Helper function to find the schema file by trying multiple paths
 ///
-/// Uses canonical schema path: schemas/test-case.schema.json (legacy, backward compatible)
-/// For new development, consider using: schemas/tcms/test-case.schema.v1.json
+/// Uses canonical schema path: schemas/tcms-schemas/tcms/test-case-main.schema.json (legacy, backward compatible)
+/// For new development, consider using: schemas/tcms-schemas/tcms/test-case-main.schema.json
 fn find_schema_file() -> Result<String> {
     let paths = vec![
-        PathBuf::from("schemas/test-case.schema.json"),
-        PathBuf::from("./schemas/test-case.schema.json"),
-        PathBuf::from("../schemas/test-case.schema.json"),
-        PathBuf::from("../../schemas/test-case.schema.json"),
+        PathBuf::from("schemas/tcms-schemas/tcms/test-case-main.schema.json"),
+        PathBuf::from("./schemas/tcms-schemas/tcms/test-case-main.schema.json"),
+        PathBuf::from("../schemas/tcms-schemas/tcms/test-case-main.schema.json"),
+        PathBuf::from("../../schemas/tcms-schemas/tcms/test-case-main.schema.json"),
     ];
 
     for path in paths {
@@ -30,7 +30,7 @@ fn find_schema_file() -> Result<String> {
     }
 
     Err(anyhow::anyhow!(
-        "Failed to find schemas/test-case.schema.json in any known location"
+        "Failed to find schemas/tcms-schemas/tcms/test-case-main.schema.json in any known location"
     ))
 }
 

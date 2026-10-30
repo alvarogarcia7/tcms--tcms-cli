@@ -401,19 +401,29 @@ mkdir -p "${TESTCASES_DIR}"
 cat > "${TESTCASES_DIR}/TC_VERIFIER_001.yaml" <<'EOF'
 type: test_case
 schema: tcms/test-case.schema.v1.json
+requirement: REQ_VERIFIER
+item: 1
+tc: 1
 id: TC_VERIFIER_001
 description: Verifier test case
+general_initial_conditions: {}
+initial_conditions: {}
 test_sequences:
   - id: 1
     name: Test sequence
     description: Test sequence
+    initial_conditions: {}
     steps:
-      - id: 1
+      - step: 1
         description: Test step
-        commands:
-          - cmd: "echo test"
-        expected_result: "0"
-        expected_output: "test"
+        command: echo test
+        expected:
+          success: true
+          result: '0'
+          output: test
+        verification:
+          result: '[[ $? -eq 0 ]]'
+          output: 'true'
 EOF
 
 # Create execution log without schema field

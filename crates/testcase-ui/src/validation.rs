@@ -12,12 +12,12 @@ pub struct SchemaValidator {
 }
 
 /// Find the schema file in common locations
-/// Uses canonical schema path: schemas/test-case.schema.json (legacy, backward compatible)
-/// For new development, consider using: schemas/tcms/test-case.schema.v1.json
+/// Uses canonical schema path: schemas/tcms-schemas/tcms/test-case-main.schema.json (legacy, backward compatible)
+/// For new development, consider using: schemas/tcms-schemas/tcms/test-case-main.schema.json
 fn find_schema_file() -> Result<PathBuf> {
     let possible_paths = vec![
-        PathBuf::from("schemas/test-case.schema.json"),
-        PathBuf::from("../../schemas/test-case.schema.json"),
+        PathBuf::from("schemas/tcms-schemas/tcms/test-case-main.schema.json"),
+        PathBuf::from("../../schemas/tcms-schemas/tcms/test-case-main.schema.json"),
     ];
 
     for path in &possible_paths {

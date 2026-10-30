@@ -5,7 +5,7 @@
 # DESCRIPTION:
 #   This script validates all test case YAML files in the Stage 1 acceptance test directory.
 #   It performs comprehensive validation including:
-#   - JSON schema validation against schemas/test-case.schema.json
+#   - JSON schema validation against schemas/tcms-schemas/tcms/test-case-main.schema.json
 #   - YAML structure validation (required fields)
 #   - Test sequences validation (at least 1 sequence with valid steps)
 #   - Hooks syntax validation (if present)
@@ -42,7 +42,7 @@ source "$REPO_ROOT/scripts/lib/find-binary.sh" || exit 1
 
 # Configuration
 TEST_CASES_DIR="$SCRIPT_DIR/00_test_cases"
-SCHEMA_FILE="$REPO_ROOT/schemas/test-case.schema.json"
+SCHEMA_FILE="$REPO_ROOT/schemas/tcms-schemas/tcms/test-case-main.schema.json"
 VERBOSE=0
 
 # Validation counters
@@ -76,7 +76,7 @@ OPTIONS:
 
 DESCRIPTION:
     Validates all test case YAML files in test-acceptance/00_test_cases/ by:
-    - Running schema validation against schemas/test-case.schema.json
+    - Running schema validation against schemas/tcms-schemas/tcms/test-case-main.schema.json
     - Verifying required YAML structure fields
     - Checking test_sequences array has at least 1 valid sequence
     - Validating hooks syntax if present

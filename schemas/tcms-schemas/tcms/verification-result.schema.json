@@ -120,6 +120,23 @@
         "signer",
         "signed_at"
       ]
+    },
+    "item": {
+      "type": "integer",
+      "description": "Item number (optional, for reporting)"
+    },
+    "requirement": {
+      "type": "string",
+      "description": "Requirement identifier (optional, for reporting)"
+    },
+    "tc": {
+      "type": "integer",
+      "description": "TC number (optional, for reporting)"
+    },
+    "source_yaml_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 of the source YAML test case file (optional)"
     }
   },
   "required": [
@@ -155,6 +172,18 @@
         "all_steps_passed": {
           "type": "boolean",
           "description": "Whether all steps in the sequence passed"
+        },
+        "item": {
+          "type": "integer",
+          "description": "Item number (optional, for reporting)"
+        },
+        "requirement": {
+          "type": "string",
+          "description": "Requirement identifier (optional, for reporting)"
+        },
+        "tc": {
+          "type": "integer",
+          "description": "TC number (optional, for reporting)"
         }
       },
       "required": [
@@ -176,17 +205,31 @@
               "properties": {
                 "step": {
                   "type": "integer",
+                  "minimum": 1,
                   "description": "Step number"
                 },
                 "description": {
                   "type": "string",
                   "description": "Step description"
+                },
+                "item": {
+                  "type": "integer",
+                  "description": "Item number (optional, for reporting)"
+                },
+                "requirement": {
+                  "type": "string",
+                  "description": "Requirement identifier (optional, for reporting)"
+                },
+                "tc": {
+                  "type": "integer",
+                  "description": "TC number (optional, for reporting)"
                 }
               },
               "required": [
                 "step",
                 "description"
-              ]
+              ],
+              "additionalProperties": false
             }
           },
           "required": [
@@ -203,6 +246,7 @@
               "properties": {
                 "step": {
                   "type": "integer",
+                  "minimum": 1,
                   "description": "Step number"
                 },
                 "description": {
@@ -223,6 +267,18 @@
                 "reason": {
                   "type": "string",
                   "description": "Reason for failure"
+                },
+                "item": {
+                  "type": "integer",
+                  "description": "Item number (optional, for reporting)"
+                },
+                "requirement": {
+                  "type": "string",
+                  "description": "Requirement identifier (optional, for reporting)"
+                },
+                "tc": {
+                  "type": "integer",
+                  "description": "TC number (optional, for reporting)"
                 }
               },
               "required": [
@@ -232,7 +288,8 @@
                 "actual_result",
                 "actual_output",
                 "reason"
-              ]
+              ],
+              "additionalProperties": false
             }
           },
           "required": [
@@ -249,17 +306,31 @@
               "properties": {
                 "step": {
                   "type": "integer",
+                  "minimum": 1,
                   "description": "Step number"
                 },
                 "description": {
                   "type": "string",
                   "description": "Step description"
+                },
+                "item": {
+                  "type": "integer",
+                  "description": "Item number (optional, for reporting)"
+                },
+                "requirement": {
+                  "type": "string",
+                  "description": "Requirement identifier (optional, for reporting)"
+                },
+                "tc": {
+                  "type": "integer",
+                  "description": "TC number (optional, for reporting)"
                 }
               },
               "required": [
                 "step",
                 "description"
-              ]
+              ],
+              "additionalProperties": false
             }
           },
           "required": [

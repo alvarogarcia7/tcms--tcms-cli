@@ -14,9 +14,9 @@ from collections import defaultdict
 from typing import List, Dict, Optional, Any
 
 # Configuration - Using canonical schema path
-# Legacy schema (backward compatible): schemas/test-case.schema.json
-# Versioned schema (recommended): schemas/tcms/test-case.schema.v1.json
-SCHEMA_FILE = "schemas/test-case.schema.json"
+# Legacy schema (backward compatible): schemas/tcms-schemas/tcms/test-case-main.schema.json
+# Versioned schema (recommended): schemas/tcms-schemas/tcms/test-case-main.schema.json
+SCHEMA_FILE = "schemas/tcms-schemas/tcms/test-case-main.schema.json"
 VALIDATE_YAML_BIN = "./target/debug/validate-yaml"
 REPORT_DIR = "reports"
 REPORT_FILE = f"{REPORT_DIR}/validation_report.txt"

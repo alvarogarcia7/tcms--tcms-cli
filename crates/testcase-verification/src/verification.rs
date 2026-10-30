@@ -564,6 +564,20 @@ impl Default for TestVerifier {
     }
 }
 
+/// A log that reached the text-format fallback and yielded no entry is not a log: it is not a JSON
+/// array of entries and no line has the text log format. Reading it as "nothing was executed"
+/// would make it a failed verdict that `--success-on-completion` forgives; it is unverifiable
+/// instead (decision D-41f). A valid JSON array, even `[]`, never gets here.
+fn reject_log_without_entries(logs: &[TestExecutionLog], log_path: &Path) -> Result<()> {
+    if logs.is_empty() {
+        anyhow::bail!(
+            "{} is not a test execution log: it is not a JSON array of entries and has no line in the text log format",
+            log_path.display()
+        );
+    }
+    Ok(())
+}
+
 impl TestVerifier {
     pub fn new(result_strategy: MatchStrategy, output_strategy: MatchStrategy) -> Self {
         Self {
@@ -730,6 +744,7 @@ impl TestVerifier {
 
         log::debug!("Parsed {} text format log entries", logs.len());
 
+        reject_log_without_entries(&logs, log_path)?;
         Ok(logs)
     }
 
@@ -867,6 +882,7 @@ impl TestVerifier {
 
         log::debug!("Parsed {} text format log entries", logs.len());
 
+        reject_log_without_entries(&logs, log_path)?;
         Ok(logs)
     }
 

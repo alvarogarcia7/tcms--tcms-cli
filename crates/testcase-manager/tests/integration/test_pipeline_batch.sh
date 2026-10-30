@@ -168,7 +168,7 @@ for YAML_FILE in "${ALL_YAMLS[@]}"; do
     fi
 
     # Validate the test case YAML against the schema
-    if "$VALIDATE_YAML_BIN" --schemas-root "$PROJECT_ROOT/schemas" --schema "$PROJECT_ROOT/schemas/test-case.schema.json" "$YAML_FILE" > "$STAGE1_OUTPUT" 2>&1; then
+    if "$VALIDATE_YAML_BIN" --schemas-root "$PROJECT_ROOT/schemas" --schema "$PROJECT_ROOT/schemas/tcms-schemas/tcms/test-case-main.schema.json" "$YAML_FILE" > "$STAGE1_OUTPUT" 2>&1; then
         TC_STAGE1=1
         STAGE1_SUCCESS=$((STAGE1_SUCCESS + 1))
         echo "  ✓ Stage 1: YAML validation passed"

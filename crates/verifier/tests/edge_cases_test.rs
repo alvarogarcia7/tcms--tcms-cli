@@ -915,6 +915,41 @@ fn an_unparsable_log_is_never_a_silent_success_in_folder_mode() {
 }
 
 #[test]
+fn an_unparsable_log_is_unverifiable_even_with_success_on_completion() {
+    // Decision D-41f: a file that is not a JSON array and has no text-format line is not a log.
+    // It was read as a log with no entries, a failed verdict that the flag forgave (exit 0).
+    for content in [
+        "{{{{ not json",
+        "not json",
+        "",
+        "   \n",
+        "[1, 2, 3]",
+        "{\"a\": 1}",
+    ] {
+        let f = Fixture::new();
+        f.case("TC_A", &[(1, 1, "0", "a")]);
+        f.log("TC_A_execution_log.json", content);
+        let out = f.folder(&["--success-on-completion"]);
+        assert_eq!(code(&out), 1, "log {content:?}: {}", stderr(&out));
+        assert!(
+            stderr(&out).contains("could not be verified"),
+            "log {content:?}: {}",
+            stderr(&out)
+        );
+    }
+}
+
+#[test]
+fn a_valid_empty_json_array_is_still_a_failed_verdict_the_flag_forgives() {
+    // `[]` is a real log of a run in which nothing was executed, unlike an unparsable file
+    let f = Fixture::new();
+    f.case("TC_A", &[(1, 1, "0", "a")]);
+    f.log("TC_A_execution_log.json", "[]");
+    assert_eq!(code(&f.folder(&[])), 1);
+    success(&f.folder(&["--success-on-completion"]));
+}
+
+#[test]
 fn two_logs_for_the_same_test_case_are_both_reported() {
     let f = Fixture::new();
     f.case("TC_A", &[(1, 1, "0", "a")]);

@@ -676,6 +676,59 @@ check:testcase-files:
     - python3 -m unittest scripts/test_check_testcase_files.py
     - python3 scripts/check_testcase_files.py --changed-since "$BASE"
 
+# Acceptance suite (make acceptance-test): all stages, including the documentation stages that need the
+# test-plan-documentation-generator (TPDG). The TPDG release is downloaded by scripts/download-tpdg.sh
+# (version: TPDG_VERSION, default v0.1.0-rc.1). It needs access to the TPDG project (id 350): either
+#   - add this project to the TPDG project's job token allowlist (Settings > CI/CD > Job token
+#     permissions), then the job's CI_JOB_TOKEN is enough; or
+#   - set a masked CI/CD variable TPDG_TOKEN (a token with read_api on the TPDG project).
+# allow_failure until it has run green on the runners once; then remove it.
+acceptance:test:
+  stage: e2e
+  image: rust:1.95
+  needs:
+    - job: rust:build-test-lint
+      artifacts: false
+  rules:
+    - if: '$CI_COMMIT_TAG || $CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - when: on_success
+  allow_failure: true
+  variables:
+    TPDG_VERSION: "v0.1.0-rc.1"
+  before_script:
+    - rustc --version
+    - cargo --version
+    - apt-get update -qq
+    - apt-get install -y -qq curl jq expect
+    # uv + Python 3.14: the acceptance scripts run python through `uv run python3.14`
+    - curl -LsSf https://astral.sh/uv/install.sh | sh
+    - source $HOME/.local/bin/env || true
+    - export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
+    - uv python install 3.14
+    - uv sync --python 3.14
+    - ./scripts/install-sccache.sh --ci
+  script:
+    - ./scripts/download-tpdg.sh
+    - export TEST_PLAN_DOC_GEN="$CI_PROJECT_DIR/tools/tpdg/tpdg"
+    - "$TEST_PLAN_DOC_GEN --help | head -1"
+    - make acceptance-test
+    - sccache --show-stats
+  cache:
+    key: "${CI_COMMIT_REF_SLUG}"
+    paths:
+      - .sccache
+    policy: pull
+  artifacts:
+    name: "acceptance-$CI_COMMIT_REF_SLUG"
+    paths:
+      - test-acceptance/reports/
+      - test-acceptance/20_verification/
+    expire_in: 1 week
+    when: always
+  tags:
+    - dind-amd
+
 # TCMS-42.9: Jira write-back for one product. It runs on every default-branch pipeline (D-42.9d):
 # the repo and GitLab have no marker of a results merge (no predefined variable, no results
 # branch naming), so the default branch is the condition, and the apply only there. Not verified

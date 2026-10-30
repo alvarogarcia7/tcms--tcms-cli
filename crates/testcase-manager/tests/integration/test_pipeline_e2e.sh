@@ -181,7 +181,7 @@ pass "Created passing test YAML fixture"
 info "Stage 1: YAML Test Case Validation"
 
 STAGE1_OUTPUT="$TEMP_DIR/stage1_pass_validate.log"
-if "$VALIDATE_YAML_BIN" --schema "$PROJECT_ROOT/schemas/test-case.schema.json" "$PASSING_YAML" > "$STAGE1_OUTPUT" 2>&1; then
+if "$VALIDATE_YAML_BIN" --schema "$PROJECT_ROOT/schemas/tcms-schemas/tcms/test-case-main.schema.json" "$PASSING_YAML" > "$STAGE1_OUTPUT" 2>&1; then
     pass "Stage 1 Gate: YAML validation passed"
 else
     fail "Stage 1 Gate: YAML validation failed"
@@ -289,7 +289,7 @@ fi
 
 # Gate: Validate verification YAML against schema (with fallback for container format)
 VALIDATION_OUTPUT="$TEMP_DIR/validation.log"
-if "$VALIDATE_YAML_BIN" --schema "$PROJECT_ROOT/schemas/verification-result.schema.json" "$VERIFICATION_YAML" > "$VALIDATION_OUTPUT" 2>&1; then
+if "$VALIDATE_YAML_BIN" --schema "$PROJECT_ROOT/schemas/tcms-schemas/tcms/verification-result.schema.json" "$VERIFICATION_YAML" > "$VALIDATION_OUTPUT" 2>&1; then
     pass "Stage 4 Gate: Verification YAML validates against schema"
 elif grep -q "test_results_container\|test_verification" "$VERIFICATION_YAML" && [ -s "$VERIFICATION_YAML" ]; then
     # Fallback: accept well-formed YAML with container/verification type for container format output
@@ -498,7 +498,7 @@ pass "Created failing test YAML fixture"
 info "Stage 1: YAML Test Case Validation (Failing Test)"
 
 STAGE1_FAIL_OUTPUT="$TEMP_DIR/stage1_fail_validate.log"
-if "$VALIDATE_YAML_BIN" --schema "$PROJECT_ROOT/schemas/test-case.schema.json" "$FAILING_YAML" > "$STAGE1_FAIL_OUTPUT" 2>&1; then
+if "$VALIDATE_YAML_BIN" --schema "$PROJECT_ROOT/schemas/tcms-schemas/tcms/test-case-main.schema.json" "$FAILING_YAML" > "$STAGE1_FAIL_OUTPUT" 2>&1; then
     pass "Stage 1 Gate: YAML validation passed (failing test)"
 else
     fail "Stage 1 Gate: YAML validation failed (failing test)"
@@ -605,7 +605,7 @@ fi
 
 # Gate: Validate verification YAML against schema (failing test, with fallback for container format)
 VALIDATION_OUTPUT_FAIL="$TEMP_DIR/validation_fail.log"
-if "$VALIDATE_YAML_BIN" --schema "$PROJECT_ROOT/schemas/verification-result.schema.json" "$VERIFICATION_YAML_FAIL" > "$VALIDATION_OUTPUT_FAIL" 2>&1; then
+if "$VALIDATE_YAML_BIN" --schema "$PROJECT_ROOT/schemas/tcms-schemas/tcms/verification-result.schema.json" "$VERIFICATION_YAML_FAIL" > "$VALIDATION_OUTPUT_FAIL" 2>&1; then
     pass "Stage 4 Gate: Verification YAML validates against schema (failing test)"
 elif grep -q "test_results_container\|test_verification" "$VERIFICATION_YAML_FAIL" && [ -s "$VERIFICATION_YAML_FAIL" ]; then
     # Fallback: accept well-formed YAML with container/verification type for container format output

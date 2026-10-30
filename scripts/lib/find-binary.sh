@@ -60,6 +60,19 @@ find_binary() {
     # 1. Workspace builds: binaries in workspace_root/target/{release,debug}/
     # 2. Single-crate builds: binaries in crate_dir/target/{release,debug}/
     
+    # A shared target directory (CARGO_TARGET_DIR, for example one directory for several
+    # checkouts) holds the binaries instead of ./target: release before debug, as below
+    if [[ -n "${CARGO_TARGET_DIR:-}" ]]; then
+        if [[ -x "$CARGO_TARGET_DIR/release/$binary_name" ]]; then
+            echo "$CARGO_TARGET_DIR/release/$binary_name"
+            return 0
+        fi
+        if [[ -x "$CARGO_TARGET_DIR/debug/$binary_name" ]]; then
+            echo "$CARGO_TARGET_DIR/debug/$binary_name"
+            return 0
+        fi
+    fi
+
     # Check workspace root target/release
     if [[ -x "target/release/$binary_name" ]]; then
         echo "target/release/$binary_name"

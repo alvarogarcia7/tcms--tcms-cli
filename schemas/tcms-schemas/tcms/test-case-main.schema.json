@@ -23,8 +23,71 @@
       "additionalProperties": {
         "type": "array",
         "items": {
-          "type": "string",
-          "description": "A condition statement. Can be a BDD pattern (e.g., 'create directory \"/path\"', 'set environment variable \"VAR\" to \"value\"', 'wait for 5 seconds') or plain text description."
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "A condition statement. Can be a BDD pattern (e.g., 'create directory \"/path\"', 'set environment variable \"VAR\" to \"value\"', 'wait for 5 seconds') or plain text description."
+            },
+            {
+              "type": "object",
+              "properties": {
+                "ref": {
+                  "type": "string",
+                  "description": "Reference to a condition defined elsewhere."
+                }
+              },
+              "required": [
+                "ref"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "test_sequence": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "ID of the test sequence to reference."
+                    },
+                    "step": {
+                      "type": "string",
+                      "description": "Step identifier within the test sequence."
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "step"
+                  ]
+                }
+              },
+              "required": [
+                "test_sequence"
+              ]
+            }
+          ]
+        }
+      },
+      "properties": {
+        "include": {
+          "type": "array",
+          "description": "Array of references to include conditions from other test cases or sequences.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "ID of the test case to include conditions from."
+              },
+              "test_sequence": {
+                "type": "string",
+                "description": "Optional test sequence ID to include conditions from a specific sequence."
+              }
+            },
+            "required": [
+              "id"
+            ]
+          }
         }
       }
     },
@@ -34,8 +97,71 @@
       "additionalProperties": {
         "type": "array",
         "items": {
-          "type": "string",
-          "description": "A condition statement. Can be a BDD pattern (e.g., 'ping device \"192.168.1.1\" with 3 retries', 'port 80 on \"localhost\" should be open') or plain text description."
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "A condition statement. Can be a BDD pattern (e.g., 'ping device \"192.168.1.1\" with 3 retries', 'port 80 on \"localhost\" should be open') or plain text description."
+            },
+            {
+              "type": "object",
+              "properties": {
+                "ref": {
+                  "type": "string",
+                  "description": "Reference to a condition defined elsewhere."
+                }
+              },
+              "required": [
+                "ref"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "test_sequence": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "ID of the test sequence to reference."
+                    },
+                    "step": {
+                      "type": "string",
+                      "description": "Step identifier within the test sequence."
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "step"
+                  ]
+                }
+              },
+              "required": [
+                "test_sequence"
+              ]
+            }
+          ]
+        }
+      },
+      "properties": {
+        "include": {
+          "type": "array",
+          "description": "Array of references to include conditions from other test cases or sequences.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "ID of the test case to include conditions from."
+              },
+              "test_sequence": {
+                "type": "string",
+                "description": "Optional test sequence ID to include conditions from a specific sequence."
+              }
+            },
+            "required": [
+              "id"
+            ]
+          }
         }
       }
     },
@@ -59,8 +185,71 @@
             "additionalProperties": {
               "type": "array",
               "items": {
-                "type": "string",
-                "description": "A condition statement. Can be a BDD pattern or plain text description."
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "description": "A condition statement. Can be a BDD pattern or plain text description."
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "ref": {
+                        "type": "string",
+                        "description": "Reference to a condition defined elsewhere."
+                      }
+                    },
+                    "required": [
+                      "ref"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "test_sequence": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer",
+                            "description": "ID of the test sequence to reference."
+                          },
+                          "step": {
+                            "type": "string",
+                            "description": "Step identifier within the test sequence."
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "step"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "test_sequence"
+                    ]
+                  }
+                ]
+              }
+            },
+            "properties": {
+              "include": {
+                "type": "array",
+                "description": "Array of references to include conditions from other test cases or sequences.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "ID of the test case to include conditions from."
+                    },
+                    "test_sequence": {
+                      "type": "string",
+                      "description": "Optional test sequence ID to include conditions from a specific sequence."
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
               }
             }
           },
@@ -114,6 +303,9 @@
                           "type": "string"
                         },
                         {
+                          "type": "boolean"
+                        },
+                        {
                           "type": "object",
                           "properties": {
                             "condition": {
@@ -148,6 +340,9 @@
                       "oneOf": [
                         {
                           "type": "string"
+                        },
+                        {
+                          "type": "boolean"
                         },
                         {
                           "type": "object",
@@ -186,6 +381,9 @@
                           "type": "string"
                         },
                         {
+                          "type": "boolean"
+                        },
+                        {
                           "type": "object",
                           "properties": {
                             "condition": {
@@ -215,11 +413,93 @@
                           ]
                         }
                       ]
+                    },
+                    "general": {
+                      "type": "array",
+                      "description": "General verification conditions that can be evaluated.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "description": "Name or description of the verification check."
+                          },
+                          "condition": {
+                            "type": "string",
+                            "description": "Condition expression to evaluate for this verification."
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "condition"
+                        ]
+                      }
                     }
                   },
                   "required": [
                     "result",
                     "output"
+                  ]
+                },
+                "ref": {
+                  "type": "string",
+                  "description": "Optional reference identifier for this step."
+                },
+                "capture_vars": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "description": "Array of capture variable definitions with name and either capture pattern or command.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "description": "Variable name to capture value into."
+                          },
+                          "capture": {
+                            "type": "string",
+                            "description": "Regex pattern for extracting value from COMMAND_OUTPUT."
+                          },
+                          "command": {
+                            "type": "string",
+                            "description": "Command to execute to obtain the variable value."
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ],
+                        "oneOf": [
+                          {
+                            "required": [
+                              "capture"
+                            ],
+                            "not": {
+                              "required": [
+                                "command"
+                              ]
+                            }
+                          },
+                          {
+                            "required": [
+                              "command"
+                            ],
+                            "not": {
+                              "required": [
+                                "capture"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "description": "Legacy format: Variable names as keys with regex patterns as values for extracting values from COMMAND_OUTPUT.",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
                   ]
                 }
               },
@@ -229,6 +509,17 @@
                 "command",
                 "expected"
               ]
+            }
+          },
+          "ref": {
+            "type": "string",
+            "description": "Optional reference identifier for this test sequence."
+          },
+          "variables": {
+            "type": "object",
+            "description": "Sequence-scoped variables that can be declared and used throughout the test sequence.",
+            "additionalProperties": {
+              "type": "string"
             }
           }
         },
@@ -356,6 +647,333 @@
         "required": [
           "system",
           "key"
+        ]
+      }
+    },
+    "hooks": {
+      "type": "object",
+      "description": "Optional hooks for custom script execution at various points in the test lifecycle. Hook paths are relative to the test case YAML file location or absolute paths.",
+      "properties": {
+        "script_start": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Path to script executed once at the very beginning of the test case script."
+            },
+            {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string",
+                  "description": "Path to script executed once at the very beginning of the test case script."
+                },
+                "on_error": {
+                  "type": "string",
+                  "enum": [
+                    "fail",
+                    "continue"
+                  ],
+                  "default": "fail",
+                  "description": "Behavior when this hook fails."
+                }
+              },
+              "required": [
+                "command"
+              ]
+            }
+          ]
+        },
+        "setup_test": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Path to script executed once at test case setup."
+            },
+            {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string",
+                  "description": "Path to script executed once at test case setup."
+                },
+                "on_error": {
+                  "type": "string",
+                  "enum": [
+                    "fail",
+                    "continue"
+                  ],
+                  "default": "fail",
+                  "description": "Behavior when this hook fails."
+                }
+              },
+              "required": [
+                "command"
+              ]
+            }
+          ]
+        },
+        "before_sequence": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Path to script executed before each test sequence starts."
+            },
+            {
+              "type": "object",
+              "description": "Hook executed before each test sequence starts.",
+              "properties": {
+                "command": {
+                  "type": "string",
+                  "description": "Path to script executed before each test sequence starts."
+                },
+                "on_error": {
+                  "type": "string",
+                  "enum": [
+                    "fail",
+                    "continue"
+                  ],
+                  "default": "fail",
+                  "description": "Behavior when this hook fails."
+                }
+              },
+              "required": [
+                "command"
+              ]
+            }
+          ]
+        },
+        "after_sequence": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Path to script executed after each test sequence completes."
+            },
+            {
+              "type": "object",
+              "description": "Hook executed after each test sequence completes.",
+              "properties": {
+                "command": {
+                  "type": "string",
+                  "description": "Path to script executed after each test sequence completes."
+                },
+                "on_error": {
+                  "type": "string",
+                  "enum": [
+                    "fail",
+                    "continue"
+                  ],
+                  "default": "fail",
+                  "description": "Behavior when this hook fails."
+                }
+              },
+              "required": [
+                "command"
+              ]
+            }
+          ]
+        },
+        "before_step": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Path to script executed before each test step."
+            },
+            {
+              "type": "object",
+              "description": "Hook executed before each test step.",
+              "properties": {
+                "command": {
+                  "type": "string",
+                  "description": "Path to script executed before each test step."
+                },
+                "on_error": {
+                  "type": "string",
+                  "enum": [
+                    "fail",
+                    "continue"
+                  ],
+                  "default": "fail",
+                  "description": "Behavior when this hook fails."
+                }
+              },
+              "required": [
+                "command"
+              ]
+            }
+          ]
+        },
+        "after_step": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Path to script executed after each test step."
+            },
+            {
+              "type": "object",
+              "description": "Hook executed after each test step.",
+              "properties": {
+                "command": {
+                  "type": "string",
+                  "description": "Path to script executed after each test step."
+                },
+                "on_error": {
+                  "type": "string",
+                  "enum": [
+                    "fail",
+                    "continue"
+                  ],
+                  "default": "fail",
+                  "description": "Behavior when this hook fails."
+                }
+              },
+              "required": [
+                "command"
+              ]
+            }
+          ]
+        },
+        "teardown_test": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Path to script executed once at test case teardown."
+            },
+            {
+              "type": "object",
+              "description": "Hook executed once at test case teardown, after all test sequences complete but before script_end.",
+              "properties": {
+                "command": {
+                  "type": "string",
+                  "description": "Path to script executed once at test case teardown."
+                },
+                "on_error": {
+                  "type": "string",
+                  "enum": [
+                    "fail",
+                    "continue"
+                  ],
+                  "default": "fail",
+                  "description": "Behavior when this hook fails."
+                }
+              },
+              "required": [
+                "command"
+              ]
+            }
+          ]
+        },
+        "script_end": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Path to script executed once at the very end of the test case script."
+            },
+            {
+              "type": "object",
+              "description": "Hook executed once at the very end of the test case script, after all other processing.",
+              "properties": {
+                "command": {
+                  "type": "string",
+                  "description": "Path to script executed once at the very end of the test case script."
+                },
+                "on_error": {
+                  "type": "string",
+                  "enum": [
+                    "fail",
+                    "continue"
+                  ],
+                  "default": "fail",
+                  "description": "Behavior when this hook fails."
+                }
+              },
+              "required": [
+                "command"
+              ]
+            }
+          ]
+        },
+        "on_error": {
+          "type": "string",
+          "enum": [
+            "fail",
+            "continue"
+          ],
+          "default": "fail",
+          "description": "Global default behavior when a hook script fails (can be overridden per-hook)."
+        }
+      }
+    },
+    "hydration_vars": {
+      "type": "object",
+      "description": "Environment variables that need hydration. Each key is the variable name, and the value is an object with metadata.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the environment variable."
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the environment variable."
+          },
+          "default_value": {
+            "type": "string",
+            "description": "Default value for the environment variable."
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether this environment variable is required.",
+            "default": false
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    },
+    "prerequisites": {
+      "type": "array",
+      "description": "Optional list of prerequisites that must be satisfied before running this test case.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "automatic"
+            ],
+            "description": "Type of prerequisite: 'manual' requires human verification, 'automatic' can be verified programmatically."
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the prerequisite."
+          },
+          "verification_command": {
+            "type": "string",
+            "description": "Command to verify the prerequisite (required for automatic type)."
+          }
+        },
+        "required": [
+          "type",
+          "description"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "automatic"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "verification_command"
+              ]
+            }
+          }
         ]
       }
     }

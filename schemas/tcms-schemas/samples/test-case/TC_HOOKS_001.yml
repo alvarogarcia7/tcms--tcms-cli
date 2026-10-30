@@ -1,0 +1,320 @@
+requirement: HOOKS
+item: 1
+tc: 1
+id: TC_HOOKS_001
+description: Comprehensive test demonstrating all eight hook types (script_start,
+  setup_test, before_sequence, after_sequence, before_step, after_step, teardown_test,
+  script_end) with sample hook scripts that perform logging, resource management,
+  and validation. Tests both fail and continue on_error modes.
+general_initial_conditions:
+  system:
+  - Bash shell is available
+  - Hook scripts are executable
+  - Logger library is available
+initial_conditions:
+  filesystem:
+  - Temporary directory /tmp is writable
+  - Hook scripts directory exists at testcases/examples/hooks/scripts/
+  environment:
+  - Test workspace can be created
+  - Hook execution is enabled
+hooks:
+  script_start:
+    command: scripts/script_start.sh
+  setup_test:
+    command: scripts/setup_test.sh
+  before_sequence:
+    command: scripts/before_sequence.sh
+  after_sequence:
+    command: scripts/after_sequence.sh
+  before_step:
+    command: scripts/before_step.sh
+  after_step:
+    command: scripts/after_step.sh
+  teardown_test:
+    command: scripts/teardown_test.sh
+  script_end:
+    command: scripts/script_end.sh
+  on_error: fail
+test_sequences:
+- id: 1
+  name: 'Hook Lifecycle with on_error: fail'
+  description: 'Demonstrates the complete hook lifecycle with on_error set to fail
+    mode.
+
+    This sequence executes simple test steps while all eight hooks execute
+
+    at their designated lifecycle points. Hooks perform logging, create and
+
+    manage temporary resources, and validate step execution.
+
+    '
+  variables:
+    TEST_VAR_1: value_one
+    TEST_VAR_2: value_two
+  initial_conditions:
+    system:
+    - Test sequence 1 ready to execute
+    - Hooks will fail the test on error
+  steps:
+  - step: 1
+    description: Execute simple echo command - before_step and after_step hooks will
+      log execution
+    command: 'echo "Step 1 execution - testing basic hook integration"
+
+      echo "Current variables: TEST_VAR_1=$TEST_VAR_1, TEST_VAR_2=$TEST_VAR_2"
+
+      '
+    expected:
+      success: true
+      result: '0'
+      output: Step 1 execution
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'Step 1 execution' <<< "$COMMAND_OUTPUT"
+  - step: 2
+    description: Create test data file - after_step hook will validate output
+    command: 'TEST_DIR=$(cat /tmp/tc_hooks_001_workspace_dir.txt 2>/dev/null || echo
+      "/tmp/tc_hooks_001_test_workspace")
+
+      echo "Test data for hooks validation" > "$TEST_DIR/test_data.txt"
+
+      cat "$TEST_DIR/test_data.txt"
+
+      '
+    expected:
+      success: true
+      result: '0'
+      output: Test data for hooks validation
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'Test data for hooks validation' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: Verify workspace created by setup_test hook exists
+    command: "TEST_DIR=$(cat /tmp/tc_hooks_001_workspace_dir.txt)\nif [ -d \"$TEST_DIR\"\
+      \ ]; then\n  echo \"Workspace directory exists: $TEST_DIR\"\n  ls -la \"$TEST_DIR\"\
+      \nelse\n  echo \"ERROR: Workspace directory not found\"\n  exit 1\nfi\n"
+    expected:
+      success: true
+      result: '0'
+      output: Workspace directory exists
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'Workspace directory exists' <<< "$COMMAND_OUTPUT"
+  - step: 4
+    description: Check sequence log created by before_sequence hook
+    command: "SEQUENCE_DIR=$(cat /tmp/tc_hooks_001_sequence_dir.txt)\nSEQUENCE_LOG=\"\
+      $SEQUENCE_DIR/sequence_1.log\"\nif [ -f \"$SEQUENCE_LOG\" ]; then\n  echo \"\
+      Sequence log exists: $SEQUENCE_LOG\"\n  cat \"$SEQUENCE_LOG\"\nelse\n  echo\
+      \ \"ERROR: Sequence log not found\"\n  exit 1\nfi\n"
+    expected:
+      success: true
+      result: '0'
+      output: Sequence log exists
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'Sequence log exists' <<< "$COMMAND_OUTPUT"
+- id: 2
+  name: Hook Integration with Variables and Capture
+  description: 'Demonstrates hook integration with variable capture and sequence variables.
+
+    The before_step and after_step hooks can access and log variable values,
+
+    showing how hooks integrate with the test execution context.
+
+    '
+  variables:
+    TEST_VAR_1: advanced_value
+    TEST_VAR_2: integration_test
+  initial_conditions:
+    system:
+    - Test sequence 2 ready to execute
+    - Variable integration enabled
+  steps:
+  - step: 1
+    description: Generate JSON output and capture variables - hooks will log the execution
+      context
+    command: 'cat << ''EOF''
+
+      {"status":"success","test_id":"TC_HOOKS_001","execution_time":125,"hooks_active":true}
+
+      EOF
+
+      '
+    capture_vars:
+    - name: json_status
+      capture: '"status":"([^"]+)"'
+    - name: test_id
+      capture: '"test_id":"([^"]+)"'
+    - name: exec_time
+      capture: '"execution_time":([0-9]+)'
+    - name: hooks_enabled
+      capture: '"hooks_active":(true|false)'
+    expected:
+      success: true
+      result: '0'
+      output: success
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'success' <<< "$COMMAND_OUTPUT"
+      general:
+      - name: verify_status_success
+        condition: '[[ "$json_status" = "success" ]]'
+      - name: verify_test_id_matches
+        condition: '[[ "$test_id" = "TC_HOOKS_001" ]]'
+      - name: verify_exec_time_reasonable
+        condition: '[[ $exec_time -gt 0 ]]'
+      - name: verify_hooks_enabled
+        condition: '[[ "$hooks_enabled" = "true" ]]'
+  - step: 2
+    description: Execute command-based capture - after_step hook validates output
+      was saved
+    command: 'cat > /tmp/hook_test_metrics.txt << ''EOF''
+
+      Total Executions: 42
+
+      Successful: 40
+
+      Failed: 2
+
+      Average Duration: 3.5s
+
+      EOF
+
+      cat /tmp/hook_test_metrics.txt
+
+      '
+    capture_vars:
+    - name: total_exec
+      command: grep 'Total Executions:' /tmp/hook_test_metrics.txt | awk '{print $3}'
+    - name: successful
+      command: grep 'Successful:' /tmp/hook_test_metrics.txt | awk '{print $2}'
+    - name: failed_count
+      command: grep 'Failed:' /tmp/hook_test_metrics.txt | awk '{print $2}'
+    expected:
+      success: true
+      result: '0'
+      output: Total Executions
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'Total Executions' <<< "$COMMAND_OUTPUT"
+      general:
+      - name: verify_total_exec_numeric
+        condition: '[[ $total_exec =~ ^[0-9]+$ ]]'
+      - name: verify_success_plus_failed_equals_total
+        condition: '[[ $((successful + failed_count)) -eq $total_exec ]]'
+      - name: verify_success_rate_above_90_percent
+        condition: '[[ $((successful * 100 / total_exec)) -ge 90 ]]'
+  - step: 3
+    description: Verify all hook tracking files were created during test execution
+    command: "echo \"Checking hook tracking files:\"\n\nif [ -f /tmp/tc_hooks_001_start_time.txt\
+      \ ]; then\n  START_TIME=$(cat /tmp/tc_hooks_001_start_time.txt)\n  echo \"Start\
+      \ time file exists: $START_TIME\"\nelse\n  echo \"WARNING: Start time file not\
+      \ found (may have been cleaned up)\"\nfi\n\nif [ -f /tmp/tc_hooks_001_workspace_dir.txt\
+      \ ]; then\n  WORKSPACE=$(cat /tmp/tc_hooks_001_workspace_dir.txt)\n  echo \"\
+      Workspace tracking file exists: $WORKSPACE\"\nelse\n  echo \"WARNING: Workspace\
+      \ tracking file not found\"\nfi\n\nif [ -f /tmp/tc_hooks_001_sequence_dir.txt\
+      \ ]; then\n  SEQ_DIR=$(cat /tmp/tc_hooks_001_sequence_dir.txt)\n  echo \"Sequence\
+      \ tracking file exists: $SEQ_DIR\"\nelse\n  echo \"WARNING: Sequence tracking\
+      \ file not found\"\nfi\n\necho \"Hook tracking file check completed\"\n"
+    expected:
+      success: true
+      result: '0'
+      output: Hook tracking file check completed
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'Hook tracking file check completed' <<< "$COMMAND_OUTPUT"
+- id: 3
+  name: 'Hook Error Handling with on_error: continue'
+  description: 'Demonstrates hook behavior with different error handling modes.
+
+    This sequence shows that even if hooks encounter issues, with proper
+
+    error handling the test can continue execution. The hooks are designed
+
+    to be resilient and handle missing files or directories gracefully.
+
+    '
+  variables:
+    TEST_VAR_1: error_handling_test
+    TEST_VAR_2: continue_mode
+  initial_conditions:
+    system:
+    - Test sequence 3 ready to execute
+    - Error handling mode demonstration
+  steps:
+  - step: 1
+    description: Execute test step - hooks handle any errors gracefully
+    command: 'echo "Testing hook resilience with continue mode"
+
+      echo "Hooks are designed to handle missing resources gracefully"
+
+      echo "Step execution continues even if optional hook operations fail"
+
+      '
+    expected:
+      success: true
+      result: '0'
+      output: Testing hook resilience
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'Testing hook resilience' <<< "$COMMAND_OUTPUT"
+  - step: 2
+    description: Verify hook scripts properly use logger library for consistent output
+    command: 'echo "All hook scripts use centralized logging library"
+
+      echo "Hooks provide consistent formatted output with timestamps"
+
+      echo "Hook messages are prefixed with ''HOOK:'' for easy identification"
+
+      echo "This enables better debugging and test execution tracking"
+
+      '
+    expected:
+      success: true
+      result: '0'
+      output: centralized logging library
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'centralized logging library' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: Final validation - demonstrate complete hook lifecycle coverage
+    command: 'cat << ''EOF''
+
+      Hook Coverage Summary:
+
+      ✓ script_start: Logs test start time at beginning
+
+      ✓ setup_test: Creates test workspace directories
+
+      ✓ before_sequence: Logs sequence start for each test sequence
+
+      ✓ after_sequence: Cleans up sequence resources after completion
+
+      ✓ before_step: Logs step details and variables before execution
+
+      ✓ after_step: Validates step output and saves results
+
+      ✓ teardown_test: Removes temporary directories and files
+
+      ✓ script_end: Logs test completion time and total duration
+
+
+      All eight hook types have been demonstrated successfully.
+
+      EOF
+
+      '
+    expected:
+      success: true
+      result: '0'
+      output: Hook Coverage Summary
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'Hook Coverage Summary' <<< "$COMMAND_OUTPUT"
+      general:
+      - name: verify_all_hooks_mentioned
+        condition: grep -q 'script_start' <<< "$COMMAND_OUTPUT" && grep -q 'script_end'
+          <<< "$COMMAND_OUTPUT"
+      - name: verify_success_message
+        condition: grep -q 'demonstrated successfully' <<< "$COMMAND_OUTPUT"

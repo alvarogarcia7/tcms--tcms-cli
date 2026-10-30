@@ -165,9 +165,9 @@ fn test_chunk_validation_on_valid_files() {
 fn test_all_data_files_exist() {
     let _ = env_logger::builder().is_test(true).try_init();
 
-    // Canonical schema path: schemas/test-case.schema.json (legacy, backward compatible)
+    // Canonical schema path: schemas/tcms-schemas/tcms/test-case-main.schema.json (legacy, backward compatible)
     let expected_files = vec![
-        "schemas/test-case.schema.json",
+        "schemas/tcms-schemas/tcms/test-case-main.schema.json",
         "tests/sample/SGP.22_4.4.2.yaml",
         "tests/sample/data.yml",
     ];

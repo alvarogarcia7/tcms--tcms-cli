@@ -91,7 +91,7 @@ if [[ -z "$VERIFY_AUDIT_LOG_BIN" ]]; then
 fi
 
 # Schema paths
-TEST_CASE_SCHEMA="$PROJECT_ROOT/schemas/test-case.schema.json"
+TEST_CASE_SCHEMA="$PROJECT_ROOT/schemas/tcms-schemas/tcms/test-case-main.schema.json"
 if [[ ! -f "$TEST_CASE_SCHEMA" ]]; then
     fail "Test case schema not found at: $TEST_CASE_SCHEMA"
     exit 1
