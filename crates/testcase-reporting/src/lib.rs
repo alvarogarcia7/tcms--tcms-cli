@@ -11,17 +11,20 @@ pub mod select;
 
 pub use run::LoadedRun;
 
+/// `Some(value)` when the value has visible text; `None` when it is absent, empty or whitespace-only.
+/// A value that is kept is returned unchanged.
+pub fn non_blank(value: Option<&str>) -> Option<&str> {
+    value.filter(|v| !v.trim().is_empty())
+}
+
 /// The text block `test-executor report` prints before the report kinds: which matrix was
 /// loaded, the reconciliation of every discovered input, and the run selection.
 pub fn input_summary(inputs: &load::LoadedInputs, selection: &select::RunSelection) -> String {
-    let baseline = inputs
-        .matrix
-        .baseline_id
-        .as_deref()
-        .unwrap_or("not recorded");
+    let matrix_id = non_blank(Some(&inputs.matrix.id)).unwrap_or("not recorded");
+    let baseline = non_blank(inputs.matrix.baseline_id.as_deref()).unwrap_or("not recorded");
     format!(
         "Trace matrix: {} (baseline: {})\n\n{}\n{}",
-        inputs.matrix.id, baseline, inputs.reconciliation, selection
+        matrix_id, baseline, inputs.reconciliation, selection
     )
 }
 

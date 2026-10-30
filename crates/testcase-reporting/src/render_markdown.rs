@@ -4,6 +4,7 @@
 //! same model always gives the same bytes (D-12). Markdown is the only format in Phase 2 (D-13).
 
 use crate::model::{DocumentSection, Header, ReportModel, RequirementRow, TestColumn};
+use crate::non_blank;
 
 const NOT_RECORDED: &str = "not recorded";
 const NO_CONTENT: &str = "No traceable content";
@@ -50,13 +51,13 @@ fn fence_len(text: &str) -> usize {
 
 fn header_block(header: &Header) -> String {
     let rows = [
-        ("Matrix", cell(&header.matrix_id)),
+        (
+            "Matrix",
+            non_blank(Some(&header.matrix_id)).map_or_else(|| NOT_RECORDED.to_string(), cell),
+        ),
         (
             "Baseline",
-            header
-                .baseline_id
-                .as_deref()
-                .map_or_else(|| NOT_RECORDED.to_string(), cell),
+            non_blank(header.baseline_id.as_deref()).map_or_else(|| NOT_RECORDED.to_string(), cell),
         ),
         ("Runs", list(&header.run_ids)),
         ("Builds", list(&header.build_ids)),

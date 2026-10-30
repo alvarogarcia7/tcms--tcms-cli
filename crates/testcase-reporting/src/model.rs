@@ -3,11 +3,11 @@
 //! Pure: no I/O, no clock. The generation time is injected through `ReportInputs`. The model
 //! holds data only; the renderer decides how a missing value is written.
 
-use crate::input_summary;
 use crate::load::LoadedInputs;
 use crate::rollup::{case_outcome, roll_up, CaseOutcome, VerificationStatus};
 use crate::run::LoadedRun;
 use crate::select::{RunReport, RunSelection};
+use crate::{input_summary, non_blank};
 use std::collections::{BTreeMap, BTreeSet};
 use testcase_models::{TestCase, TestCaseStatus, TestType};
 use testcase_verification::RequirementLevel;
@@ -258,7 +258,7 @@ fn header(input: &ReportInputs, selection: &RunSelection, obsolete_count: usize)
 
     Header {
         matrix_id: input.inputs.matrix.id.clone(),
-        baseline_id: input.inputs.matrix.baseline_id.clone(),
+        baseline_id: non_blank(input.inputs.matrix.baseline_id.as_deref()).map(str::to_string),
         run_ids: sorted_recorded(used.iter().map(|r| r.run_id.as_str())),
         build_ids: sorted_recorded(used.iter().map(|r| r.build_id.as_str())),
         environments: sorted_recorded(loaded.iter().map(|r| r.record.environment.as_str())),
