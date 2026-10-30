@@ -10,6 +10,7 @@
 
 use crate::model::Header;
 use crate::non_blank;
+use crate::render_markdown::{cell, header_markdown};
 use crate::view::{linked_cases, ViewInput};
 use std::collections::BTreeMap;
 use testcase_verification::Verdict;
@@ -78,6 +79,58 @@ pub fn build_problems(input: ViewInput) -> ProblemsReport {
         rows,
         missing_count,
     }
+}
+
+const MISSING_FLAG: &str = "**MISSING problem_report_id**";
+const NO_REQUIREMENTS: &str = "-";
+const TABLE_HEADER: &str = "| Test case | Verdict | Run | Build | Problem report | Requirements |";
+const TABLE_RULE: &str = "| --- | --- | --- | --- | --- | --- |";
+
+/// Render the problem list as one Markdown document ending with exactly one newline.
+/// Every model-derived string goes through `cell`; a missing report ID is the visible flag text.
+pub fn render_problems_markdown(report: &ProblemsReport) -> String {
+    let mut blocks: Vec<String> = vec![
+        "# Problem Reports".to_string(),
+        header_markdown(&report.header),
+        format!("Failed or errored results: {}", report.rows.len()),
+        format!("Without problem report: {}", report.missing_count),
+    ];
+    if report.rows.is_empty() {
+        blocks.push("No failed or errored results".to_string());
+    } else {
+        let mut lines = vec![TABLE_HEADER.to_string(), TABLE_RULE.to_string()];
+        lines.extend(report.rows.iter().map(row_line));
+        blocks.push(lines.join("\n"));
+    }
+
+    let mut out = blocks.join("\n\n");
+    out.push('\n');
+    out
+}
+
+fn row_line(row: &ProblemRow) -> String {
+    let problem_report = row
+        .problem_report_id
+        .as_deref()
+        .map_or_else(|| MISSING_FLAG.to_string(), cell);
+    let requirements = if row.requirement_ids.is_empty() {
+        NO_REQUIREMENTS.to_string()
+    } else {
+        row.requirement_ids
+            .iter()
+            .map(|id| cell(id))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    format!(
+        "| {} | {} | {} | {} | {} | {} |",
+        cell(&row.test_case_id),
+        row.verdict.as_str(),
+        cell(&row.run_id),
+        cell(&row.build_id),
+        problem_report,
+        requirements
+    )
 }
 
 #[cfg(test)]
@@ -317,5 +370,101 @@ mod tests {
         // Guards the fixture assumption used above: T2 is decided by RUN-1, not by RUN-2.
         let (_, selection) = fixture();
         assert_eq!(selection.results["T2"].run_id, "RUN-1");
+    }
+
+    // Task 2: Markdown rendering. Golden tests are written before the renderer exists.
+    mod markdown {
+        use super::*;
+        use crate::render_markdown::header_markdown;
+
+        #[test]
+        fn fixture_renders_exact_golden_markdown() {
+            let (model, selection) = fixture();
+            let report = report_of(&model, &selection);
+            let expected = r#"# Problem Reports
+
+## Report header
+
+| Field | Value |
+| --- | --- |
+| Matrix | TM-1 |
+| Baseline | not recorded |
+| Runs | RUN-1, RUN-2 |
+| Builds | b1, b2 |
+| Environments | e |
+| Testers | t |
+| Obsolete test cases excluded | not recorded |
+| Generated | 2026-10-31T09:00:00Z |
+
+Failed or errored results: 2
+
+Without problem report: 1
+
+| Test case | Verdict | Run | Build | Problem report | Requirements |
+| --- | --- | --- | --- | --- | --- |
+| T2 | fail | RUN-1 | b1 | PR-7 | HLR-1 |
+| T3 | error | RUN-1 | b1 | **MISSING problem_report_id** | LLR-2 |
+"#;
+            assert_eq!(render_problems_markdown(&report), expected);
+        }
+
+        #[test]
+        fn fixture_rows_carry_the_flag_text_and_counts() {
+            let (model, selection) = fixture();
+            let out = render_problems_markdown(&report_of(&model, &selection));
+            assert!(
+                out.contains("| T2 | fail | RUN-1 | b1 | PR-7 | HLR-1 |"),
+                "{out}"
+            );
+            assert!(
+                out.contains("| T3 | error | RUN-1 | b1 | **MISSING problem_report_id** | LLR-2 |"),
+                "{out}"
+            );
+            assert!(out.contains("Failed or errored results: 2"), "{out}");
+            assert!(out.contains("Without problem report: 1"), "{out}");
+        }
+
+        #[test]
+        fn empty_report_says_so_and_counts_zero() {
+            let (model, _) = fixture();
+            let report = ProblemsReport {
+                header: model.header.clone(),
+                rows: Vec::new(),
+                missing_count: 0,
+            };
+            let out = render_problems_markdown(&report);
+            assert!(out.contains("No failed or errored results"), "{out}");
+            assert!(out.contains("Without problem report: 0"), "{out}");
+            assert!(out.contains("Failed or errored results: 0"), "{out}");
+            assert!(!out.contains("| Test case |"), "{out}");
+            // The header is still the shared Phase 2 header.
+            assert!(out.contains(&header_markdown(&model.header)), "{out}");
+        }
+
+        #[test]
+        fn hostile_problem_report_id_is_escaped_and_stays_on_one_line() {
+            let (model, selection) = fixture();
+            let mut report = report_of(&model, &selection);
+            report.rows[0].problem_report_id = Some("PR|1\n9".to_string());
+            report.rows[0].requirement_ids.clear();
+            let out = render_problems_markdown(&report);
+            let matches: Vec<&str> = out.lines().filter(|l| l.contains("PR\\|1 9")).collect();
+            assert_eq!(matches.len(), 1, "{out}");
+            assert_eq!(
+                matches[0], "| T2 | fail | RUN-1 | b1 | PR\\|1 9 | - |",
+                "{out}"
+            );
+        }
+
+        #[test]
+        fn identical_inputs_give_identical_bytes_and_one_trailing_newline() {
+            let (model_a, selection_a) = fixture();
+            let (model_b, selection_b) = fixture();
+            let a = render_problems_markdown(&report_of(&model_a, &selection_a));
+            let b = render_problems_markdown(&report_of(&model_b, &selection_b));
+            assert_eq!(a.as_bytes(), b.as_bytes());
+            assert!(a.ends_with('\n'));
+            assert!(!a.ends_with("\n\n"));
+        }
     }
 }
