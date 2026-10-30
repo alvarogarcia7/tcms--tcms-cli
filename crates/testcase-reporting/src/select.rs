@@ -4,6 +4,7 @@
 //! `started` instant, then by `run_id`, so the input order never changes the result.
 
 use crate::run::LoadedRun;
+use chrono::{DateTime, Utc};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 use testcase_verification::Verdict;
@@ -61,18 +62,127 @@ pub struct RunSelection {
 
 impl RunSelection {
     pub fn used(&self) -> impl Iterator<Item = &RunReport> {
-        std::iter::empty()
+        self.runs.iter().filter(|r| r.use_ == RunUse::Used)
     }
 
     pub fn excluded(&self) -> impl Iterator<Item = &RunReport> {
-        std::iter::empty()
+        self.runs
+            .iter()
+            .filter(|r| matches!(r.use_, RunUse::Excluded(_)))
     }
+}
+
+/// Per-run counters, indexed by position in selection order.
+#[derive(Debug, Clone, Copy, Default)]
+struct Counts {
+    total: usize,
+    decided: usize,
+    superseded: usize,
+    not_executed: usize,
+}
+
+/// The current deciding result for one test case, with the position of its run.
+struct Winner {
+    index: usize,
+    started: DateTime<Utc>,
+    result: SelectedResult,
 }
 
 /// Select the deciding result for every test case (D-01..D-05, D-16).
 pub fn select_results(runs: &[LoadedRun]) -> RunSelection {
-    let _ = runs;
-    RunSelection::default()
+    let mut order: Vec<&LoadedRun> = runs.iter().collect();
+    order.sort_by(|a, b| {
+        a.started
+            .cmp(&b.started)
+            .then_with(|| a.record.run_id.cmp(&b.record.run_id))
+    });
+
+    let mut counts = vec![Counts::default(); order.len()];
+    let mut winners: BTreeMap<String, Winner> = BTreeMap::new();
+    let mut notes: Vec<String> = Vec::new();
+
+    for (index, run) in order.iter().enumerate() {
+        counts[index].total = run.record.results.len();
+        for r in &run.record.results {
+            if r.verdict == Verdict::NotExecuted {
+                counts[index].not_executed += 1;
+                continue;
+            }
+            let candidate = Winner {
+                index,
+                started: run.started,
+                result: SelectedResult {
+                    test_case_id: r.test_case_id.clone(),
+                    verdict: r.verdict,
+                    run_id: run.record.run_id.clone(),
+                    build_id: run.record.build_id.clone(),
+                    started_at: run.record.started_at.clone(),
+                    problem_report_id: r.problem_report_id.clone(),
+                    verification_result_ref: r.verification_result_ref.clone(),
+                },
+            };
+            if let Some(previous) = winners.insert(r.test_case_id.clone(), candidate) {
+                counts[previous.index].superseded += 1;
+                if previous.started == run.started {
+                    notes.push(format!(
+                        "{}: runs {} and {} share started_at {}; {} wins by run_id order",
+                        r.test_case_id,
+                        order[previous.index].record.run_id,
+                        run.record.run_id,
+                        run.record.started_at,
+                        run.record.run_id
+                    ));
+                }
+            }
+        }
+    }
+
+    for winner in winners.values() {
+        counts[winner.index].decided += 1;
+    }
+
+    let runs_report: Vec<RunReport> = order
+        .iter()
+        .zip(counts.iter())
+        .map(|(run, c)| {
+            let use_ = if c.decided > 0 {
+                RunUse::Used
+            } else if c.total == 0 {
+                RunUse::Excluded("no results".to_string())
+            } else if c.superseded == 0 {
+                RunUse::Excluded("only not_executed results".to_string())
+            } else {
+                RunUse::Excluded("every executed result superseded by a later run".to_string())
+            };
+            RunReport {
+                run_id: run.record.run_id.clone(),
+                build_id: run.record.build_id.clone(),
+                started_at: run.record.started_at.clone(),
+                path: run.path.clone(),
+                total: c.total,
+                decided: c.decided,
+                superseded: c.superseded,
+                not_executed: c.not_executed,
+                use_,
+            }
+        })
+        .collect();
+
+    let builds: BTreeSet<String> = runs_report
+        .iter()
+        .filter(|r| r.use_ == RunUse::Used)
+        .map(|r| r.build_id.clone())
+        .collect();
+
+    let results: BTreeMap<String, SelectedResult> =
+        winners.into_iter().map(|(id, w)| (id, w.result)).collect();
+
+    RunSelection {
+        results,
+        runs: runs_report,
+        builds,
+        notes,
+    }
 }
 
 #[cfg(test)]
@@ -211,10 +321,7 @@ mod tests {
         ];
 
         for (name, specs, expect) in cases {
-            let runs: Vec<LoadedRun> = specs
-                .iter()
-                .map(|(id, b, s, r)| run(id, b, s, r))
-                .collect();
+            let runs: Vec<LoadedRun> = specs.iter().map(|(id, b, s, r)| run(id, b, s, r)).collect();
             let sel = select_results(&runs);
 
             let mut reversed = runs.clone();
@@ -247,8 +354,18 @@ mod tests {
     #[test]
     fn demo_case_resolves_to_fail_from_run_2() {
         let runs = vec![
-            run("RUN-1", "b1", "2026-10-28T10:00:00Z", &[("T1", Verdict::Pass)]),
-            run("RUN-2", "b2", "2026-10-28T11:00:00Z", &[("T1", Verdict::Fail)]),
+            run(
+                "RUN-1",
+                "b1",
+                "2026-10-28T10:00:00Z",
+                &[("T1", Verdict::Pass)],
+            ),
+            run(
+                "RUN-2",
+                "b2",
+                "2026-10-28T11:00:00Z",
+                &[("T1", Verdict::Fail)],
+            ),
             run(
                 "RUN-3",
                 "b3",
@@ -283,8 +400,18 @@ mod tests {
     #[test]
     fn equal_started_at_is_noted_and_later_run_id_wins() {
         let runs = vec![
-            run("RUN-B", "b2", "2026-10-28T10:00:00Z", &[("T1", Verdict::Fail)]),
-            run("RUN-A", "b1", "2026-10-28T10:00:00Z", &[("T1", Verdict::Pass)]),
+            run(
+                "RUN-B",
+                "b2",
+                "2026-10-28T10:00:00Z",
+                &[("T1", Verdict::Fail)],
+            ),
+            run(
+                "RUN-A",
+                "b1",
+                "2026-10-28T10:00:00Z",
+                &[("T1", Verdict::Pass)],
+            ),
         ];
         let sel = select_results(&runs);
         assert_eq!(sel.results["T1"].run_id, "RUN-B");
@@ -301,7 +428,12 @@ mod tests {
     fn run_without_results_is_excluded_with_reason() {
         let runs = vec![
             run("RUN-0", "b0", "2026-10-28T09:00:00Z", &[]),
-            run("RUN-1", "b1", "2026-10-28T10:00:00Z", &[("T1", Verdict::Pass)]),
+            run(
+                "RUN-1",
+                "b1",
+                "2026-10-28T10:00:00Z",
+                &[("T1", Verdict::Pass)],
+            ),
         ];
         let sel = select_results(&runs);
         assert_eq!(
@@ -315,8 +447,18 @@ mod tests {
     #[test]
     fn builds_are_those_of_used_runs_only() {
         let runs = vec![
-            run("RUN-1", "b1", "2026-10-28T10:00:00Z", &[("T1", Verdict::Pass)]),
-            run("RUN-2", "b2", "2026-10-28T11:00:00Z", &[("T2", Verdict::Fail)]),
+            run(
+                "RUN-1",
+                "b1",
+                "2026-10-28T10:00:00Z",
+                &[("T1", Verdict::Pass)],
+            ),
+            run(
+                "RUN-2",
+                "b2",
+                "2026-10-28T11:00:00Z",
+                &[("T2", Verdict::Fail)],
+            ),
             run(
                 "RUN-3",
                 "b3",
@@ -345,7 +487,12 @@ mod tests {
                     ("T3", Verdict::NotExecuted),
                 ],
             ),
-            run("RUN-2", "b2", "2026-10-28T11:00:00Z", &[("T2", Verdict::Pass)]),
+            run(
+                "RUN-2",
+                "b2",
+                "2026-10-28T11:00:00Z",
+                &[("T2", Verdict::Pass)],
+            ),
         ];
         let sel = select_results(&runs);
         let r1 = report(&sel, "RUN-1");
