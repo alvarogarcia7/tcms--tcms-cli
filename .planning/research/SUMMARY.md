@@ -72,8 +72,10 @@ Resolved:
 - **TPDG capability (partly).** TPDG (github.com/alvarogarcia7/test-plan-documentation-generator, Rust, public, not on crates.io) renders schema-validated YAML through Jinja templates. Its requirement aggregation template groups results by each result's `requirement` string and hard-codes the requirement IDs in the template. Our container output carries the legacy `LEGACY-NOT-USED` value in that field, so TPDG's grouping would not match our traceability. TPDG is not a drop-in for requirement-centric reports. The native renderer stays primary. Not installed here, not tested end to end.
 
 Still open (decisions or unverified):
-- **Run-selection and roll-up policy.** Product decision for the owner. Suggested defaults: one build per report; latest `started_at` wins; a `not_executed` result never overrides an executed one.
-- **Crate placement.** New crate `testcase-reporting` (per ARCHITECTURE.md) is the working choice. Confirm during Phase 1 planning.
+**Decided (2026-10-30, owner):**
+- **Run selection.** For each test case, the latest run (by `started_at`) with an executed result decides. A later pass overrides an earlier fail or error; a later fail or error overrides an earlier pass. A run that omits the test case or records `not_executed` does not change the result. Runs are not restricted to one build: the report lists each build it used. Recorded in REQUIREMENTS LOAD-03 and ROADMAP Phase 1.
+- **Roll-up.** `VERIFIED` only when every linked live test case's decisive result is `pass`. `ERRORED` ranks above `FAILED` (working assumption, not yet confirmed by the owner).
+- **Crate placement.** New crate `testcase-reporting` (Layer 3). Only `test-executor` depends on it, so report changes do not rebuild the nine crates that depend on `testcase-verification`.
 - **Quality gates.** `make test` is still not runnable in full here (uv, shellcheck, TPDG missing). `cargo build -p test-executor -p verifier` now works after installing `libssl-dev`. StrictDoc 0.30.4 was run in a temporary venv and validates `docs/strictdoc` with no errors.
 - **Verifier input rules** (found while reproducing): JSON execution logs need `result_verification_pass` and `output_verification_pass`; folder mode needs `<ID>_execution_log.json` names; test cases are loaded from `testcases/<ID>.yaml` relative to the working directory; the container schema defaults to `data/testcase_results_container/schema.json`.
 
