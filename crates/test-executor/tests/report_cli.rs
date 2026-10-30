@@ -303,7 +303,7 @@ fn report_kinds_default_to_all_and_can_be_selected() {
     assert!(out.contains("## Inputs"), "{out}");
     for kind in ["summary", "gaps", "problems"] {
         assert!(
-            out.contains(&format!("Report kind {kind}: renderer not yet available")),
+            out.contains(&format!("Report kind {kind}: rendered below")),
             "{out}"
         );
     }
@@ -320,8 +320,8 @@ fn report_kinds_default_to_all_and_can_be_selected() {
     ]);
     assert!(some.status.success(), "{}", stderr(&some));
     let out = stdout(&some);
-    assert!(out.contains("summary: renderer not yet available"), "{out}");
-    assert!(out.contains("gaps: renderer not yet available"), "{out}");
+    assert!(out.contains("  summary: rendered below\n"), "{out}");
+    assert!(out.contains("  gaps: rendered below\n"), "{out}");
     assert!(!out.contains("traceability:"), "{out}");
 }
 
@@ -1082,4 +1082,535 @@ fn invalid_requirements_export_fails_naming_it_and_writes_nothing() {
         stderr(&output)
     );
     assert!(!out_file.exists());
+}
+
+// ---- Phase 3: run summary, coverage gaps and problem reports ----
+
+/// A run file whose results may carry a problem report: (test case, verdict, problem report ID).
+fn run_yaml_pr(
+    run_id: &str,
+    build_id: &str,
+    started_at: &str,
+    results: &[(&str, &str, Option<&str>)],
+) -> String {
+    let mut yaml = format!(
+        "type: test_run\nschema: tcms/test-run.schema.json\nrun_id: {run_id}\nbuild_id: {build_id}\n\
+         environment: e\ntester: t\nstarted_at: '{started_at}'\nresults:\n"
+    );
+    if results.is_empty() {
+        yaml = yaml.replace("results:\n", "results: []\n");
+    }
+    for (tc, verdict, problem) in results {
+        match problem {
+            Some(pr) => yaml.push_str(&format!(
+                "  - {{test_case_id: {tc}, verdict: {verdict}, problem_report_id: {pr}}}\n"
+            )),
+            None => yaml.push_str(&format!("  - {{test_case_id: {tc}, verdict: {verdict}}}\n")),
+        }
+    }
+    yaml
+}
+
+/// The Phase 3 scenario. Matrix: HLR-1 (T1, T2; both coverage flags), LLR-2 (T3; normal range
+/// only), HLR-3 (no cases), LLR-4 (T4; robustness only, no result). RUN-1 (b1) holds T1 pass,
+/// T2 fail with PR-7 and T3 error; RUN-2 (b2) holds T2 not_executed and T5 pass (T5 is not in
+/// the matrix). `t3_problem` is the problem report of T3's error.
+fn scenario(
+    t3_problem: Option<&str>,
+) -> (tempfile::TempDir, std::path::PathBuf, std::path::PathBuf) {
+    let (dir, matrix, runs) = project(&[
+        link(
+            "HLR-1",
+            "HLR",
+            &["T1", "T2"],
+            true,
+            true,
+            &["RUN-1", "RUN-2"],
+        ),
+        link("LLR-2", "LLR", &["T3"], true, false, &["RUN-1"]),
+        link("HLR-3", "HLR", &[], false, false, &[]),
+        link("LLR-4", "LLR", &["T4"], false, true, &[]),
+    ]);
+    write(
+        &runs,
+        "run1.yaml",
+        &run_yaml_pr(
+            "RUN-1",
+            "b1",
+            "2026-10-01T10:00:00Z",
+            &[
+                ("T1", "pass", None),
+                ("T2", "fail", Some("PR-7")),
+                ("T3", "error", t3_problem),
+            ],
+        ),
+    );
+    write(
+        &runs,
+        "run2.yaml",
+        &run_yaml_pr(
+            "RUN-2",
+            "b2",
+            "2026-10-02T10:00:00Z",
+            &[("T2", "not_executed", None), ("T5", "pass", None)],
+        ),
+    );
+    (dir, matrix, runs)
+}
+
+/// The text of one section: from `heading` up to the next `## ` heading (or the end).
+fn section<'a>(out: &'a str, heading: &str) -> &'a str {
+    let start = out
+        .find(heading)
+        .unwrap_or_else(|| panic!("no `{heading}` in:\n{out}"));
+    let body = &out[start + heading.len()..];
+    let end = body.find("\n## ").map(|i| i + 1).unwrap_or(body.len());
+    &out[start..start + heading.len() + end]
+}
+
+/// The text from `heading` to the end of the output, for the last document of a report.
+fn tail<'a>(out: &'a str, heading: &str) -> &'a str {
+    let start = out
+        .find(heading)
+        .unwrap_or_else(|| panic!("no `{heading}` in:\n{out}"));
+    &out[start..]
+}
+
+/// The cells of every data row of the Markdown table in `text`, header and rule excluded.
+/// Index 0 is the empty cell before the first pipe.
+fn table_rows(text: &str) -> Vec<Vec<String>> {
+    text.lines()
+        .filter(|l| l.starts_with('|') && !l.starts_with("| ---"))
+        .skip(1)
+        .map(|l| l.split('|').map(|c| c.trim().to_string()).collect())
+        .collect()
+}
+
+/// Cells of the requirement rows (`| HLR-n |` or `| LLR-n |`) of the traceability document.
+fn traceability_requirement_rows(out: &str) -> Vec<Vec<String>> {
+    out.lines()
+        .filter(|l| l.starts_with("| HLR-") || l.starts_with("| LLR-"))
+        .map(|l| l.split('|').map(|c| c.trim().to_string()).collect())
+        .collect()
+}
+
+fn requirement_ids(rows: &[Vec<String>], status: Option<&str>, col: usize) -> Vec<String> {
+    rows.iter()
+        .filter(|cells| status.is_none_or(|s| cells[col] == s))
+        .map(|cells| cells[1].clone())
+        .collect()
+}
+
+#[test]
+fn summary_counts_per_run() {
+    let (_dir, matrix, runs) = scenario(None);
+    let output = render(&matrix, &runs, &["--kind", "summary"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let out = stdout(&output);
+    assert!(
+        out.lines()
+            .any(|l| l == "| RUN-1 | b1 | yes | 1 | 1 | 0 | 1 | 3 |"),
+        "{out}"
+    );
+    assert!(
+        out.lines()
+            .any(|l| l == "| RUN-2 | b2 | yes | 1 | 0 | 1 | 0 | 2 |"),
+        "{out}"
+    );
+}
+
+#[test]
+fn summary_counts_per_requirement() {
+    let (_dir, matrix, runs) = scenario(None);
+    let output = render(&matrix, &runs, &["--kind", "summary"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let out = stdout(&output);
+    for line in [
+        "| HLR-1 | HLR | FAILED | 1 | 1 | 0 | 0 | 2 |",
+        "| LLR-2 | LLR | ERRORED | 0 | 0 | 0 | 1 | 1 |",
+        "| HLR-3 | HLR | NO TESTS | 0 | 0 | 0 | 0 | 0 |",
+        "| LLR-4 | LLR | NOT RUN | 0 | 0 | 1 | 0 | 1 |",
+    ] {
+        assert!(out.lines().any(|l| l == line), "missing {line}\n{out}");
+    }
+}
+
+#[test]
+fn summary_buckets_sum_to_total() {
+    let (_dir, matrix, runs) = scenario(None);
+    let output = render(&matrix, &runs, &["--kind", "summary"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let out = stdout(&output);
+    let runs_rows = table_rows(section(&out, "## Results per run"));
+    let req_rows = table_rows(section(&out, "## Results per requirement"));
+    assert_eq!(runs_rows.len(), 2, "{out}");
+    assert_eq!(req_rows.len(), 4, "{out}");
+    for cells in runs_rows.iter().chain(req_rows.iter()) {
+        // Columns 4 to 7 are pass, fail, not_executed, error; column 8 is Total
+        let n: Vec<usize> = cells[4..=8].iter().map(|c| c.parse().unwrap()).collect();
+        assert_eq!(n[0] + n[1] + n[2] + n[3], n[4], "row {cells:?}\n{out}");
+    }
+}
+
+#[test]
+fn summary_superseded_result_not_counted() {
+    let (dir, matrix, runs) = project(&[link(
+        "HLR-1",
+        "HLR",
+        &["T1"],
+        true,
+        false,
+        &["RUN-A", "RUN-B"],
+    )]);
+    write(
+        &runs,
+        "a.yaml",
+        &run_yaml("RUN-A", "bA", "2026-10-01T10:00:00Z", &[("T1", "pass")]),
+    );
+    write(
+        &runs,
+        "b.yaml",
+        &run_yaml("RUN-B", "bB", "2026-10-02T10:00:00Z", &[("T1", "fail")]),
+    );
+    let _keep = dir;
+
+    let output = render(&matrix, &runs, &["--kind", "summary"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let out = stdout(&output);
+    let rows = table_rows(section(&out, "## Results per run"));
+    let total = |run: &str| {
+        rows.iter()
+            .find(|cells| cells[1] == run)
+            .unwrap_or_else(|| panic!("no row for {run}\n{out}"))[8]
+            .clone()
+    };
+    assert_eq!(total("RUN-A"), "0", "{out}");
+    assert_eq!(total("RUN-B"), "1", "{out}");
+}
+
+#[test]
+fn gaps_lists_each_gap_in_its_section() {
+    let (_dir, matrix, runs) = scenario(None);
+    let output = render(&matrix, &runs, &["--kind", "gaps"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let out = stdout(&output);
+
+    let no_tests = section(&out, "## Requirements with no test cases (1)");
+    assert!(no_tests.contains("HLR-3"), "{out}");
+    assert!(
+        !no_tests.contains("HLR-1") && !no_tests.contains("LLR-2"),
+        "{out}"
+    );
+
+    let normal = section(&out, "## Requirements missing a normal-range test (2)");
+    assert!(
+        normal.contains("HLR-3") && normal.contains("LLR-4"),
+        "{out}"
+    );
+    assert!(
+        !normal.contains("HLR-1") && !normal.contains("LLR-2"),
+        "{out}"
+    );
+
+    let robust = section(&out, "## Requirements missing a robustness test (2)");
+    assert!(
+        robust.contains("HLR-3") && robust.contains("LLR-2"),
+        "{out}"
+    );
+    assert!(
+        !robust.contains("HLR-1") && !robust.contains("LLR-4"),
+        "{out}"
+    );
+
+    let no_result = section(&out, "## Test cases with no recorded result (1)");
+    assert!(
+        no_result.contains("T4") && no_result.contains("LLR-4"),
+        "{out}"
+    );
+    assert!(
+        !no_result.contains("T1") && !no_result.contains("T2"),
+        "{out}"
+    );
+    assert!(
+        !no_result.contains("T3") && !no_result.contains("T5"),
+        "{out}"
+    );
+}
+
+#[test]
+fn gaps_all_clear_prints_none() {
+    let (_dir, matrix, runs) = project(&[
+        link("HLR-1", "HLR", &["T1"], true, true, &["RUN-1"]),
+        link("LLR-2", "LLR", &["T2"], true, true, &["RUN-1"]),
+    ]);
+    write(
+        &runs,
+        "run1.yaml",
+        &run_yaml(
+            "RUN-1",
+            "b1",
+            "2026-10-01T10:00:00Z",
+            &[("T1", "pass"), ("T2", "pass")],
+        ),
+    );
+
+    let output = render(&matrix, &runs, &["--kind", "gaps"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let out = stdout(&output);
+    for heading in [
+        "## Requirements with no test cases (0)",
+        "## Requirements missing a normal-range test (0)",
+        "## Requirements missing a robustness test (0)",
+        "## Test cases with no recorded result (0)",
+    ] {
+        let body = section(&out, heading);
+        assert!(body.contains("None"), "{body}");
+        assert!(!body.contains("| --- |"), "{body}");
+    }
+}
+
+#[test]
+fn problems_lists_decided_failures() {
+    let (_dir, matrix, runs) = scenario(None);
+    let output = render(&matrix, &runs, &["--kind", "problems"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let out = stdout(&output);
+    assert!(
+        out.lines()
+            .any(|l| l == "| Test case | Verdict | Run | Build | Problem report | Requirements |"),
+        "{out}"
+    );
+    assert!(
+        out.lines()
+            .any(|l| l == "| T2 | fail | RUN-1 | b1 | PR-7 | HLR-1 |"),
+        "{out}"
+    );
+    assert!(out.contains("Failed or errored results: 2"), "{out}");
+    let problems = tail(&out, "# Problem Reports");
+    assert!(
+        !problems.contains("| T1 |") && !problems.contains("| T5 |"),
+        "{out}"
+    );
+}
+
+#[test]
+fn problems_flags_missing_problem_report() {
+    let (_dir, matrix, runs) = scenario(None);
+    let output = render(&matrix, &runs, &["--kind", "problems"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let out = stdout(&output);
+    assert!(out.contains("Without problem report: 1"), "{out}");
+    let t3 = tail(&out, "# Problem Reports")
+        .lines()
+        .find(|l| l.starts_with("| T3 |"))
+        .unwrap_or_else(|| panic!("no T3 row\n{out}"))
+        .to_string();
+    assert!(t3.contains("**MISSING problem_report_id**"), "{t3}");
+}
+
+#[test]
+fn problems_missing_flag_clears_when_id_is_given() {
+    let (_dir, matrix, runs) = scenario(Some("PR-8"));
+    let output = render(&matrix, &runs, &["--kind", "problems"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let out = stdout(&output);
+    assert!(out.contains("Without problem report: 0"), "{out}");
+    assert!(
+        !tail(&out, "# Problem Reports").contains("MISSING problem_report_id"),
+        "{out}"
+    );
+    assert!(
+        out.lines()
+            .any(|l| l == "| T3 | error | RUN-1 | b1 | PR-8 | LLR-2 |"),
+        "{out}"
+    );
+}
+
+#[test]
+fn problems_superseded_fail_is_absent() {
+    let (_dir, matrix, runs) = project(&[link(
+        "HLR-1",
+        "HLR",
+        &["T1"],
+        true,
+        false,
+        &["RUN-A", "RUN-B"],
+    )]);
+    write(
+        &runs,
+        "a.yaml",
+        &run_yaml_pr(
+            "RUN-A",
+            "bA",
+            "2026-10-01T10:00:00Z",
+            &[("T1", "fail", Some("PR-9"))],
+        ),
+    );
+    write(
+        &runs,
+        "b.yaml",
+        &run_yaml_pr(
+            "RUN-B",
+            "bB",
+            "2026-10-02T10:00:00Z",
+            &[("T1", "pass", None)],
+        ),
+    );
+
+    let output = render(&matrix, &runs, &["--kind", "problems"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let out = stdout(&output);
+    assert!(out.contains("No failed or errored results"), "{out}");
+    assert!(!out.contains("PR-9"), "{out}");
+}
+
+#[test]
+fn consistency_across_default_kinds() {
+    let (_dir, matrix, runs) = scenario(None);
+    let output = render(&matrix, &runs, &[]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let out = stdout(&output);
+
+    // The traceability report and the problems list agree on T2's verdict
+    let trace_text = &out[..out.find("# Run Summary").unwrap()];
+    let trace = traceability_requirement_rows(trace_text);
+    let hlr1 = trace
+        .iter()
+        .find(|c| c[1] == "HLR-1")
+        .unwrap_or_else(|| panic!("{out}"));
+    assert!(hlr1[OTHER_COL].contains("T2 (fail, RUN-1)"), "{out}");
+    assert!(
+        tail(&out, "# Problem Reports")
+            .lines()
+            .any(|l| l == "| T2 | fail | RUN-1 | b1 | PR-7 | HLR-1 |"),
+        "{out}"
+    );
+
+    // Requirements with a FAILED status in traceability are the summary rows with fail > 0
+    let summary_rows = table_rows(section(&out, "## Results per requirement"));
+    let failed_in_trace = requirement_ids(&trace, Some("FAILED"), STATUS);
+    let fail_in_summary: Vec<String> = summary_rows
+        .iter()
+        .filter(|c| c[5] != "0")
+        .map(|c| c[1].clone())
+        .collect();
+    assert_eq!(failed_in_trace, fail_in_summary, "{out}");
+
+    // The NO TESTS requirements are exactly the gaps list with no tests
+    let no_tests_in_trace = requirement_ids(&trace, Some("NO TESTS"), STATUS);
+    let no_tests_in_gaps: Vec<String> =
+        table_rows(section(&out, "## Requirements with no test cases"))
+            .iter()
+            .map(|c| c[1].clone())
+            .collect();
+    assert_eq!(no_tests_in_trace, no_tests_in_gaps, "{out}");
+}
+
+#[test]
+fn views_are_deterministic() {
+    let (_dir, matrix, runs) = scenario(None);
+    let matrix_arg = path_arg(&matrix);
+    let runs_arg = path_arg(&runs);
+    for kind in ["summary", "gaps", "problems"] {
+        let args = [
+            "--matrix",
+            &matrix_arg,
+            "--runs",
+            &runs_arg,
+            "--kind",
+            kind,
+            "--generated-at",
+            GENERATED,
+        ];
+        let first = report(&args);
+        let second = report(&args);
+        assert_eq!(first.status.code(), Some(0), "{}", stderr(&first));
+        assert_eq!(
+            stdout(&first),
+            stdout(&second),
+            "{kind} differs between runs"
+        );
+
+        let later = report(&[
+            "--matrix",
+            &matrix_arg,
+            "--runs",
+            &runs_arg,
+            "--kind",
+            kind,
+            "--generated-at",
+            "2026-11-01T09:00:00Z",
+        ]);
+        let (a, b) = (stdout(&first), stdout(&later));
+        assert_eq!(a.lines().count(), b.lines().count(), "{kind}");
+        for (x, y) in a.lines().zip(b.lines()) {
+            if x != y {
+                assert!(
+                    x.contains("| Generated |") && y.contains("| Generated |"),
+                    "{x}\n{y}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn report_kinds_list_and_order() {
+    let (_dir, matrix, runs) = scenario(None);
+
+    let summary = render(&matrix, &runs, &["--kind", "summary"]);
+    assert_eq!(summary.status.code(), Some(0), "{}", stderr(&summary));
+    let out = stdout(&summary);
+    assert!(out.contains("  summary: rendered below\n"), "{out}");
+    assert!(out.contains("# Run Summary"), "{out}");
+    assert!(!out.contains("# Traceability Report"), "{out}");
+
+    let both = render(&matrix, &runs, &["--kind", "problems", "--kind", "gaps"]);
+    assert_eq!(both.status.code(), Some(0), "{}", stderr(&both));
+    let out = stdout(&both);
+    assert!(out.contains("  gaps: rendered below\n"), "{out}");
+    assert!(out.contains("  problems: rendered below\n"), "{out}");
+    let gaps_at = out
+        .find("# Coverage Gaps")
+        .unwrap_or_else(|| panic!("{out}"));
+    let problems_at = out
+        .find("# Problem Reports")
+        .unwrap_or_else(|| panic!("{out}"));
+    assert!(gaps_at < problems_at, "{out}");
+
+    let all = render(&matrix, &runs, &[]);
+    assert_eq!(all.status.code(), Some(0), "{}", stderr(&all));
+    let out = stdout(&all);
+    for text in [stdout(&summary), stdout(&both), out.clone()] {
+        assert!(!text.contains("renderer not yet available"), "{text}");
+    }
+    let trace_at = out.find("# Traceability Report").unwrap();
+    let summary_at = out.find("# Run Summary").unwrap();
+    let gaps_at = out.find("# Coverage Gaps").unwrap();
+    let problems_at = out.find("# Problem Reports").unwrap();
+    assert!(
+        trace_at < summary_at && summary_at < gaps_at && gaps_at < problems_at,
+        "{out}"
+    );
+}
+
+#[test]
+fn new_kinds_fail_before_write() {
+    let (dir, matrix, runs) = scenario(None);
+    let out_file = dir.path().join("out.md");
+    let output = report(&[
+        "--matrix",
+        &path_arg(&matrix),
+        "--runs",
+        &path_arg(&runs),
+        "--kind",
+        "summary",
+        "--generated-at",
+        "yesterday",
+        "--output",
+        &path_arg(&out_file),
+    ]);
+    assert_eq!(output.status.code(), Some(1), "{}", stdout(&output));
+    assert!(stderr(&output).contains("yesterday"), "{}", stderr(&output));
+    assert!(!out_file.exists(), "a file was written before the error");
 }
