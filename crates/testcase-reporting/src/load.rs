@@ -5,7 +5,7 @@
 
 use crate::run::LoadedRun;
 use std::path::{Path, PathBuf};
-use testcase_verification::TraceMatrix;
+use testcase_verification::{TestRunRecord, TraceMatrix};
 
 /// Schema every run record must declare (D-06)
 pub const RUN_SCHEMA: &str = "tcms/test-run.schema.json";
@@ -69,9 +69,41 @@ impl Reconciliation {
 }
 
 impl std::fmt::Display for Reconciliation {
+    /// The reconciliation block printed in the report header (fixed layout)
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // GREEN step: the reconciliation block layout
-        let _ = f;
+        writeln!(f, "Reconciliation")?;
+        writeln!(
+            f,
+            "  Inputs discovered: {} (loaded: {}, skipped: {})",
+            self.discovered(),
+            self.loaded(),
+            self.skipped()
+        )?;
+        for entry in &self.inputs {
+            let (status, reason) = match &entry.status {
+                InputStatus::Loaded => ("loaded", None),
+                InputStatus::Skipped(reason) => ("skipped", Some(reason)),
+            };
+            let kind = match entry.kind {
+                InputKind::Matrix => "matrix",
+                InputKind::Run => "run",
+            };
+            write!(f, "  {:<8} {:<7} {}", status, kind, entry.path.display())?;
+            match (&entry.run_id, reason) {
+                (Some(run_id), _) => write!(f, " ({run_id})")?,
+                (None, Some(reason)) => write!(f, ": {reason}")?,
+                (None, None) => {}
+            }
+            writeln!(f)?;
+        }
+        if self.notes.is_empty() {
+            writeln!(f, "  Notes: none")?;
+        } else {
+            writeln!(f, "  Notes:")?;
+            for note in &self.notes {
+                writeln!(f, "    - {note}")?;
+            }
+        }
         Ok(())
     }
 }
@@ -149,16 +181,61 @@ pub fn load_inputs(
     let matrix = loaded_matrix.expect("a matrix failure is recorded above");
 
     check_unique_run_ids(&runs)?;
+    let notes = matrix_notes(&matrix, &runs);
 
     Ok(LoadedInputs {
         matrix_path,
         matrix,
         runs,
-        reconciliation: Reconciliation {
-            inputs,
-            notes: Vec::new(),
-        },
+        reconciliation: Reconciliation { inputs, notes },
     })
+}
+
+/// D-18: mismatches between the matrix and the loaded runs are notes, not failures.
+/// First the run IDs the matrix names but which were not loaded, then per run (by `run_id`) the
+/// test cases it reports that the matrix does not trace.
+pub fn matrix_notes(matrix: &TraceMatrix, runs: &[LoadedRun]) -> Vec<String> {
+    use std::collections::BTreeSet;
+    let mut notes = Vec::new();
+
+    let loaded: BTreeSet<&str> = runs.iter().map(|r| r.record.run_id.as_str()).collect();
+    let referenced: BTreeSet<&str> = matrix
+        .links
+        .iter()
+        .flat_map(|link| link.run_ids.iter().map(String::as_str))
+        .collect();
+    for run_id in referenced.difference(&loaded) {
+        notes.push(format!(
+            "matrix references run {run_id}, which was not loaded"
+        ));
+    }
+
+    let traced: BTreeSet<&str> = matrix
+        .links
+        .iter()
+        .flat_map(|link| link.test_case_ids.iter().map(String::as_str))
+        .collect();
+    let mut by_run: Vec<&LoadedRun> = runs.iter().collect();
+    by_run.sort_by(|a, b| a.record.run_id.cmp(&b.record.run_id));
+    for run in by_run {
+        let untraced: BTreeSet<&str> = run
+            .record
+            .results
+            .iter()
+            .map(|r| r.test_case_id.as_str())
+            .filter(|id| !traced.contains(id))
+            .collect();
+        if !untraced.is_empty() {
+            let ids: Vec<&str> = untraced.iter().copied().collect();
+            notes.push(format!(
+                "run {} has {} result(s) for test cases not in the matrix: {}",
+                run.record.run_id,
+                untraced.len(),
+                ids.join(", ")
+            ));
+        }
+    }
+    notes
 }
 
 /// D-08: two records with the same `run_id` fail the load, naming every file that carries it
@@ -347,8 +424,8 @@ fn load_run(path: &Path, from_dir: bool, schemas_root: &str) -> anyhow::Result<R
         );
     }
 
-    let record: testcase_verification::TestRunRecord =
-        testcase_common::load_and_validate_yaml(path, schemas_root)
+    let record: TestRunRecord =
+        testcase_common::load_and_validate_yaml::<TestRunRecord, _, _>(path, schemas_root)
             .map_err(|e| anyhow!("{}: {e:#}", path.display()))?;
 
     let mut counts: BTreeMap<&str, usize> = BTreeMap::new();
