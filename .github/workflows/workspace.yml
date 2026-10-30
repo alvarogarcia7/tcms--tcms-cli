@@ -72,13 +72,10 @@ jobs:
               export CI_MERGE_REQUEST_DIFF_BASE_SHA="${{ github.event.pull_request.base.sha }}"
               export CI_COMMIT_SHA="${{ github.event.pull_request.head.sha }}"
             else
-              # For push events on feature branches. github.event.before is all zeros
-              # for the first push of a new branch, so diff against main instead.
-              BEFORE_SHA="${{ github.event.before }}"
-              if [[ "$BEFORE_SHA" =~ ^0+$ ]]; then
-                BEFORE_SHA="origin/main"
-              fi
-              export CI_MERGE_REQUEST_DIFF_BASE_SHA="$BEFORE_SHA"
+              # For push events on feature branches, test the whole branch delta against
+              # main. github.event.before is all zeros on the first push of a new branch,
+              # and diffing only the last push would skip crates changed by earlier pushes.
+              export CI_MERGE_REQUEST_DIFF_BASE_SHA="origin/main"
               export CI_COMMIT_SHA="${{ github.sha }}"
             fi
             
