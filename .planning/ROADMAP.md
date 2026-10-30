@@ -22,7 +22,7 @@ This milestone adds a `test-executor report` command that turns the existing tra
 **Success Criteria** (what must be TRUE):
   1. User runs `test-executor report` with a matrix and run records and gets a reconciliation block listing inputs discovered, loaded, and skipped with reason
   2. A matrix or run record that fails schema validation makes the command fail with an error naming the offending file
-  3. When several runs contain the same test case, the output names the run with the latest `started_at` and lists the excluded runs
+  3. When several runs contain the same test case, the latest executed result decides (a later pass overrides an earlier fail or error, and a later fail or error overrides an earlier pass); runs that omit the test case or record `not_executed` do not count; the output lists the runs used and excluded
   4. Two run records sharing a `run_id` make the command fail
 **Plans**: TBD
 **Notes**: CLI-01 is satisfied by the command and its report-kind selection existing from here; later phases add the kinds. Research flag: check in `trace_matrix.rs` whether requirements with zero test cases are emitted; if not, "no tests" needs a requirements input (affects Phase 3 GAP-01). Loaders are extracted from `test-executor/main.rs` behaviour-preserving; use `load_and_validate_yaml`. Record which quality gates could run (uv, shellcheck, StrictDoc, TPDG missing locally).

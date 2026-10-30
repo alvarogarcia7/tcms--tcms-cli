@@ -11,7 +11,7 @@ Requirements for this milestone. Each maps to a roadmap phase.
 
 - [ ] **LOAD-01**: Report reads the trace matrix and test-run records, and fails the command if any input does not validate against its schema, naming the file
 - [ ] **LOAD-02**: Report shows a reconciliation block (inputs discovered, loaded, skipped with reason) and never drops an input silently
-- [ ] **LOAD-03**: When several runs contain a result for the same test case, the report uses the run with the latest `started_at` and lists the runs it excluded
+- [ ] **LOAD-03**: Run selection: per test case, the latest run (by `started_at`) that has an executed result for it decides; a later pass overrides an earlier fail or error, a later fail or error overrides an earlier pass; a run that omits the test case or records `not_executed` does not change the result. The report lists the runs it used and the runs it excluded
 - [ ] **LOAD-04**: Two test-run records with the same `run_id` cause the command to fail
 
 ### Verdict Roll-up (ROLL)

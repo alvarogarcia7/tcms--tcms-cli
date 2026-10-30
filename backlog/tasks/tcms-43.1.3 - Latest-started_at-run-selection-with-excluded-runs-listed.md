@@ -4,6 +4,7 @@ title: Latest-started_at run selection with excluded runs listed
 status: To Do
 assignee: []
 created_date: '2026-10-30T16:20:00Z'
+updated_date: '2026-10-30T18:50:00Z'
 labels: []
 milestone: m-0
 dependencies: []
@@ -16,7 +17,7 @@ ordinal: 36000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Requirement: LOAD-03. When several runs contain a result for the same test case, the latest started_at (RFC 3339) wins, and the report lists the runs it excluded.
+Requirement: LOAD-03. Run selection per test case: the latest run (by started_at, RFC 3339) with an executed result decides. A later pass overrides an earlier fail or error; a later fail or error overrides an earlier pass. Runs that omit the test case or record not_executed do not count. The report lists runs used and excluded.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
