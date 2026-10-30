@@ -168,7 +168,8 @@ enum Commands {
         no_coverage_check: bool,
     },
     /// Load a trace matrix and test run records strictly, select one result per test case, and
-    /// print what was used and skipped (report renderers follow in later phases)
+    /// print the report. The traceability kind is rendered as Markdown; the other kinds print a
+    /// placeholder until their renderers arrive.
     Report {
         /// Trace matrix YAML file
         #[arg(long, value_name = "FILE")]
@@ -185,6 +186,18 @@ enum Commands {
         /// Output file (defaults to stdout)
         #[arg(short, long, value_name = "OUTPUT_FILE")]
         output: Option<PathBuf>,
+
+        /// Directory of test cases: supplies test types and obsolete status
+        #[arg(long = "test-cases", value_name = "DIR")]
+        test_cases: Option<PathBuf>,
+
+        /// StrictDoc JSON export: supplies the source document of each requirement
+        #[arg(long = "requirements-export", value_name = "FILE")]
+        requirements_export: Option<PathBuf>,
+
+        /// Generation time, RFC 3339 (defaults to the current UTC time)
+        #[arg(long = "generated-at", value_name = "TIMESTAMP")]
+        generated_at: Option<String>,
     },
     /// Select the regression test cases from a baseline's change impact: the test cases the
     /// impact analysis lists plus those tracing to the impacted requirements
@@ -560,15 +573,80 @@ impl ReportKind {
     }
 }
 
+/// Source documents of the requirements, from a StrictDoc JSON export. Every item's document is
+/// listed; HLR and LLR items map to their document. A UID that appears twice is an error, as in
+/// `read_matrix_requirements`.
+fn read_requirement_documents(
+    path: &Path,
+) -> Result<testcase_reporting::model::RequirementDocuments> {
+    let text =
+        fs::read_to_string(path).with_context(|| format!("Failed to read {}", path.display()))?;
+    let items = requirement_import::strictdoc::export_items(&text)
+        .with_context(|| format!("{} is not a StrictDoc export", path.display()))?;
+    let mut seen = std::collections::BTreeSet::new();
+    let mut documents = std::collections::BTreeSet::new();
+    let mut requirement_document = std::collections::BTreeMap::new();
+    for item in items {
+        if !seen.insert(item.uid.clone()) {
+            anyhow::bail!(
+                "{}: requirement '{}' appears twice in the StrictDoc export",
+                path.display(),
+                item.uid
+            );
+        }
+        documents.insert(item.path.clone());
+        if matches!(item.level.as_str(), "HLR" | "LLR") {
+            requirement_document.insert(item.uid, item.path);
+        }
+    }
+    Ok(testcase_reporting::model::RequirementDocuments {
+        documents: documents.into_iter().collect(),
+        requirement_document,
+    })
+}
+
+/// Validate `--generated-at` and return the timestamp as the user wrote it. Without the flag the
+/// current UTC time is used: the only clock read in the report pipeline.
+fn generated_at_value(given: Option<&str>) -> Result<String> {
+    match given {
+        Some(value) => {
+            chrono::DateTime::parse_from_rfc3339(value).with_context(|| {
+                format!("--generated-at '{value}' is not an RFC 3339 timestamp")
+            })?;
+            Ok(value.to_string())
+        }
+        None => Ok(chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)),
+    }
+}
+
+/// Optional report inputs and the generation time (`report --test-cases`, `--requirements-export`,
+/// `--generated-at`).
+#[derive(Clone, Copy, Default)]
+struct ReportOptions<'a> {
+    test_cases: Option<&'a Path>,
+    requirements_export: Option<&'a Path>,
+    generated_at: Option<&'a str>,
+}
+
 fn report(
     matrix: &Path,
     run_paths: &[PathBuf],
     kinds: &[ReportKind],
     output: Option<PathBuf>,
+    options: ReportOptions<'_>,
 ) -> Result<()> {
     // Any input error returns here, before anything is written (T-01-14)
     let inputs = testcase_reporting::load::load_inputs(matrix, run_paths, "schemas/")?;
     let selection = testcase_reporting::select::select_results(&inputs.runs);
+    let generated_at = generated_at_value(options.generated_at)?;
+    let test_cases = match options.test_cases {
+        Some(dir) => Some(testcase_reporting::legacy::load_test_cases_strict(dir)?),
+        None => None,
+    };
+    let documents = match options.requirements_export {
+        Some(path) => Some(read_requirement_documents(path)?),
+        None => None,
+    };
 
     let selected: Vec<ReportKind> = if kinds.is_empty() {
         ReportKind::ALL.to_vec()
@@ -579,14 +657,35 @@ fn report(
         sorted
     };
 
-    let mut text = testcase_reporting::input_summary(&inputs, &selection);
-    text.push_str("\nReport kinds\n");
-    for kind in selected {
-        text.push_str(&format!(
-            "  {}: renderer not yet available\n",
-            kind.as_str()
-        ));
-    }
+    let text = if selected.contains(&ReportKind::Traceability) {
+        let model =
+            testcase_reporting::model::build_model(&testcase_reporting::model::ReportInputs {
+                inputs: &inputs,
+                selection: &selection,
+                test_cases: test_cases.as_deref(),
+                documents: documents.as_ref(),
+                generated_at: &generated_at,
+            });
+        let mut text = testcase_reporting::render_markdown::render_markdown(&model);
+        // Other kinds have no renderer yet; keep the document valid Markdown after the report
+        for kind in selected.iter().filter(|k| **k != ReportKind::Traceability) {
+            text.push_str(&format!(
+                "\nReport kind {}: renderer not yet available\n",
+                kind.as_str()
+            ));
+        }
+        text
+    } else {
+        let mut text = testcase_reporting::input_summary(&inputs, &selection);
+        text.push_str("\nReport kinds\n");
+        for kind in selected {
+            text.push_str(&format!(
+                "  {}: renderer not yet available\n",
+                kind.as_str()
+            ));
+        }
+        text
+    };
 
     match output {
         Some(path) => fs::write(&path, &text)
@@ -1282,7 +1381,20 @@ fn main() -> Result<()> {
             runs,
             kinds,
             output,
-        } => report(&matrix, &runs, &kinds, output),
+            test_cases,
+            requirements_export,
+            generated_at,
+        } => report(
+            &matrix,
+            &runs,
+            &kinds,
+            output,
+            ReportOptions {
+                test_cases: test_cases.as_deref(),
+                requirements_export: requirements_export.as_deref(),
+                generated_at: generated_at.as_deref(),
+            },
+        ),
         Commands::RegressionSelect {
             test_case_dir,
             baselines,

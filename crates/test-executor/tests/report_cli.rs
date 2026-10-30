@@ -299,9 +299,11 @@ fn report_kinds_default_to_all_and_can_be_selected() {
     let all = report(&["--matrix", &matrix_arg, "--runs", &runs_arg]);
     assert!(all.status.success(), "{}", stderr(&all));
     let out = stdout(&all);
-    for kind in ["traceability", "summary", "gaps", "problems"] {
+    assert!(out.starts_with("# Traceability Report\n"), "{out}");
+    assert!(out.contains("## Inputs"), "{out}");
+    for kind in ["summary", "gaps", "problems"] {
         assert!(
-            out.contains(&format!("  {kind}: renderer not yet available")),
+            out.contains(&format!("Report kind {kind}: renderer not yet available")),
             "{out}"
         );
     }
@@ -383,7 +385,14 @@ fn same_inputs_give_identical_output() {
             &[("T1", "not_executed")],
         ),
     );
-    let args = ["--matrix", &path_arg(&matrix), "--runs", &path_arg(&runs)];
+    let args = [
+        "--matrix",
+        &path_arg(&matrix),
+        "--runs",
+        &path_arg(&runs),
+        "--generated-at",
+        "2026-10-31T09:00:00Z",
+    ];
 
     let first = report(&args);
     let second = report(&args);
