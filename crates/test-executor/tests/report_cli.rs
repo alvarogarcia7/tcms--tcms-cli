@@ -503,6 +503,55 @@ fn header_value<'a>(out: &'a str, field: &str) -> &'a str {
         .unwrap_or_else(|| panic!("no header row {field} in:\n{out}"))
 }
 
+/// Overwrites the matrix with the given header lines (before `links:`) and one HLR-1 link.
+fn matrix_with_header(matrix: &Path, header: &str) {
+    let yaml = format!(
+        "type: trace_matrix\nschema: tcms/trace-matrix.schema.json\n{header}links:\n{}",
+        link("HLR-1", "HLR", &["T1"], true, false, &["RUN-1"])
+    );
+    std::fs::write(matrix, yaml).unwrap();
+}
+
+#[test]
+fn blank_baseline_renders_not_recorded() {
+    let (_dir, matrix, runs) = project(&[]);
+    matrix_with_header(&matrix, "id: TM-1\nbaseline_id: \"\"\n");
+    write(
+        &runs,
+        "run1.yaml",
+        &run_yaml("RUN-1", "b1", "2026-10-28T10:00:00Z", &[("T1", "pass")]),
+    );
+
+    let output = render(&matrix, &runs, &[]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let out = stdout(&output);
+    assert!(out.contains("| Baseline | not recorded |"), "{out}");
+    assert!(out.contains("(baseline: not recorded)"), "{out}");
+    assert!(!out.contains("| Baseline |  |"), "{out}");
+    assert!(!out.contains("(baseline: )"), "{out}");
+}
+
+#[test]
+fn blank_matrix_id_renders_not_recorded() {
+    let (_dir, matrix, runs) = project(&[]);
+    matrix_with_header(&matrix, "id: \"   \"\n");
+    write(
+        &runs,
+        "run1.yaml",
+        &run_yaml("RUN-1", "b1", "2026-10-28T10:00:00Z", &[("T1", "pass")]),
+    );
+
+    let output = render(&matrix, &runs, &[]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let out = stdout(&output);
+    assert_eq!(
+        header_value(&out, "Matrix"),
+        "| Matrix | not recorded |",
+        "{out}"
+    );
+    assert!(out.contains("Trace matrix: not recorded"), "{out}");
+}
+
 /// A StrictDoc export: srs.sdoc holds HLR-1, LLR-2 and HLR-3; empty.sdoc holds one system item.
 fn export_file(dir: &Path) -> std::path::PathBuf {
     let path = dir.join("export.json");
