@@ -136,10 +136,14 @@ Plans:
 
 ### Phase 7: E2E tests for locating requirements by ID in StrictDoc
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** The real `tcms` binary is tested end to end on exports made by the real StrictDoc tool: `tcms requirements locate` finds HLR, LLR and `system` items by ID, reports missing IDs, and exits 0/1/2 as specified; `tcms requirements export-ids` writes the valid IDs. The StrictDoc reader first reads the layout StrictDoc really writes (DECISIONS.md Q1-Q3).
+**Requirements**: LOOK-03, LOOK-04, LOOK-07 (Phase 6 IDs; this phase has none of its own)
 **Depends on:** Phase 6
-**Plans:** 0 plans
+**Plans:** 5 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 7 to break down)
+- [ ] 07-01-PLAN.md — StrictDoc reader fix: read DOCUMENTS/NODES, REQUIREMENT nodes only, uppercase fields, path = document TITLE, Parent relations, refuse an item with no LEVEL; old layout dropped; every changed test listed (wave 1)
+- [ ] 07-02-PLAN.md — real-tool fixture: small .sdoc sources, exports made by `strictdoc export --formats json`, regenerate script with --check, README (wave 2)
+- [ ] 07-03-PLAN.md — e2e tests of `requirements locate` on the real export: found HLR/LLR/system, not found, exit 2 cases, batch rule (wave 3)
+- [ ] 07-04-PLAN.md — e2e tests of `requirements export-ids` on the real export: valid/invalid, --output, product mismatch, strict mode (wave 3)
+- [ ] 07-05-PLAN.md — docs updated from "assumed" to verified layout; quality gates run and recorded (wave 4)
