@@ -1,9 +1,10 @@
 ---
 id: TCMS-43.1.1
 title: Extract matrix and run-record loaders into testcase-reporting
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-10-30T16:20:00Z'
+updated_date: '2026-10-30T19:14:00Z'
 labels: []
 milestone: m-0
 dependencies: []

@@ -1,10 +1,10 @@
 ---
 id: TCMS-43.1.3
 title: Latest-started_at run selection with excluded runs listed
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-10-30T16:20:00Z'
-updated_date: '2026-10-30T18:50:00Z'
+updated_date: '2026-10-30T19:14:00Z'
 labels: []
 milestone: m-0
 dependencies: []
