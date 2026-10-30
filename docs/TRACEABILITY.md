@@ -69,3 +69,94 @@ LLR-2 (LLR): no normal_range and no robustness test
 ```
 
 Test cases that name requirements missing from the requirement set are listed as warnings.
+
+## Report inputs and run selection (`test-executor report`)
+
+`test-executor report` reads one trace matrix and the test run records, checks every input
+strictly, chooses one result per test case, and prints what it used and what it skipped.
+
+```bash
+test-executor report --matrix trace-matrix.yaml --runs test-runs/ --kind traceability
+```
+
+| Option | Meaning |
+|--------|---------|
+| `--matrix FILE` | Trace matrix YAML file (required) |
+| `--runs PATH` | Test run record file or directory of them. Repeatable. Required |
+| `--kind KIND` | Report kind: `traceability`, `summary`, `gaps` or `problems`. Repeatable. Default: all four |
+| `--output FILE` | Write the text to a file instead of stdout |
+
+Report bodies are not rendered yet. Each selected kind prints
+`<kind>: renderer not yet available`.
+
+### Inputs are strict
+
+- Every matrix and every run record is validated against its schema before use. A file that
+  fails validation, or a YAML syntax error, makes the command exit with status 1. The message
+  names the file. Nothing is written when an input fails.
+- A file named on the command line must be a test run record. Otherwise the command fails.
+- In a runs directory, YAML files without a `type` field, or with another `type`, are skipped,
+  and so are non-YAML files. Each skipped file is listed with its reason. The directory is not
+  searched recursively.
+- Two run records with the same `run_id` fail the command, naming both files.
+- A test case that appears twice in one run fails the command.
+
+### Reconciliation block
+
+The output starts with the matrix line and a reconciliation of every discovered input:
+
+```
+Trace matrix: TM-1 (baseline: not recorded)
+
+Reconciliation
+  Inputs discovered: 4 (loaded: 2, skipped: 2)
+  loaded   matrix  trace-matrix.yaml
+  loaded   run     test-runs/run1.yaml (RUN-1)
+  skipped  run     test-runs/notes.yaml: no `type` field
+  skipped  run     test-runs/readme.txt: not a YAML file
+  Notes: none
+```
+
+### Run selection
+
+For each test case the result that decides is the one from the latest run that has an
+executed result for it:
+
+1. Runs are ordered by `started_at`, compared as instants, so `+02:00` and `Z` offsets compare
+   correctly.
+2. Runs with the same `started_at` are ordered by `run_id`. The later run wins, and a note
+   names both runs.
+3. A `not_executed` result never decides a test case and never replaces an earlier result.
+4. A later `pass`, `fail` or `error` replaces an earlier one. There is no ranking of verdicts.
+5. The builds of the used runs are listed. Builds are not restricted.
+
+Each run is listed as used or excluded. An excluded run has one of these reasons:
+`only not_executed results`, or `every executed result superseded by a later run`.
+
+```
+Run selection (per test case, the latest run with an executed result decides)
+  Builds used: b2
+  Runs used: 1
+    RUN-2  build b2  started 2026-10-28T11:00:00Z  decided 1, superseded 0, not_executed 0
+  Runs excluded: 2
+    RUN-1  build b1  started 2026-10-28T10:00:00Z: every executed result superseded by a later run
+    RUN-3  build b3  started 2026-10-28T12:00:00Z: only not_executed results
+  Selected results: 1
+    T1  fail  RUN-2
+  Notes: none
+```
+
+### Notes
+
+Notes never fail the command:
+
+- A run that the matrix names in `run_ids` but that was not loaded.
+- Results for test cases that are not in the matrix.
+- Ties on `started_at`.
+
+### Exit status
+
+0 on success. 1 when any input is invalid, a `run_id` repeats, or the output cannot be
+written. The three-state exit code is a later phase.
+
+`trace-matrix --runs` keeps its previous lenient behaviour. It does not use the strict loader.
