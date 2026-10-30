@@ -63,14 +63,19 @@ Ordering: load → model → render → CLI follows the dependency chain. Summar
 | Architecture | MEDIUM-HIGH | Code facts verified; TPDG fit LOW |
 | Pitfalls | HIGH (code) / MEDIUM (general) | |
 
-**Gaps to address:**
-- Run-selection and roll-up policy are product decisions. Suggested defaults: one build per report; latest `started_at` wins; `not_executed` never overrides an executed result.
-- Zero-test requirements in the matrix (verify in `trace_matrix.rs`).
-- TPDG capability (resolve in phase 5; native renderers are primary, so this only affects the "reuse TPDG" goal — consider updating that Key Decision in PROJECT.md).
-- Staleness evidence (see research flags).
-- Exact `TestRunRecord` and problem-report field names.
-- Crate placement (new crate chosen; confirm in phase 1 planning).
-- `make test` is not fully runnable here (uv, shellcheck, StrictDoc, TPDG missing); record which gates ran per phase.
+**Gaps: status after checking the code (2026-10-30)**
+
+Resolved:
+- **Zero-test requirements.** `build_matrix` (`testcase-verification/src/trace_matrix.rs`) builds one link per requirement in the input set, so a requirement with no test cases gets a row with `test_case_ids: []` and both coverage flags false. Verified: a demo requirement `LLR-9` with no tests appears in the matrix and is reported as "Requirements without test cases". The gap report therefore needs no extra input, provided the requirement list comes from the requirements source (ID list, requirement records or StrictDoc export). Phase 1 research flag closed.
+- **Staleness evidence.** The verifier writes a SHA-256 per test-case source file into the results container (`metadata.source_hashes`, `verification.rs`); execution logs can carry `source_yaml_sha256` too. The run record does NOT carry the hash: `TestRunResult` holds only `test_case_id`, `verdict`, `problem_report_id` and `verification_result_ref`. Staleness can therefore be detected by comparing the current file hash with `source_hashes` in the container that `verification_result_ref` points to. Carrying the hash in the run record would be a schema change, which the requirements rule out for this milestone.
+- **Field names.** `TestRunRecord`: `doc_type`, `schema`, `run_id`, `build_id`, `environment`, `tester`, `started_at`, `finished_at`, `reviewer`, `results`. `TestRunResult`: `test_case_id`, `verdict`, `problem_report_id`, `verification_result_ref`. Verdicts come from `Verdict::of`.
+- **TPDG capability (partly).** TPDG (github.com/alvarogarcia7/test-plan-documentation-generator, Rust, public, not on crates.io) renders schema-validated YAML through Jinja templates. Its requirement aggregation template groups results by each result's `requirement` string and hard-codes the requirement IDs in the template. Our container output carries the legacy `LEGACY-NOT-USED` value in that field, so TPDG's grouping would not match our traceability. TPDG is not a drop-in for requirement-centric reports. The native renderer stays primary. Not installed here, not tested end to end.
+
+Still open (decisions or unverified):
+- **Run-selection and roll-up policy.** Product decision for the owner. Suggested defaults: one build per report; latest `started_at` wins; a `not_executed` result never overrides an executed one.
+- **Crate placement.** New crate `testcase-reporting` (per ARCHITECTURE.md) is the working choice. Confirm during Phase 1 planning.
+- **Quality gates.** `make test` is still not runnable in full here (uv, shellcheck, TPDG missing). `cargo build -p test-executor -p verifier` now works after installing `libssl-dev`. StrictDoc 0.30.4 was run in a temporary venv and validates `docs/strictdoc` with no errors.
+- **Verifier input rules** (found while reproducing): JSON execution logs need `result_verification_pass` and `output_verification_pass`; folder mode needs `<ID>_execution_log.json` names; test cases are loaded from `testcases/<ID>.yaml` relative to the working directory; the container schema defaults to `data/testcase_results_container/schema.json`.
 
 ## Sources
 
