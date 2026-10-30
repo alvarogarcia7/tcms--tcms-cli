@@ -168,8 +168,8 @@ enum Commands {
         no_coverage_check: bool,
     },
     /// Load a trace matrix and test run records strictly, select one result per test case, and
-    /// print the report. The traceability kind is rendered as Markdown; the other kinds print a
-    /// placeholder until their renderers arrive.
+    /// print the report. Every kind (traceability, summary, gaps, problems) is rendered as
+    /// Markdown from one model, in that order.
     Report {
         /// Trace matrix YAML file
         #[arg(long, value_name = "FILE")]
@@ -546,7 +546,7 @@ fn read_matrix_requirements(path: &Path) -> Result<Vec<testcase_verification::Re
     Ok(requirements)
 }
 
-/// Report kinds accepted by `report --kind` (D-19). Renderers arrive in later phases.
+/// Report kinds accepted by `report --kind` (D-19). Every kind is rendered as Markdown.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum)]
 enum ReportKind {
     Traceability,
@@ -657,32 +657,55 @@ fn report(
         sorted
     };
 
+    // One model for every kind, so the numbers agree across the report (D-06)
+    let model = testcase_reporting::model::build_model(&testcase_reporting::model::ReportInputs {
+        inputs: &inputs,
+        selection: &selection,
+        test_cases: test_cases.as_deref(),
+        documents: documents.as_ref(),
+        generated_at: &generated_at,
+    });
+    let view = testcase_reporting::view::ViewInput {
+        model: &model,
+        selection: &selection,
+    };
+    let body = |kind: ReportKind| -> String {
+        match kind {
+            ReportKind::Traceability => {
+                testcase_reporting::render_markdown::render_markdown(&model)
+            }
+            ReportKind::Summary => testcase_reporting::summary::render_summary_markdown(
+                &testcase_reporting::summary::build_summary(view),
+            ),
+            ReportKind::Gaps => testcase_reporting::gaps::render_gaps_markdown(
+                &testcase_reporting::gaps::build_gaps(view),
+            ),
+            ReportKind::Problems => testcase_reporting::problems::render_problems_markdown(
+                &testcase_reporting::problems::build_problems(view),
+            ),
+        }
+    };
+
     let text = if selected.contains(&ReportKind::Traceability) {
-        let model =
-            testcase_reporting::model::build_model(&testcase_reporting::model::ReportInputs {
-                inputs: &inputs,
-                selection: &selection,
-                test_cases: test_cases.as_deref(),
-                documents: documents.as_ref(),
-                generated_at: &generated_at,
-            });
-        let mut text = testcase_reporting::render_markdown::render_markdown(&model);
-        // Other kinds have no renderer yet; keep the document valid Markdown after the report
+        // The traceability document comes first and keeps its own heading; the other kinds follow
+        let mut text = body(ReportKind::Traceability);
         for kind in selected.iter().filter(|k| **k != ReportKind::Traceability) {
             text.push_str(&format!(
-                "\nReport kind {}: renderer not yet available\n",
+                "\nReport kind {}: rendered below\n\n",
                 kind.as_str()
             ));
+            text.push_str(&body(*kind));
         }
         text
     } else {
         let mut text = testcase_reporting::input_summary(&inputs, &selection);
         text.push_str("\nReport kinds\n");
-        for kind in selected {
-            text.push_str(&format!(
-                "  {}: renderer not yet available\n",
-                kind.as_str()
-            ));
+        for kind in &selected {
+            text.push_str(&format!("  {}: rendered below\n", kind.as_str()));
+        }
+        for kind in &selected {
+            text.push('\n');
+            text.push_str(&body(*kind));
         }
         text
     };
