@@ -59,6 +59,31 @@ pub fn jql(system: &SystemConfig) -> Result<String> {
     ))
 }
 
+/// Fields read by `tcms requirements locate` (D-03).
+pub const LOCATE_FIELDS: &[&str] = &["summary", "status"];
+
+/// Escape a value for a JQL string literal: `\` first, then `"`.
+pub fn escape_jql_string(s: &str) -> String {
+    s.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
+/// One JQL search selecting the given keys: `key in ("PAY-1", "PAY-2")`.
+///
+/// Any issue type counts, so there is no `project in` or `issuetype in` clause (D-04). The caller
+/// must match the returned issues to its IDs by `key`: a real Jira may return an issue under its
+/// new key after a move, and the mock does not filter on key.
+pub fn jql_for_keys(keys: &[&str]) -> Result<String> {
+    if keys.is_empty() {
+        bail!("no Jira keys to look up");
+    }
+    let list = keys
+        .iter()
+        .map(|k| format!("\"{}\"", escape_jql_string(k)))
+        .collect::<Vec<_>>()
+        .join(", ");
+    Ok(format!("key in ({list})"))
+}
+
 /// Read the feature issues through the client and map them, in key order.
 pub fn fetch(
     client: &JiraClient,
@@ -173,6 +198,47 @@ mod tests {
         let r = record_from_issue(&issue("PAY-3", "Story"), flags).unwrap();
         assert_eq!(r.safety_related, Some(true));
         assert_eq!(r.security_related, Some(false));
+    }
+
+    #[test]
+    fn jql_for_keys_quotes_each_key_in_order() {
+        assert_eq!(jql_for_keys(&["PAY-1"]).unwrap(), "key in (\"PAY-1\")");
+        assert_eq!(
+            jql_for_keys(&["PAY-1", "PAY-2", "ENG-7"]).unwrap(),
+            "key in (\"PAY-1\", \"PAY-2\", \"ENG-7\")"
+        );
+    }
+
+    #[test]
+    fn jql_for_keys_refuses_an_empty_list() {
+        let err = jql_for_keys(&[]).unwrap_err();
+        assert!(format!("{err}").contains("no Jira keys"), "{err}");
+    }
+
+    #[test]
+    fn escape_jql_string_escapes_backslash_then_quote() {
+        assert_eq!(escape_jql_string("A\"B"), "A\\\"B");
+        assert_eq!(escape_jql_string("A\\B"), "A\\\\B");
+        // Backslash first: the quote's escape backslash must not be doubled again.
+        assert_eq!(escape_jql_string("\\\""), "\\\\\\\"");
+    }
+
+    #[test]
+    fn jql_for_keys_escapes_a_quote_in_a_key() {
+        assert_eq!(jql_for_keys(&["X\"Y"]).unwrap(), "key in (\"X\\\"Y\")");
+    }
+
+    #[test]
+    fn jql_for_keys_has_no_project_or_type_clause() {
+        let q = jql_for_keys(&["PAY-1", "ENG-2"]).unwrap();
+        assert!(!q.contains("project"), "{q}");
+        assert!(!q.contains("issuetype"), "{q}");
+        assert!(!q.contains("ORDER BY"), "{q}");
+    }
+
+    #[test]
+    fn locate_fields_are_summary_and_status() {
+        assert_eq!(LOCATE_FIELDS, &["summary", "status"]);
     }
 
     #[test]
