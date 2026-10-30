@@ -23,6 +23,7 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Do not replace with sccache: measured slower on this pipeline. See docs/GITHUB_CI_CACHING.md
       - uses: RustCrypto/actions/cargo-cache@master
 
       - uses: dtolnay/rust-toolchain@master
@@ -72,8 +73,10 @@ jobs:
               export CI_MERGE_REQUEST_DIFF_BASE_SHA="${{ github.event.pull_request.base.sha }}"
               export CI_COMMIT_SHA="${{ github.event.pull_request.head.sha }}"
             else
-              # For push events on feature branches
-              export CI_MERGE_REQUEST_DIFF_BASE_SHA="${{ github.event.before }}"
+              # For push events on feature branches, test the whole branch delta against
+              # main. github.event.before is all zeros on the first push of a new branch,
+              # and diffing only the last push would skip crates changed by earlier pushes.
+              export CI_MERGE_REQUEST_DIFF_BASE_SHA="origin/main"
               export CI_COMMIT_SHA="${{ github.sha }}"
             fi
             

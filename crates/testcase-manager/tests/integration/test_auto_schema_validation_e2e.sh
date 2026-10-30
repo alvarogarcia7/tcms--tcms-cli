@@ -483,19 +483,26 @@ EOF
 cat > "${TESTCASES_DIR}/TC_VERIFIER_002.yaml" <<'EOF'
 type: test_case
 schema: tcms/test-case.schema.v1.json
+requirement: REQ_VERIFIER
+item: 1
+tc: 2
 id: TC_VERIFIER_002
 description: Verifier test case with schema
+general_initial_conditions: {}
+initial_conditions: {}
 test_sequences:
   - id: 1
     name: Test sequence
     description: Test sequence
+    initial_conditions: {}
     steps:
-      - id: 1
+      - step: 1
         description: Test step
-        commands:
-          - cmd: "echo test"
-        expected_result: "0"
-        expected_output: "test"
+        command: echo test
+        expected:
+          success: true
+          result: '0'
+          output: test
 EOF
 
 if "${VERIFIER}" --folder "${LOGS_DIR}" --test-case-dir "${TESTCASES_DIR}" --log-level=debug --success-on-completion > "${TEST_DIR}/verifier_output2.txt" 2>&1; then
