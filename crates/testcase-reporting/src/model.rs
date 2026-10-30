@@ -135,7 +135,7 @@ pub fn build_model(input: &ReportInputs) -> ReportModel {
         .map(|tc| tc.id.as_str())
         .collect();
 
-    let rows: Vec<RequirementRow> = matrix
+    let rows: Vec<(Option<String>, RequirementRow)> = matrix
         .links
         .iter()
         .map(|link| {
@@ -159,14 +159,18 @@ pub fn build_model(input: &ReportInputs) -> ReportModel {
                 .collect();
 
             let outcomes: Vec<CaseOutcome> = cases.iter().map(|c| c.outcome).collect();
-            RequirementRow {
+            let document = input
+                .documents
+                .and_then(|d| d.requirement_document.get(&link.requirement_id).cloned());
+            let row = RequirementRow {
                 requirement_id: link.requirement_id.clone(),
                 level: link.level,
                 status: roll_up(&outcomes),
                 normal_range_covered: link.normal_range_covered,
                 robustness_covered: link.robustness_covered,
                 cases,
-            }
+            };
+            (document, row)
         })
         .collect();
 
@@ -175,8 +179,59 @@ pub fn build_model(input: &ReportInputs) -> ReportModel {
             details: input_summary(input.inputs, selection),
         },
         header: header(input, selection, obsolete.len()),
-        documents: vec![DocumentSection { name: None, rows }],
+        documents: sections(input.documents, rows),
     }
+}
+
+/// Group rows under their source documents (D-07).
+///
+/// Without a document list there is one section with no name. With one, every listed document
+/// gets a section even when it has no rows; a row whose document is not listed still gets a
+/// section of its own; rows with no mapped document go to a trailing unnamed section. Sections
+/// are sorted by name, rows by requirement ID (D-12).
+fn sections(
+    documents: Option<&RequirementDocuments>,
+    rows: Vec<(Option<String>, RequirementRow)>,
+) -> Vec<DocumentSection> {
+    let Some(documents) = documents else {
+        return vec![DocumentSection {
+            name: None,
+            rows: sorted_rows(rows.into_iter().map(|(_, row)| row).collect()),
+        }];
+    };
+
+    let mut named: BTreeMap<String, Vec<RequirementRow>> = documents
+        .documents
+        .iter()
+        .map(|path| (path.clone(), Vec::new()))
+        .collect();
+    let mut unnamed: Vec<RequirementRow> = Vec::new();
+    for (document, row) in rows {
+        match document {
+            Some(path) => named.entry(path).or_default().push(row),
+            None => unnamed.push(row),
+        }
+    }
+
+    let mut sections: Vec<DocumentSection> = named
+        .into_iter()
+        .map(|(name, rows)| DocumentSection {
+            name: Some(name),
+            rows: sorted_rows(rows),
+        })
+        .collect();
+    if !unnamed.is_empty() {
+        sections.push(DocumentSection {
+            name: None,
+            rows: sorted_rows(unnamed),
+        });
+    }
+    sections
+}
+
+fn sorted_rows(mut rows: Vec<RequirementRow>) -> Vec<RequirementRow> {
+    rows.sort_by(|a, b| a.requirement_id.cmp(&b.requirement_id));
+    rows
 }
 
 /// The column of a case. Unknown test types, and cases not in the supplied list, go to `Other`.
@@ -583,5 +638,183 @@ mod tests {
         );
         let model = build(&inputs, None);
         assert_eq!(rows(&model).len(), inputs.matrix.links.len());
+    }
+
+    fn build_docs(inputs: &LoadedInputs, documents: Option<&RequirementDocuments>) -> ReportModel {
+        let selection = select_results(&inputs.runs);
+        build_model(&ReportInputs {
+            inputs,
+            selection: &selection,
+            test_cases: None,
+            documents,
+            generated_at: GENERATED,
+        })
+    }
+
+    fn docs(list: &[&str], mapping: &[(&str, &str)]) -> RequirementDocuments {
+        RequirementDocuments {
+            documents: list.iter().map(|d| d.to_string()).collect(),
+            requirement_document: mapping
+                .iter()
+                .map(|(r, d)| (r.to_string(), d.to_string()))
+                .collect(),
+        }
+    }
+
+    fn section_names(model: &ReportModel) -> Vec<Option<&str>> {
+        model.documents.iter().map(|s| s.name.as_deref()).collect()
+    }
+
+    fn row_ids(section: &DocumentSection) -> Vec<&str> {
+        section
+            .rows
+            .iter()
+            .map(|r| r.requirement_id.as_str())
+            .collect()
+    }
+
+    #[test]
+    fn sections_are_sorted_by_document_with_unnamed_last() {
+        let inputs = inputs(
+            vec![
+                link("R-B", RequirementLevel::Hlr, &[], false, false),
+                link("R-X", RequirementLevel::Llr, &[], false, false),
+                link("R-A", RequirementLevel::Llr, &[], false, false),
+            ],
+            None,
+            Vec::new(),
+        );
+        let d = docs(
+            &["docs/b.sdoc", "docs/a.sdoc"],
+            &[("R-B", "docs/b.sdoc"), ("R-A", "docs/a.sdoc")],
+        );
+        let model = build_docs(&inputs, Some(&d));
+        assert_eq!(
+            section_names(&model),
+            vec![Some("docs/a.sdoc"), Some("docs/b.sdoc"), None]
+        );
+        assert_eq!(row_ids(&model.documents[0]), vec!["R-A"]);
+        assert_eq!(row_ids(&model.documents[1]), vec!["R-B"]);
+        assert_eq!(row_ids(&model.documents[2]), vec!["R-X"]);
+        let total: usize = model.documents.iter().map(|s| s.rows.len()).sum();
+        assert_eq!(total, inputs.matrix.links.len());
+    }
+
+    #[test]
+    fn document_without_requirements_is_kept_as_empty_section() {
+        let inputs = inputs(
+            vec![link("R-A", RequirementLevel::Hlr, &[], false, false)],
+            None,
+            Vec::new(),
+        );
+        let d = docs(
+            &["docs/a.sdoc", "docs/system.sdoc"],
+            &[("R-A", "docs/a.sdoc")],
+        );
+        let model = build_docs(&inputs, Some(&d));
+        assert_eq!(
+            section_names(&model),
+            vec![Some("docs/a.sdoc"), Some("docs/system.sdoc")]
+        );
+        assert!(model.documents[1].rows.is_empty());
+    }
+
+    #[test]
+    fn requirement_in_undeclared_document_gets_its_own_section() {
+        let inputs = inputs(
+            vec![link("R-A", RequirementLevel::Hlr, &[], false, false)],
+            None,
+            Vec::new(),
+        );
+        let d = docs(&["docs/a.sdoc"], &[("R-A", "docs/other.sdoc")]);
+        let model = build_docs(&inputs, Some(&d));
+        assert_eq!(
+            section_names(&model),
+            vec![Some("docs/a.sdoc"), Some("docs/other.sdoc")]
+        );
+        assert_eq!(row_ids(&model.documents[1]), vec!["R-A"]);
+    }
+
+    #[test]
+    fn without_documents_there_is_one_unnamed_section_with_every_row() {
+        let inputs = inputs(
+            vec![
+                link("R-2", RequirementLevel::Llr, &[], false, false),
+                link("R-1", RequirementLevel::Hlr, &[], false, false),
+            ],
+            None,
+            Vec::new(),
+        );
+        let model = build_docs(&inputs, None);
+        assert_eq!(section_names(&model), vec![None]);
+        assert_eq!(row_ids(&model.documents[0]), vec!["R-1", "R-2"]);
+    }
+
+    #[test]
+    fn shuffled_links_and_case_ids_give_the_sorted_model() {
+        let runs = || {
+            vec![loaded(record(
+                "RUN-1",
+                "b1",
+                "2026-10-28T10:00:00Z",
+                &[("T1", Verdict::Pass), ("T2", Verdict::Fail)],
+            ))]
+        };
+        let sorted = inputs(
+            vec![
+                link("R-1", RequirementLevel::Hlr, &["T1", "T2"], true, true),
+                link("R-2", RequirementLevel::Llr, &["T2"], false, false),
+            ],
+            Some("BL-1"),
+            runs(),
+        );
+        let shuffled = inputs(
+            vec![
+                link("R-2", RequirementLevel::Llr, &["T2"], false, false),
+                link("R-1", RequirementLevel::Hlr, &["T2", "T1"], true, true),
+            ],
+            Some("BL-1"),
+            runs(),
+        );
+        assert_eq!(build_docs(&sorted, None), build_docs(&shuffled, None));
+    }
+
+    #[test]
+    fn cases_within_a_row_are_sorted_by_test_case_id() {
+        let inputs = inputs(
+            vec![link(
+                "R-1",
+                RequirementLevel::Hlr,
+                &["T3", "T1", "T2"],
+                false,
+                false,
+            )],
+            None,
+            Vec::new(),
+        );
+        let model = build_docs(&inputs, None);
+        let ids: Vec<&str> = rows(&model)[0]
+            .cases
+            .iter()
+            .map(|c| c.test_case_id.as_str())
+            .collect();
+        assert_eq!(ids, vec!["T1", "T2", "T3"]);
+    }
+
+    #[test]
+    fn identical_inputs_give_equal_model_and_identical_text() {
+        let inputs = inputs(
+            vec![
+                link("R-1", RequirementLevel::Hlr, &["T1"], true, false),
+                link("R-2", RequirementLevel::Llr, &["T1", "T2"], false, false),
+            ],
+            Some("BL-1"),
+            demo_runs(),
+        );
+        let d = docs(&["docs/a.sdoc"], &[("R-1", "docs/a.sdoc")]);
+        let first = build_docs(&inputs, Some(&d));
+        let second = build_docs(&inputs, Some(&d));
+        assert_eq!(first, second);
+        assert_eq!(format!("{first:?}"), format!("{second:?}"));
     }
 }
