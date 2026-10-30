@@ -888,3 +888,36 @@ write, and shall never store a credential in a record or a log.
 <<<
 
 [[/SECTION]]
+
+[[SECTION]]
+TITLE: Traceability Report Requirements
+
+[REQUIREMENT]
+UID: SYS-REP-001
+TITLE: Traceability Report
+STATEMENT: >>>
+The system shall produce a traceability report that shows, for each requirement, the test cases that verify it, the verdict of each test case, and the run each verdict came from.
+<<<
+
+[REQUIREMENT]
+UID: SYS-REP-002
+TITLE: Honest Verification Status
+STATEMENT: >>>
+The system shall report a requirement as verified only when every linked test case passed in the selected runs, and shall show test coverage separately from verification status.
+<<<
+
+[REQUIREMENT]
+UID: SYS-REP-003
+TITLE: Accounted Inputs And Reproducible Reports
+STATEMENT: >>>
+The system shall show which inputs a report used, skipped or rejected, and shall produce byte-identical output for the same inputs and generation time.
+<<<
+
+[REQUIREMENT]
+UID: SYS-REP-004
+TITLE: Pipeline-Safe Report Outcome
+STATEMENT: >>>
+The system shall report the outcome of a report run through its exit status, and shall write the report before it exits with a failure caused by gaps or failed test cases.
+<<<
+
+[[/SECTION]]
