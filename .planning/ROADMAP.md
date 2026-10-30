@@ -24,7 +24,13 @@ This milestone adds a `test-executor report` command that turns the existing tra
   2. A matrix or run record that fails schema validation makes the command fail with an error naming the offending file
   3. When several runs contain the same test case, the latest executed result decides (a later pass overrides an earlier fail or error, and a later fail or error overrides an earlier pass); runs that omit the test case or record `not_executed` do not count; the output lists the runs used and excluded
   4. Two run records sharing a `run_id` make the command fail
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — New crate `testcase-reporting`, legacy loaders moved behaviour-preserving, `LoadedRun` (wave 1)
+- [ ] 01-02-PLAN.md — Strict fail-closed loader, duplicate `run_id`, reconciliation block (wave 2, TDD)
+- [ ] 01-03-PLAN.md — Run-selection policy D-01..D-05, D-16 with table-driven tests (wave 2, TDD)
+- [ ] 01-04-PLAN.md — `test-executor report` subcommand, CLI tests, docs, quality gates (wave 3)
 **Notes**: CLI-01 is satisfied by the command and its report-kind selection existing from here; later phases add the kinds. Research flag: check in `trace_matrix.rs` whether requirements with zero test cases are emitted; if not, "no tests" needs a requirements input (affects Phase 3 GAP-01). Loaders are extracted from `test-executor/main.rs` behaviour-preserving; use `load_and_validate_yaml`. Record which quality gates could run (uv, shellcheck, StrictDoc, TPDG missing locally).
 
 ### Phase 2: Traceability Report (Markdown)
