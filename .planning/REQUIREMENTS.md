@@ -54,6 +54,16 @@ Requirements for this milestone. Each maps to a roadmap phase.
 - [ ] **CLI-01**: `test-executor report` produces the selected report kinds from a trace matrix and test-run records
 - [ ] **CLI-02**: Exit status distinguishes success (0), input or validation error (1), and gaps or failed results when `--fail-on-gaps` is given (2); the report is written before any non-zero exit
 
+### Requirement Lookup (LOOK)
+
+- [ ] **LOOK-01**: `tcms requirements locate <ID>...` resolves each ID to its system through the integration configuration, and checks all Jira IDs in one batch search and all StrictDoc IDs against one export
+- [ ] **LOOK-02**: A Jira ID is found when an issue with that key exists in the batch search result, whatever its issue type; a key that matches no issue is reported as not found
+- [ ] **LOOK-03**: A StrictDoc ID is found when an item with that UID is in the export given with `--input` (a local file; no URL); the line shows the item's level (for example `HLR`, `LLR`, `system`)
+- [ ] **LOOK-04**: The command exits 0 when every ID is found, 1 when any ID is not found, and 2 on an error (an ID that matches no system, a StrictDoc ID without `--input`, a configuration or credential problem)
+- [ ] **LOOK-05**: Output is text by default, JSON with `--format=json`, and plain text with `--format=plaintext`
+- [ ] **LOOK-06**: `tcms requirements export-ids` reads the product requirements file (`requirements.json` by default, or `--requirements <FILE>`) with a `product_id` and a `requirements` array of `{ "id": ... }` objects, and checks each ID with the same lookup as `locate`
+- [ ] **LOOK-07**: `export-ids` writes the valid IDs (those the source finds) as JSON with `product_id` and `requirements: [{ "id": ... }]` to stdout or `--output <FILE>`; invalid IDs are listed on stderr; exit 0 when all are valid, 1 when any is invalid (the valid ones are still written), 2 on an error, including a file whose `product_id` differs from the configured product
+
 ## v2 Requirements
 
 Deferred to a future release. Tracked but not in the current roadmap.
@@ -111,10 +121,17 @@ Deferred to a future release. Tracked but not in the current roadmap.
 | OUT-04 | Phase 2 | Pending |
 | CLI-01 | Phase 1 | Pending |
 | CLI-02 | Phase 5 | Pending |
+| LOOK-01 | Phase 6 | Pending |
+| LOOK-02 | Phase 6 | Pending |
+| LOOK-03 | Phase 6 | Pending |
+| LOOK-04 | Phase 6 | Pending |
+| LOOK-05 | Phase 6 | Pending |
+| LOOK-06 | Phase 6 | Pending |
+| LOOK-07 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 23 total
-- Mapped to phases: 23
+- v1 requirements: 30 total
+- Mapped to phases: 30
 - Unmapped: 0
 
 ---

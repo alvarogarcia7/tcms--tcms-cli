@@ -94,3 +94,17 @@ Plans:
 | 3. Summary, Gaps and Problem Reports | 0/0 | Not started | - |
 | 4. AsciiDoc and Machine-Readable Output | 0/0 | Not started | - |
 | 5. Pipeline Use: Exit Codes and E2E | 0/0 | Not started | - |
+
+### Phase 6: Requirement lookup: tcms requirements locate verifies that requirement IDs exist in the configured Jira backlog or StrictDoc export
+
+**Goal:** A user can run `tcms requirements locate <ID>...` and see, for each ID, whether it is a requirement in the configured Jira backlog or in a StrictDoc export, with a non-zero exit status when any ID is missing.
+**Requirements**: LOOK-01, LOOK-02, LOOK-03, LOOK-04, LOOK-05, LOOK-06, LOOK-07
+**Depends on:** Phase 5
+**Plans:** 5 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — requirement-import helpers: batch `key in (...)` JQL with escaping, StrictDoc `export_items` (wave 1)
+- [ ] 06-02-PLAN.md — `tcms requirements locate`: resolution, one batch Jira search matched by key, StrictDoc export lookup, text/plaintext/json, exit 0/1/2 (wave 2)
+- [ ] 06-03-PLAN.md — binary tests: mock Jira Cloud/DC batch and key match, StrictDoc fixture, formats, exit codes (wave 3)
+- [ ] 06-04-PLAN.md — docs in JIRA_INTEGRATION.md and CLAUDE.md quality gates (wave 4)
+- [ ] 06-05-PLAN.md — `tcms requirements export-ids`: read requirements.json, shared batch lookup, valid IDs to stdout/--output, invalid on stderr, exit 0/1/2, binary tests (wave 5)

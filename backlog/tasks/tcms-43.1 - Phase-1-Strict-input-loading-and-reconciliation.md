@@ -1,9 +1,10 @@
 ---
 id: TCMS-43.1
 title: 'Phase 1: Strict input loading and reconciliation'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-10-30T16:20:00Z'
+updated_date: '2026-10-30T19:14:00Z'
 labels: []
 milestone: m-0
 dependencies: []
