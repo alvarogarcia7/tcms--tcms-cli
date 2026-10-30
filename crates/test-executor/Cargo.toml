@@ -15,6 +15,7 @@ testcase-models = { path = "../testcase-models" }
 testcase-validation = { path = "../testcase-validation" }
 testcase-common = { path = "../testcase-common" }
 testcase-verification = { path = "../testcase-verification" }
+testcase-reporting = { path = "../testcase-reporting" }
 requirement-import = { path = "../requirement-import" }
 chrono = { workspace = true }
 audit-verifier = { path = "../audit-verifier" }
