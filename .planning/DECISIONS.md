@@ -55,3 +55,10 @@ Entry format:
 - **Options considered**: docs only; docs plus recorded gates
 - **Decision**: 07-05 updates docs from "assumed" to "verified against StrictDoc 0.20.0 output" and records build, lint, test, coverage and acceptance results. **Why**: CLAUDE.md pre-commit workflow.
 - **Supersedes / affects**: 07-05
+
+- **ID**: D-02-G1
+- **Phase / stage**: 2 / plan (gap closure)
+- **Question**: Which existing-plans option closes the 02-VERIFICATION gap (blank baseline_id or matrix id renders an empty cell instead of "not recorded"; SC5, OUT-04)?
+- **Options considered**: add more plans; view existing; replan from scratch
+- **Decision**: Add more plans: one small gap-closure plan (02-05) covering model.rs, render_markdown.rs, lib.rs and a CLI test. **Why**: 02-01..02-04 are executed and committed and must not be rewritten; the gap is small and localized; a new plan lets the verifier re-check the same gap items. TRC-03 stays deferred to Phase 7.
+- **Supersedes / affects**: 02-VERIFICATION.md gap; adds 02-05
