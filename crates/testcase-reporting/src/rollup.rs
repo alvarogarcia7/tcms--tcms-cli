@@ -3,7 +3,9 @@
 //! Pure functions over decided outcomes: no I/O, no clock. The rule lives here once so the
 //! model, the renderer and later report kinds cannot disagree (D-02, D-03, D-05).
 
+use crate::select::RunSelection;
 use std::fmt;
+use testcase_verification::Verdict;
 
 /// The decided outcome of one linked live test case, as the roll-up sees it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -95,11 +97,111 @@ pub fn roll_up(outcomes: &[CaseOutcome]) -> VerificationStatus {
     }
 }
 
+/// The roll-up input for one test case, read from the Phase 1 run selection (D-01, D-05).
+///
+/// A case with no entry in `selection.results` has no executed result and is `NotRun`. A
+/// `not_executed` verdict is never a pass: it is also `NotRun` (ROLL-04).
+pub fn case_outcome(selection: &RunSelection, test_case_id: &str) -> CaseOutcome {
+    match selection.results.get(test_case_id).map(|r| r.verdict) {
+        Some(Verdict::Pass) => CaseOutcome::Pass,
+        Some(Verdict::Fail) => CaseOutcome::Fail,
+        Some(Verdict::Error) => CaseOutcome::Error,
+        Some(Verdict::NotExecuted) | None => CaseOutcome::NotRun,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::CaseOutcome::{Error, Fail, NotRun, Pass};
     use super::VerificationStatus as S;
     use super::*;
+    use crate::run::test_support::record;
+    use crate::run::LoadedRun;
+    use crate::select::{select_results, SelectedResult};
+    use std::path::PathBuf;
+    use testcase_verification::Verdict;
+
+    fn run(run_id: &str, started: &str, results: &[(&str, Verdict)]) -> LoadedRun {
+        LoadedRun::new(
+            PathBuf::from(format!("{run_id}.yaml")),
+            record(run_id, "b1", started, results),
+        )
+        .expect("valid run")
+    }
+
+    #[test]
+    fn selected_verdicts_map_to_outcomes() {
+        let runs = vec![run(
+            "RUN-1",
+            "2026-10-28T10:00:00Z",
+            &[
+                ("T1", Verdict::Pass),
+                ("T2", Verdict::Fail),
+                ("T3", Verdict::Error),
+            ],
+        )];
+        let sel = select_results(&runs);
+        assert_eq!(case_outcome(&sel, "T1"), Pass);
+        assert_eq!(case_outcome(&sel, "T2"), Fail);
+        assert_eq!(case_outcome(&sel, "T3"), Error);
+    }
+
+    #[test]
+    fn case_absent_from_selection_is_not_run() {
+        let runs = vec![run(
+            "RUN-1",
+            "2026-10-28T10:00:00Z",
+            &[("T1", Verdict::Pass)],
+        )];
+        let sel = select_results(&runs);
+        assert_eq!(case_outcome(&sel, "T404"), NotRun);
+    }
+
+    #[test]
+    fn case_with_only_not_executed_results_is_not_run() {
+        let runs = vec![run(
+            "RUN-1",
+            "2026-10-28T10:00:00Z",
+            &[("T1", Verdict::NotExecuted)],
+        )];
+        let sel = select_results(&runs);
+        assert!(!sel.results.contains_key("T1"));
+        assert_eq!(case_outcome(&sel, "T1"), NotRun);
+    }
+
+    #[test]
+    fn demo_later_not_executed_does_not_override_fail() {
+        // RUN-1 pass, RUN-2 fail, RUN-3 not_executed on T1: the executed fail decides (D-01).
+        let runs = vec![
+            run("RUN-1", "2026-10-28T10:00:00Z", &[("T1", Verdict::Pass)]),
+            run("RUN-2", "2026-10-28T11:00:00Z", &[("T1", Verdict::Fail)]),
+            run(
+                "RUN-3",
+                "2026-10-28T12:00:00Z",
+                &[("T1", Verdict::NotExecuted)],
+            ),
+        ];
+        let sel = select_results(&runs);
+        assert_eq!(case_outcome(&sel, "T1"), Fail);
+    }
+
+    #[test]
+    fn hand_built_not_executed_verdict_is_never_a_pass() {
+        let mut sel = RunSelection::default();
+        sel.results.insert(
+            "T1".to_string(),
+            SelectedResult {
+                test_case_id: "T1".to_string(),
+                verdict: Verdict::NotExecuted,
+                run_id: "RUN-1".to_string(),
+                build_id: "b1".to_string(),
+                started_at: "2026-10-28T10:00:00Z".to_string(),
+                problem_report_id: None,
+                verification_result_ref: None,
+            },
+        );
+        assert_eq!(case_outcome(&sel, "T1"), NotRun);
+    }
 
     /// Every slice of length 0 to 4 over the four outcomes, built from base-4 digits.
     fn all_slices_up_to_four() -> Vec<Vec<CaseOutcome>> {
