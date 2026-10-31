@@ -1156,19 +1156,22 @@ fn build_executor(config: Option<&testcase_common::Config>) -> TestExecutor {
     }
 }
 
+/// Load the `--config` file when one was given. Only the subcommands that build a
+/// `TestExecutor` call this, so a bad path cannot fail the others.
+fn load_explicit_config(path: Option<&Path>) -> Result<Option<testcase_common::Config>> {
+    match path {
+        Some(path) => testcase_common::Config::load_from_path(path)
+            .with_context(|| format!("Failed to load --config file: {}", path.display()))
+            .map(Some),
+        None => Ok(None),
+    }
+}
+
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
     let log_level = if cli.verbose { "info" } else { &cli.log_level };
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(log_level)).init();
-
-    let explicit_config = match cli.config.as_deref() {
-        Some(path) => Some(
-            testcase_common::Config::load_from_path(path)
-                .with_context(|| format!("Failed to load --config file: {}", path.display()))?,
-        ),
-        None => None,
-    };
 
     let audit_log_path = cli
         .audit_log
@@ -1191,6 +1194,7 @@ fn main() -> Result<()> {
             audit_log,
             run_id,
         } => {
+            let explicit_config = load_explicit_config(cli.config.as_deref())?;
             let result = (|| -> Result<()> {
                 let yaml_bytes = fs::read(&yaml_file)
                     .context(format!("Failed to read YAML file: {}", yaml_file.display()))?;
@@ -1290,6 +1294,7 @@ fn main() -> Result<()> {
             result
         }
         Commands::Execute { yaml_file } => {
+            let explicit_config = load_explicit_config(cli.config.as_deref())?;
             let result = (|| -> Result<()> {
                 let mut test_case = load_test_case(&yaml_file)?;
 
