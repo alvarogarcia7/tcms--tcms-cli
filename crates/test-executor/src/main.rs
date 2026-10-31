@@ -36,6 +36,11 @@ struct Cli {
     #[arg(long, global = true)]
     no_audit: bool,
 
+    /// Path to a TOML configuration file (e.g. [script_generation.json_escaping]).
+    /// When omitted, ~/.testcase-manager/config.toml is used
+    #[arg(long, value_name = "TOML", global = true)]
+    config: Option<PathBuf>,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -1142,6 +1147,26 @@ fn run_shellcheck_validation(script_content: &str, force: bool) -> Result<bool> 
     }
 }
 
+/// Build the executor from an explicit `--config` file when given, otherwise from the
+/// default user configuration (`TestExecutor::new`).
+fn build_executor(config: Option<&testcase_common::Config>) -> TestExecutor {
+    match config {
+        Some(cfg) => TestExecutor::with_config(cfg.clone()),
+        None => TestExecutor::new(),
+    }
+}
+
+/// Load the `--config` file when one was given. Only the subcommands that build a
+/// `TestExecutor` call this, so a bad path cannot fail the others.
+fn load_explicit_config(path: Option<&Path>) -> Result<Option<testcase_common::Config>> {
+    match path {
+        Some(path) => testcase_common::Config::load_from_path(path)
+            .with_context(|| format!("Failed to load --config file: {}", path.display()))
+            .map(Some),
+        None => Ok(None),
+    }
+}
+
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
@@ -1169,6 +1194,7 @@ fn main() -> Result<()> {
             audit_log,
             run_id,
         } => {
+            let explicit_config = load_explicit_config(cli.config.as_deref())?;
             let result = (|| -> Result<()> {
                 let yaml_bytes = fs::read(&yaml_file)
                     .context(format!("Failed to read YAML file: {}", yaml_file.display()))?;
@@ -1183,7 +1209,7 @@ fn main() -> Result<()> {
                     .resolve(&test_case)
                     .context("Failed to resolve dependencies")?;
 
-                let executor = TestExecutor::new().with_run_id(run_id.clone());
+                let executor = build_executor(explicit_config.as_ref()).with_run_id(run_id.clone());
                 let script = executor.generate_test_script_from_yaml_with_path(
                     &test_case,
                     &yaml_bytes,
@@ -1268,6 +1294,7 @@ fn main() -> Result<()> {
             result
         }
         Commands::Execute { yaml_file } => {
+            let explicit_config = load_explicit_config(cli.config.as_deref())?;
             let result = (|| -> Result<()> {
                 let mut test_case = load_test_case(&yaml_file)?;
 
@@ -1276,7 +1303,7 @@ fn main() -> Result<()> {
                     .resolve(&test_case)
                     .context("Failed to resolve dependencies")?;
 
-                let executor = TestExecutor::new();
+                let executor = build_executor(explicit_config.as_ref());
                 executor.execute_test_case(&test_case)?;
 
                 Ok(())
