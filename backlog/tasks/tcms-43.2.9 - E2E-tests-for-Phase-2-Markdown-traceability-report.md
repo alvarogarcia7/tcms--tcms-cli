@@ -1,7 +1,7 @@
 ---
 id: TCMS-43.2.9
 title: E2E tests for Phase 2: traceability report (Markdown)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-10-31T08:00:00Z'
 labels:

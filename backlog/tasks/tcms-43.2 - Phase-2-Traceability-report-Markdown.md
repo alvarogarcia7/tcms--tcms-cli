@@ -44,3 +44,6 @@ Requirements: ROLL-01, ROLL-02, ROLL-03, ROLL-04, TRC-01, TRC-02, OUT-03, OUT-04
 - Still open for Phase 2: phase-level gates (make build, lint, test, coverage-e2e, acceptance-test), E2E subtask tcms-43.2.9, pipeline run.
 - Acceptance criterion #5 (header not recorded) is covered by 02-05; criteria #1-#4 were verified in 02-VERIFICATION.md.
 - Plan 02-06 done (report shapes A and B and --shape CLI): commits 03e7a26, c88f81e; summary e100f69. Review PASS. Acceptance criteria #7 and #8 ticked.
+- Phase 2 verification PASSED (.planning/phases/02-traceability-report-markdown/02-VERIFICATION-FINAL.md). E2E tests: bd9740e (tcms-43.2.9 done).
+- Warnings: no acceptance criterion #6 in this task (numbering jumps from #5 to #7); header obsolete count includes unlinked obsolete cases. Needs human decision.
+- Phase gates: make test and coverage blocked by pre-existing tcms-44 (fix in progress on fix/tcms-44).
