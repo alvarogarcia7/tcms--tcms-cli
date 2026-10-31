@@ -203,6 +203,46 @@ Grouping and order:
 clock read is the default generation time, the current UTC time, used when `--generated-at` is
 absent.
 
+### Report shapes
+
+`--shape` picks the layout of the traceability report. Both shapes are views over the same
+model as the grid, so every verdict comes from the same roll-up. The default is `grid`, the
+layout described above, and `--shape grid` prints the same bytes as no `--shape`.
+
+`--shape a` and `--shape b` need `--kind traceability` as the only `--kind`. Any other use (no
+`--kind`, or `--kind summary`, `gaps` or `problems`) is a usage error: exit code 2, nothing on
+stdout, and stderr names `--shape` and `--kind`. An unknown shape value is also exit code 2.
+
+Both shapes keep the document top (title, `## Inputs`, `## Report header`) and one
+`## Document: <path>` section per document, with `No traceable content` for a document without
+requirements. They do not show coverage columns or the fixed test-type columns.
+
+Shape A: one row per requirement. Test cases are `ID (status)`, joined by `<br>`; `-` when the
+requirement has none.
+
+```
+| Requirement | Test cases (ID, status) | Final verdict |
+| --- | --- | --- |
+| HLR-1 | T1 (pass)<br>T2 (NOT RUN) | PARTIAL |
+```
+
+Shape B: per requirement, a verdict table and then a case table. The requirement verdict is
+the roll-up. Each case row shows that case's own status, not the requirement verdict. A
+requirement with no cases has no case table.
+
+```
+| Requirement | Final verdict |
+| --- | --- |
+| HLR-1 | PARTIAL |
+
+| TESTCASE ID | Status |
+| --- | --- |
+| T1 | pass |
+| T2 | NOT RUN |
+```
+
+Shape output is not yet validated against the report schema; that is Phase 4.
+
 ### Verification status rule
 
 A requirement's status is computed over its linked live test cases. Each case's verdict is the

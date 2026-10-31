@@ -1639,3 +1639,123 @@ fn new_kinds_fail_before_write() {
     assert!(stderr(&output).contains("yesterday"), "{}", stderr(&output));
     assert!(!out_file.exists(), "a file was written before the error");
 }
+
+/// One VERIFIED requirement (HLR-1, T1 passes) and one with no tests (HLR-2).
+fn shape_fixture() -> (tempfile::TempDir, std::path::PathBuf, std::path::PathBuf) {
+    let (dir, matrix, runs) = project(&[
+        link("HLR-1", "HLR", &["T1"], true, false, &["RUN-1"]),
+        link("HLR-2", "HLR", &[], false, false, &[]),
+    ]);
+    write(
+        &runs,
+        "run1.yaml",
+        &run_yaml("RUN-1", "b1", "2026-10-28T10:00:00Z", &[("T1", "pass")]),
+    );
+    (dir, matrix, runs)
+}
+
+/// A usage error: exit code 2, nothing on stdout, and stderr names every option in `needles`.
+fn assert_usage_error(output: &Output, needles: &[&str]) {
+    assert_eq!(output.status.code(), Some(2), "{}", stderr(output));
+    assert!(stdout(output).is_empty(), "{}", stdout(output));
+    let err = stderr(output);
+    for needle in needles {
+        assert!(err.contains(needle), "stderr lacks {needle}: {err}");
+    }
+}
+
+#[test]
+fn shape_a_prints_requirement_cases_and_verdict_rows() {
+    let (_dir, matrix, runs) = shape_fixture();
+    let output = render(&matrix, &runs, &["--kind", "traceability", "--shape", "a"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let out = stdout(&output);
+    assert!(
+        out.contains("| Requirement | Test cases (ID, status) | Final verdict |"),
+        "{out}"
+    );
+    assert!(out.contains("| HLR-1 | T1 (pass) | VERIFIED |"), "{out}");
+    assert!(out.contains("| HLR-2 | - | NO TESTS |"), "{out}");
+}
+
+#[test]
+fn shape_b_prints_case_status_rows() {
+    let (_dir, matrix, runs) = shape_fixture();
+    let output = render(&matrix, &runs, &["--kind", "traceability", "--shape", "b"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let out = stdout(&output);
+    assert!(out.contains("| TESTCASE ID | Status |"), "{out}");
+    assert!(out.contains("| T1 | pass |"), "{out}");
+    assert!(out.contains("| HLR-1 | VERIFIED |"), "{out}");
+}
+
+#[test]
+fn default_and_grid_shape_are_identical_and_keep_the_grid() {
+    let (_dir, matrix, runs) = shape_fixture();
+    let default = render(&matrix, &runs, &["--kind", "traceability"]);
+    let grid = render(
+        &matrix,
+        &runs,
+        &["--kind", "traceability", "--shape", "grid"],
+    );
+    assert_eq!(default.status.code(), Some(0), "{}", stderr(&default));
+    assert_eq!(grid.status.code(), Some(0), "{}", stderr(&grid));
+    assert_eq!(stdout(&default).as_bytes(), stdout(&grid).as_bytes());
+    assert!(
+        stdout(&grid).contains("| Requirement | Level | Status | Normal-range test |"),
+        "{}",
+        stdout(&grid)
+    );
+}
+
+#[test]
+fn shape_a_is_byte_identical_for_the_same_generated_at() {
+    let (_dir, matrix, runs) = shape_fixture();
+    let first = render(&matrix, &runs, &["--kind", "traceability", "--shape", "a"]);
+    let second = render(&matrix, &runs, &["--kind", "traceability", "--shape", "a"]);
+    assert_eq!(first.status.code(), Some(0), "{}", stderr(&first));
+    assert_eq!(stdout(&first).as_bytes(), stdout(&second).as_bytes());
+}
+
+#[test]
+fn shape_without_traceability_kind_is_a_usage_error() {
+    let (_dir, matrix, runs) = shape_fixture();
+    let default_kinds = render(&matrix, &runs, &["--shape", "a"]);
+    assert_usage_error(&default_kinds, &["--shape", "--kind"]);
+    let summary = render(&matrix, &runs, &["--shape", "a", "--kind", "summary"]);
+    assert_usage_error(&summary, &["--shape", "--kind"]);
+}
+
+#[test]
+fn unknown_shape_value_is_a_usage_error() {
+    let (_dir, matrix, runs) = shape_fixture();
+    let output = render(
+        &matrix,
+        &runs,
+        &["--kind", "traceability", "--shape", "xyz"],
+    );
+    assert_usage_error(&output, &["--shape", "xyz"]);
+}
+
+#[test]
+fn shape_with_grid_only_kinds_is_a_usage_error() {
+    let (_dir, matrix, runs) = shape_fixture();
+    let cases: [&[&str]; 5] = [
+        &["--shape", "a", "--kind", "summary"],
+        &["--shape", "b", "--kind", "gaps"],
+        &["--shape", "a", "--kind", "problems"],
+        &[
+            "--shape",
+            "a",
+            "--kind",
+            "traceability",
+            "--kind",
+            "problems",
+        ],
+        &["--shape", "b"],
+    ];
+    for extra in cases {
+        let output = render(&matrix, &runs, extra);
+        assert_usage_error(&output, &["--shape", "--kind"]);
+    }
+}
