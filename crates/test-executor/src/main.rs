@@ -36,6 +36,11 @@ struct Cli {
     #[arg(long, global = true)]
     no_audit: bool,
 
+    /// Path to a TOML configuration file (e.g. [script_generation.json_escaping]).
+    /// When omitted, ~/.testcase-manager/config.toml is used
+    #[arg(long, value_name = "TOML", global = true)]
+    config: Option<PathBuf>,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -1142,11 +1147,28 @@ fn run_shellcheck_validation(script_content: &str, force: bool) -> Result<bool> 
     }
 }
 
+/// Build the executor from an explicit `--config` file when given, otherwise from the
+/// default user configuration (`TestExecutor::new`).
+fn build_executor(config: Option<&testcase_common::Config>) -> TestExecutor {
+    match config {
+        Some(cfg) => TestExecutor::with_config(cfg.clone()),
+        None => TestExecutor::new(),
+    }
+}
+
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
     let log_level = if cli.verbose { "info" } else { &cli.log_level };
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(log_level)).init();
+
+    let explicit_config = match cli.config.as_deref() {
+        Some(path) => Some(
+            testcase_common::Config::load_from_path(path)
+                .with_context(|| format!("Failed to load --config file: {}", path.display()))?,
+        ),
+        None => None,
+    };
 
     let audit_log_path = cli
         .audit_log
@@ -1183,7 +1205,7 @@ fn main() -> Result<()> {
                     .resolve(&test_case)
                     .context("Failed to resolve dependencies")?;
 
-                let executor = TestExecutor::new().with_run_id(run_id.clone());
+                let executor = build_executor(explicit_config.as_ref()).with_run_id(run_id.clone());
                 let script = executor.generate_test_script_from_yaml_with_path(
                     &test_case,
                     &yaml_bytes,
@@ -1276,7 +1298,7 @@ fn main() -> Result<()> {
                     .resolve(&test_case)
                     .context("Failed to resolve dependencies")?;
 
-                let executor = TestExecutor::new();
+                let executor = build_executor(explicit_config.as_ref());
                 executor.execute_test_case(&test_case)?;
 
                 Ok(())

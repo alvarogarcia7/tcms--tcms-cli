@@ -162,8 +162,14 @@ impl Config {
             return Ok(Self::default());
         }
 
-        let contents = fs::read_to_string(&config_path)
-            .context(format!("Failed to read config file: {:?}", config_path))?;
+        Self::load_from_path(&config_path)
+    }
+
+    /// Load configuration from an explicit TOML file path (does not consult the
+    /// default `~/.testcase-manager/config.toml`).
+    pub fn load_from_path(path: &Path) -> Result<Self> {
+        let contents =
+            fs::read_to_string(path).context(format!("Failed to read config file: {:?}", path))?;
 
         let config: Config = toml::from_str(&contents).context("Failed to parse config file")?;
 
