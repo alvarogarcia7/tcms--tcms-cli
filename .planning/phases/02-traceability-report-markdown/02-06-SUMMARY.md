@@ -15,7 +15,7 @@ Markdown shapes A (requirement, cases as `ID (status)`, final verdict) and B (re
 - `crates/testcase-reporting/src/render_markdown.rs`: `inputs_block` made `pub(crate)`. No other change; the grid output is unchanged.
 - `crates/testcase-reporting/src/lib.rs`: `pub mod render_shapes;`.
 - `crates/test-executor/src/main.rs`: `--shape grid|a|b` (default `grid`), `ReportShape` enum, usage check before any input is read.
-- `crates/test-executor/tests/report_cli.rs`: CLI tests for shape output, grid identity, determinism, unknown shape, and grid-only usage errors. Existing tests unchanged (additive diff only).
+- `crates/test-executor/tests/report_cli.rs`: CLI tests for shape output, grid identity, determinism, unknown shape, and grid-only usage errors. Existing grid tests unchanged; three placeholder-text assertions in report_cli.rs were rewritten to "rendered below" with equal strength.
 - `docs/TRACEABILITY.md`: "Report shapes" section.
 
 ## Decisions applied
