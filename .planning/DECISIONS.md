@@ -118,3 +118,12 @@ Entry format:
 - **Options considered**: reject; silently ignore
 - **Decision**: Reject: any option that only affects the grid (coverage or type-column flags, if present) with `--shape a|b` is a usage error naming both options. If none exist today, add the guard test so future flags inherit it. **Why**: silent ignoring hides a user's intent.
 - **Supersedes / affects**: 02-06 CLI tests
+
+## D-44-1: tcms-44 test-executor `--config` for json-escape E2E
+- **Phase / stage**: backlog tcms-44 / triage
+- **Question**: Is the script or the binary wrong about `--config`?
+- **Options considered**: A. change script only; B. add `--config` to test-executor; C. stop and report
+- **Decision**: B. Add `--config <TOML>` to test-executor as a `global = true` arg on `Cli` (crates/test-executor/src/main.rs), so both `test-executor --config f generate ...` and `generate ... --config f` (the AGENTS.md form) work. When given, load `testcase_common::Config` from that file (TOML, `[script_generation.json_escaping]`, methods `Auto|Jq|RustBinary|ShellFallback`, optional `binary_path`) and build the executor with `TestExecutor::with_config(config)` (keep `.with_run_id`) in Generate and Execute. Without it, behaviour is unchanged. **Why**: AGENTS.md documents the flag and docs/JSON_ESCAPING_CONFIG.md documents the section; the library already has `with_config` and the escaping methods (executor.rs ~309-343); only the CLI wiring is missing. Not A: the script's intent is valid.
+- **Script fixes also required**: the script passes `--output-dir "$TEMP_DIR"`, which also does not exist on generate (it has `-o FILE`). Replace with `generate "$TEST_YAML" -o "$TEMP_DIR/<TC_ID>_test.sh"` (lines ~244, 344, 415, 569) or add an equivalent flag; the script expects `$TEMP_DIR/TEST_RUST_BINARY_test.sh`. The docs list lowercase method names ("rust_binary") while the script and code use `RustBinary`; check serde rename in config.rs and align docs. Also make `make test` propagate the script exit status (second half of tcms-44).
+- **container_config.yml error**: unrelated to this flag (verifier `--config` for run_verifier_and_generate_reports.sh; default container_config.yml missing at repo root). Leave to a separate task; do not fold in.
+- **Supersedes / affects**: D-03-G2; tcms-44
