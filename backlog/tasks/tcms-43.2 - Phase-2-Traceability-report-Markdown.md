@@ -27,6 +27,8 @@ Requirements: ROLL-01, ROLL-02, ROLL-03, ROLL-04, TRC-01, TRC-02, OUT-03, OUT-04
 - [ ] #3 Test coverage shown separately from verification status; a linked case with no result shows NOT RUN
 - [ ] #4 Obsolete test cases excluded from roll-up and counted in header
 - [ ] #5 Same inputs and --generated-at give byte-identical output; header shows identification fields or not recorded
+- [ ] #7 Report shape A: each requirement row shows REQUIREMENT | list of test cases (ID, status) | final verdict for the requirement.
+- [ ] #8 Report shape B: REQUIREMENT | final verdict, and per-test-case rows TESTCASE ID | status for that test case.
 <!-- AC:END -->
 
 ## Definition of Done

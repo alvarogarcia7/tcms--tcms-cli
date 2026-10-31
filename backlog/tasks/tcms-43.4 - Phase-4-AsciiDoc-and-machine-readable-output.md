@@ -25,6 +25,7 @@ Requirements: OUT-01, OUT-02. Goal: every report available as AsciiDoc and as JS
 - [ ] #1 All report kinds render as Markdown and AsciiDoc, with hostile strings escaped in cells
 - [ ] #2 JSON and YAML output validated against a local schema before writing; a failure writes no file
 - [ ] #3 Determinism holds for every format
+- [ ] #5 The traceability report (both shapes) is validated against the local report schema before it is written; a schema failure aborts without writing a file.
 <!-- AC:END -->
 
 ## Definition of Done
