@@ -169,6 +169,8 @@ section "Test 4: Generate and execute test script with RustBinary mode"
 log_info "Creating test case YAML..."
 TEST_YAML="$TEMP_DIR/test_rust_binary.yaml"
 cat > "$TEST_YAML" << 'EOF'
+type: test_case
+schema: tcms/test-case.schema.v1.json
 requirement: REQ001
 item: 1
 tc: 1
@@ -181,10 +183,10 @@ initial_conditions:
   System:
     - Shell is ready
 test_sequences:
-  - sequence: 1
-    seq_id: SEQ1
+  - id: 1
+    name: Test commands with special characters
     description: Test commands with special characters
-    sequence_initial_conditions:
+    initial_conditions:
       System:
         - Commands can be executed
     steps:
@@ -210,7 +212,8 @@ test_sequences:
           output: "true"
       - step: 3
         description: Echo with backslashes
-        command: echo 'Path: C:\test\file'
+        command: |-
+          echo 'Path: C:\test\file'
         expected:
           success: true
           result: "0"
@@ -234,15 +237,14 @@ log_info "Creating config file for RustBinary mode..."
 CONFIG_FILE="$TEMP_DIR/config_rust_binary.toml"
 cat > "$CONFIG_FILE" << EOF
 [script_generation.json_escaping]
-method = "RustBinary"
+method = "rust_binary"
 enabled = true
 EOF
 
 log_info "Generating test script with RustBinary mode..."
 if cargo run -p test-executor -- \
     --config "$CONFIG_FILE" \
-    --output-dir "$TEMP_DIR" \
-    generate "$TEST_YAML" > "$TEMP_DIR/generate_rust_binary.log" 2>&1; then
+    generate "$TEST_YAML" -o "$TEMP_DIR/TEST_RUST_BINARY_test.sh" > "$TEMP_DIR/generate_rust_binary.log" 2>&1; then
     pass "Test script generated with RustBinary mode"
     ((++TESTS_PASSED))
 else
@@ -271,7 +273,9 @@ else
     # Make script executable and run it
     chmod +x "$SCRIPT_PATH"
     log_info "Executing test script with RustBinary mode..."
-    if bash "$SCRIPT_PATH" > "$TEMP_DIR/execute_rust_binary.log" 2>&1; then
+    # rust_binary mode invokes json-escape by name, so its directory must be on PATH
+    JSON_ESCAPE_DIR="$(cd "$(dirname "$JSON_ESCAPE_BIN")" && pwd)"
+    if (cd "$TEMP_DIR" && PATH="$JSON_ESCAPE_DIR:$PATH" bash "$SCRIPT_PATH") > "$TEMP_DIR/execute_rust_binary.log" 2>&1; then
         pass "Test script executed successfully"
         ((++TESTS_PASSED))
     else
@@ -334,15 +338,14 @@ log_info "Creating config file for ShellFallback mode..."
 CONFIG_FILE_FALLBACK="$TEMP_DIR/config_shell_fallback.toml"
 cat > "$CONFIG_FILE_FALLBACK" << EOF
 [script_generation.json_escaping]
-method = "ShellFallback"
+method = "shell_fallback"
 enabled = true
 EOF
 
 log_info "Generating test script with ShellFallback mode..."
 if cargo run -p test-executor -- \
     --config "$CONFIG_FILE_FALLBACK" \
-    --output-dir "$TEMP_DIR" \
-    generate "$TEST_YAML" > "$TEMP_DIR/generate_shell_fallback.log" 2>&1; then
+    generate "$TEST_YAML" -o "$TEMP_DIR/TEST_RUST_BINARY_test.sh" > "$TEMP_DIR/generate_shell_fallback.log" 2>&1; then
     pass "Test script generated with ShellFallback mode"
     ((++TESTS_PASSED))
 else
@@ -372,7 +375,7 @@ if [[ -f "$SCRIPT_PATH" ]]; then
     
     # Execute script
     log_info "Executing test script with ShellFallback mode..."
-    if bash "$SCRIPT_PATH" > "$TEMP_DIR/execute_shell_fallback.log" 2>&1; then
+    if (cd "$TEMP_DIR" && bash "$SCRIPT_PATH") > "$TEMP_DIR/execute_shell_fallback.log" 2>&1; then
         pass "Test script with ShellFallback executed successfully"
         ((++TESTS_PASSED))
     else
@@ -405,15 +408,14 @@ log_info "Creating config file for Auto mode..."
 CONFIG_FILE_AUTO="$TEMP_DIR/config_auto.toml"
 cat > "$CONFIG_FILE_AUTO" << EOF
 [script_generation.json_escaping]
-method = "Auto"
+method = "auto"
 enabled = true
 EOF
 
 log_info "Generating test script with Auto mode..."
 if cargo run -p test-executor -- \
     --config "$CONFIG_FILE_AUTO" \
-    --output-dir "$TEMP_DIR" \
-    generate "$TEST_YAML" > "$TEMP_DIR/generate_auto.log" 2>&1; then
+    generate "$TEST_YAML" -o "$TEMP_DIR/TEST_RUST_BINARY_test.sh" > "$TEMP_DIR/generate_auto.log" 2>&1; then
     pass "Test script generated with Auto mode"
     ((++TESTS_PASSED))
 else
@@ -442,7 +444,7 @@ if [[ -f "$SCRIPT_PATH" ]]; then
     
     # Execute script with json-escape in PATH
     log_info "Executing test script with Auto mode (binary in PATH)..."
-    if bash "$SCRIPT_PATH" > "$TEMP_DIR/execute_auto_with_binary.log" 2>&1; then
+    if (cd "$TEMP_DIR" && bash "$SCRIPT_PATH") > "$TEMP_DIR/execute_auto_with_binary.log" 2>&1; then
         pass "Test script with Auto mode executed successfully (binary available)"
         ((++TESTS_PASSED))
     else
@@ -477,7 +479,7 @@ log_info "Executing test script with json-escape removed from PATH..."
 CLEAN_PATH=$(echo "$PATH" | tr ':' '\n' | grep -v "target/debug" | tr '\n' ':' | sed 's/:$//')
 
 # Execute script without json-escape in PATH
-if env PATH="$CLEAN_PATH" bash "$SCRIPT_PATH" > "$TEMP_DIR/execute_auto_without_binary.log" 2>&1; then
+if (cd "$TEMP_DIR" && env PATH="$CLEAN_PATH" bash "$SCRIPT_PATH") > "$TEMP_DIR/execute_auto_without_binary.log" 2>&1; then
     pass "Test script with Auto mode executed successfully (binary NOT available)"
     ((++TESTS_PASSED))
 else
@@ -511,6 +513,8 @@ section "Test 8: Test with complex special characters"
 log_info "Creating test case with complex special characters..."
 COMPLEX_YAML="$TEMP_DIR/test_complex_chars.yaml"
 cat > "$COMPLEX_YAML" << 'EOF'
+type: test_case
+schema: tcms/test-case.schema.v1.json
 requirement: REQ002
 item: 1
 tc: 1
@@ -523,10 +527,10 @@ initial_conditions:
   System:
     - Shell is ready
 test_sequences:
-  - sequence: 1
-    seq_id: SEQ1
+  - id: 1
+    name: Complex special character tests
     description: Complex special character tests
-    sequence_initial_conditions:
+    initial_conditions:
       System:
         - Commands can be executed
     steps:
@@ -552,7 +556,8 @@ test_sequences:
           output: "true"
       - step: 3
         description: JSON-like output
-        command: echo '{"key": "value", "nested": {"data": "test"}}'
+        command: |-
+          echo '{"key": "value", "nested": {"data": "test"}}'
         expected:
           success: true
           result: "0"
@@ -566,8 +571,7 @@ log_info "Generating test script for complex characters..."
 COMPLEX_SCRIPT="$TEMP_DIR/TEST_COMPLEX_CHARS_test.sh"
 if cargo run -p test-executor -- \
     --config "$CONFIG_FILE_AUTO" \
-    --output-dir "$TEMP_DIR" \
-    generate "$COMPLEX_YAML" > "$TEMP_DIR/generate_complex.log" 2>&1; then
+    generate "$COMPLEX_YAML" -o "$TEMP_DIR/TEST_COMPLEX_CHARS_test.sh" > "$TEMP_DIR/generate_complex.log" 2>&1; then
     pass "Test script generated for complex characters"
     ((++TESTS_PASSED))
 else
@@ -579,7 +583,7 @@ fi
 if [[ -f "$COMPLEX_SCRIPT" ]]; then
     chmod +x "$COMPLEX_SCRIPT"
     log_info "Executing test script with complex characters..."
-    if bash "$COMPLEX_SCRIPT" > "$TEMP_DIR/execute_complex.log" 2>&1; then
+    if (cd "$TEMP_DIR" && bash "$COMPLEX_SCRIPT") > "$TEMP_DIR/execute_complex.log" 2>&1; then
         pass "Test script with complex characters executed successfully"
         ((++TESTS_PASSED))
     else
