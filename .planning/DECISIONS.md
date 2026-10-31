@@ -83,3 +83,38 @@ Entry format:
 - **Options considered**: (a) assert the two outputs differ only on the "Generated" row; (b) drop the timestamp from the header (renderer change, contradicts OUT-04); (c) drop the cross-timestamp comparison and keep only same-args equality
 - **Decision**: (a). **Why**: summary.rs, gaps.rs and problems.rs all render a `| Generated | <ts> |` header row (summary.rs:368, gaps.rs:530, problems.rs:397), so all three kinds differ on it. OUT-04 requires the generation time in the header and OUT-03 requires determinism only for the same inputs and the same `--generated-at`. (b) breaks OUT-04. (c) loses the check that nothing else depends on the timestamp. Rule: same args give byte-equal output; different `--generated-at` gives output that is identical after removing the line starting `| Generated |`, and the full outputs must differ (that row holds each timestamp).
 - **Supersedes / affects**: report_cli.rs `views_are_deterministic`; 03-05 verification
+
+- **ID**: D-02-G4
+- **Phase / stage**: 2 / plan (new requirement: tcms-43.2 AC#7-8, tcms-43.4 AC#5)
+- **Question**: Where does the new traceability report shapes work go (shape A: REQUIREMENT | test cases (ID, status) | final verdict; shape B: REQUIREMENT | final verdict plus TESTCASE ID | status rows; both validated against the local report schema before writing)?
+- **Options considered**: A. new plan inside Phase 3 (before verification); B. follow-up plan on Phase 2 (renderers) with schema validation carried by Phase 4; C. new phase after Phase 5
+- **Decision**: B. Add plan 02-06 to Phase 2: shapes A and B as new Markdown renderers over the existing ReportModel (verdicts from the existing roll-up, no model change). Phase 4 (04-02 schema, 04-03 render, 04-04 CLI) carries validation: the local report schema must describe both shapes and the traceability report is validated before write. **Why**: the traceability report is owned by Phase 2 (TRC-*, ROLL-*); Phase 3 covers summary, gaps and problems and is in gate verification, so adding there would reopen it; Phase 4 already owns validate-before-write (OUT-02) and the local schema; a new phase after Phase 5 would ship the shapes after exit-code/E2E work and split one report across phases. Same pattern as D-02-G1 (gap plan added to an executed phase, earlier plans untouched).
+- **Supersedes / affects**: adds 02-06; adds shape coverage to 04-02..04-04; tcms-43.2, tcms-43.4; Phase 3 verification unaffected
+
+- **ID**: D-02-6-1
+- **Phase / stage**: 2 / plan (02-06)
+- **Question**: How do D-04 (coverage columns) and D-08 (fixed type columns) apply to shapes A and B?
+- **Options considered**: A. grid-only, shapes define own columns; B. add coverage and type columns to shapes; C. drop document headings in shapes
+- **Decision**: A. D-04 and D-08 apply to the default grid only. Shapes A and B keep D-07 document headings, D-14 Inputs section and the "No traceable content" rule. **Why**: tcms-43.2 AC#7/#8 name the exact columns; extra columns would contradict them; headings and the empty rule are structure, not columns, and keep output consistent with the grid.
+- **Supersedes / affects**: narrows D-04 and D-08 scope; 02-06
+
+- **ID**: D-02-6-2
+- **Phase / stage**: 2 / plan (02-06)
+- **Question**: CLI surface for selecting the shape?
+- **Options considered**: `--shape grid|a|b` on `report`; separate kinds; separate subcommand
+- **Decision**: `--shape grid|a|b`, default `grid`; `a` or `b` rejected (usage error, exit 2) unless `--kind traceability` is the only kind. **Why**: shapes are views of one kind over the same ReportModel; default output stays unchanged.
+- **Supersedes / affects**: 02-06; Phase 4 CLI (04-04) extends the same option
+
+- **ID**: D-02-6-3
+- **Phase / stage**: 2 / plan (02-06)
+- **Question**: What do heading and per-test-case rows show?
+- **Options considered**: keep AC#8 wording literally; add roll-up to case rows
+- **Decision**: Keep AC#7/#8 wording unchanged. Shape B requirement row = REQUIREMENT | final verdict (existing roll-up); each test-case row = TESTCASE ID | that case's own status (pass/fail/error/NOT RUN), not the requirement verdict. Shape A: REQUIREMENT | test cases as "ID (status)" | final verdict. **Why**: matches the user's words; the final verdict is on the heading row, per-case status on case rows.
+- **Supersedes / affects**: 02-06; tcms-43.2 AC#7, #8
+
+- **ID**: D-02-6-4
+- **Phase / stage**: 2 / plan (02-06)
+- **Question**: Reject `--shape a|b` combined with grid-only options?
+- **Options considered**: reject; silently ignore
+- **Decision**: Reject: any option that only affects the grid (coverage or type-column flags, if present) with `--shape a|b` is a usage error naming both options. If none exist today, add the guard test so future flags inherit it. **Why**: silent ignoring hides a user's intent.
+- **Supersedes / affects**: 02-06 CLI tests
