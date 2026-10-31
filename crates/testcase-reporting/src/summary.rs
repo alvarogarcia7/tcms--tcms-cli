@@ -66,7 +66,7 @@ pub fn build_summary(input: ViewInput) -> SummaryReport {
             }
             counts.not_executed = run.not_executed;
             // Total from the record size, buckets from the selection: two sources that must agree.
-            counts.total = run.total - run.superseded;
+            counts.total = run.total.saturating_sub(run.superseded);
             debug_assert_eq!(
                 counts.bucket_sum(),
                 counts.total,
