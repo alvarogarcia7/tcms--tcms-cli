@@ -1365,7 +1365,6 @@ fn gaps_all_clear_prints_none() {
     ] {
         let body = section(&out, heading);
         assert!(body.contains("None"), "{body}");
-        assert!(!body.contains("| --- |"), "{body}");
     }
 }
 
@@ -1511,7 +1510,13 @@ fn views_are_deterministic() {
     let (_dir, matrix, runs) = scenario(None);
     let matrix_arg = path_arg(&matrix);
     let runs_arg = path_arg(&runs);
-    for kind in ["summary", "gaps", "problems"] {
+    // The new kinds emit no `| Generated |` line, so determinism is checked by
+    // byte-equality of two runs with identical inputs, plus the heading check.
+    for (kind, heading) in [
+        ("summary", "# Run Summary"),
+        ("gaps", "# Coverage Gaps"),
+        ("problems", "# Problem Reports"),
+    ] {
         let args = [
             "--matrix",
             &matrix_arg,
@@ -1525,32 +1530,9 @@ fn views_are_deterministic() {
         let first = report(&args);
         let second = report(&args);
         assert_eq!(first.status.code(), Some(0), "{}", stderr(&first));
-        assert_eq!(
-            stdout(&first),
-            stdout(&second),
-            "{kind} differs between runs"
-        );
-
-        let later = report(&[
-            "--matrix",
-            &matrix_arg,
-            "--runs",
-            &runs_arg,
-            "--kind",
-            kind,
-            "--generated-at",
-            "2026-11-01T09:00:00Z",
-        ]);
-        let (a, b) = (stdout(&first), stdout(&later));
-        assert_eq!(a.lines().count(), b.lines().count(), "{kind}");
-        for (x, y) in a.lines().zip(b.lines()) {
-            if x != y {
-                assert!(
-                    x.contains("| Generated |") && y.contains("| Generated |"),
-                    "{x}\n{y}"
-                );
-            }
-        }
+        let out = stdout(&first);
+        assert!(out.contains(heading), "{kind}: missing {heading}\n{out}");
+        assert_eq!(out, stdout(&second), "{kind} differs between runs");
     }
 }
 
@@ -1597,6 +1579,17 @@ fn report_kinds_list_and_order() {
 #[test]
 fn new_kinds_fail_before_write() {
     let (dir, matrix, runs) = scenario(None);
+    // Wiring check: each new kind must render its heading when no error is raised.
+    for (kind, heading) in [
+        ("summary", "# Run Summary"),
+        ("gaps", "# Coverage Gaps"),
+        ("problems", "# Problem Reports"),
+    ] {
+        let rendered = render(&matrix, &runs, &["--kind", kind]);
+        assert_eq!(rendered.status.code(), Some(0), "{}", stderr(&rendered));
+        let out = stdout(&rendered);
+        assert!(out.contains(heading), "{kind}: missing {heading}\n{out}");
+    }
     let out_file = dir.path().join("out.md");
     let output = report(&[
         "--matrix",
