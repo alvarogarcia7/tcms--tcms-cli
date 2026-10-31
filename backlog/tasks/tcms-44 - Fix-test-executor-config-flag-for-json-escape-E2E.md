@@ -1,7 +1,7 @@
 ---
 id: TCMS-44
 title: Fix test-executor --config flag for json-escape E2E
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-10-31T00:00:00Z'
 labels: []
@@ -24,3 +24,11 @@ Additionally, `make test` exits 0 even though this script reports failures, so t
 <!-- DOD:BEGIN -->
 - [ ] #1 All tests are passing. Run make test
 <!-- DOD:END -->
+
+## Implementation Notes
+
+- Fixed in fix/tcms-44 (commits 9f9f36e, 824edf8) and merged into traceability-matrix-report (bc4799f).
+- Decision D-44-1: global --config on test-executor, loaded only in generate and execute; json-escape E2E script uses -o instead of --output-dir.
+- Also fixed: testcase-execution replace("\\r") deleted literal backslash-r from user commands; json-escape put on PATH for rust_binary runs (subshell scope).
+- Result: test_json_escape_e2e.sh 37/37 passed, exit 0. cargo test -p test-executor passes; clippy -D warnings passes.
+- Remaining CI-only issue, separate: acceptance job cannot download TPDG (needs TPDG_TOKEN or job-token allowlist; GitLab setting, outside the repo).
