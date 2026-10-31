@@ -48,3 +48,6 @@ Requirements: SUM-01, GAP-01, PRB-01, PRB-02. Goal: run summary, coverage-gaps r
 - Plan 03-05 done (CLI wiring for summary, gaps, problems; 14 new CLI tests; docs): commits e18f652, 2b43ee9, 5b668b3; review fixes fa97442 and 29048f8 (determinism rule per D-03-G3). Review of 29048f8 PASS.
 - Gates: make build PASS; make lint PASS; make test FAIL (pre-existing: test_json_escape_e2e.sh expects a --config flag that test-executor does not have; tracked in tcms-44; make test exits 0 despite the failure); coverage-e2e and acceptance-test results: see run log.
 - Blocker recorded: D-03-G1 (CARGO_TARGET_DIR moved into repo target/), D-03-G2 (pre-existing --config failure), D-03-G3 (determinism rule).
+- Phase 3 verification PASSED (.planning/phases/03-summary-gaps-and-problem-reports/03-VERIFICATION.md). Plans 03-01 to 03-05 and E2E d8882bf complete.
+- Coverage gate passes on merged tree 692594a: 72.36% lines (fix in 2cfe145 via --workspace on report lines).
+- Open: make test and acceptance-test failures are pre-existing or environmental (tcms-45 for acceptance; GitLab acceptance needs TPDG_TOKEN, outside the repo).
