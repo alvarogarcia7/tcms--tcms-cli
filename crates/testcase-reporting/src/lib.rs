@@ -7,6 +7,7 @@ pub mod load;
 pub mod model;
 pub mod problems;
 pub mod render_markdown;
+pub mod render_shapes;
 pub mod rollup;
 pub mod run;
 pub mod select;

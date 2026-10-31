@@ -27,7 +27,7 @@ pub fn render_markdown(model: &ReportModel) -> String {
 }
 
 /// The Phase 1 input text, verbatim, inside a fence longer than any backtick run in it (D-14).
-fn inputs_block(details: &str) -> String {
+pub(crate) fn inputs_block(details: &str) -> String {
     let fence = "`".repeat(fence_len(details));
     // One trailing newline is structural (the line break before the fence), not content.
     let body = details.strip_suffix('\n').unwrap_or(details);
