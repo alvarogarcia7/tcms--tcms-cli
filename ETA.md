@@ -1,8 +1,8 @@
 # Backlog ETA
 
-Updated: 2026-10-31 03:44 +04 (Asia/Dubai)
+Updated: 2026-10-31 04:49 +04 (Asia/Dubai)
 
-Estimated finish: 2026-10-31 11:44 +04 (Asia/Dubai)
+Estimated finish: 2026-10-31 12:49 +04 (Asia/Dubai)
 
 ## Done
 - Phase 1: verified passed
@@ -11,7 +11,7 @@ Estimated finish: 2026-10-31 11:44 +04 (Asia/Dubai)
 
 ## Remaining
 - Phase 2: plans 02-01 to 02-05 done; 02-05 review passed after one fix (0f75467); phase gates and E2E (tcms-43.2.9) pending
-- Phase 3: 03-01 to 03-04 done and reviewed; 03-05 executing (last Phase 3 plan)
+- Phase 3: plans 03-01 to 03-05 done; 03-05 reviewed; phase gates partly blocked (see backlog tcms-43.3 notes); E2E subtask tcms-43.3.4 pending
 - Phase 4: 4 plans
 - Phase 5: 3 plans
 - Phase 6: 5 plans

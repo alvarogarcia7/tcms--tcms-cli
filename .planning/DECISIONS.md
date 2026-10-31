@@ -62,3 +62,24 @@ Entry format:
 - **Options considered**: add more plans; view existing; replan from scratch
 - **Decision**: Add more plans: one small gap-closure plan (02-05) covering model.rs, render_markdown.rs, lib.rs and a CLI test. **Why**: 02-01..02-04 are executed and committed and must not be rewritten; the gap is small and localized; a new plan lets the verifier re-check the same gap items. TRC-03 stays deferred to Phase 7.
 - **Supersedes / affects**: 02-VERIFICATION.md gap; adds 02-05
+
+- **ID**: D-03-G1
+- **Phase / stage**: 3 / execute (blocker)
+- **Question**: How do `make test` and `make coverage-e2e` find `validate-yaml` (fail with `Failed to execute validate-yaml: NotFound`)? The shell sets CARGO_TARGET_DIR=$HOME/.cache/cargo-target (~/.zshrc:21) but tests look for `target/debug/validate-yaml` in the repo; about 1 GB to 2.9 GB free, so a full rebuild into ./target may not fit.
+- **Options considered**: A. move the cargo-target dir to ./target (same filesystem, rename, reuses build) and run gates with `env -u CARGO_TARGET_DIR`; B. change tests to resolve the binary via CARGO_TARGET_DIR (touches test files of another phase); C. leave it and report
+- **Decision**: A. Moved with `mv` only, nothing deleted. Gates run as `env -u CARGO_TARGET_DIR make test` and `env -u CARGO_TARGET_DIR make coverage-e2e`. **Why**: no code change, no rebuild, no extra disk. The acceptance-suite failures remain open and are not addressed by this decision.
+- **Supersedes / affects**: Phase 3 gate runs; 03-05 verification
+
+- **ID**: D-03-G2
+- **Phase / stage**: 3 / execute (blocker)
+- **Question**: What to do about `make test` failing in crates/testcase-manager/tests/integration/test_json_escape_e2e.sh (7 of 19 cases fail with `error: unexpected argument '--config' found`; the script runs `test-executor --config ... generate ...` at lines ~243, 343, 414, 568)?
+- **Options considered**: A. add the `--config` flag to test-executor now; B. record as known pre-existing failure, change no code, continue Phase 3 gates, create a backlog task; C. stop the whole run
+- **Decision**: B. Backlog task TCMS-44 created. **Why**: `--config` is absent from crates/test-executor/src/main.rs on this branch and on `main`, and `git log -S config` on that file finds no commit adding it, so the failure predates Phase 3 (not from 14a68f4..HEAD); Phase 3 does not use `--config`; adding it would change another crate's CLI outside phase scope. Note: the `make test` target masks this failure, it exits 0 even though the script reports failures, so a green exit code cannot be trusted for this script.
+- **Supersedes / affects**: Phase 3 gate runs; 03-05 verification; TCMS-44
+
+- **ID**: D-03-G3
+- **Phase / stage**: 3 / execute (test fix)
+- **Question**: `views_are_deterministic` in crates/test-executor/tests/report_cli.rs expects byte-equal output for summary, gaps and problems across two different `--generated-at` values, but the summary fails. How should the test change?
+- **Options considered**: (a) assert the two outputs differ only on the "Generated" row; (b) drop the timestamp from the header (renderer change, contradicts OUT-04); (c) drop the cross-timestamp comparison and keep only same-args equality
+- **Decision**: (a). **Why**: summary.rs, gaps.rs and problems.rs all render a `| Generated | <ts> |` header row (summary.rs:368, gaps.rs:530, problems.rs:397), so all three kinds differ on it. OUT-04 requires the generation time in the header and OUT-03 requires determinism only for the same inputs and the same `--generated-at`. (b) breaks OUT-04. (c) loses the check that nothing else depends on the timestamp. Rule: same args give byte-equal output; different `--generated-at` gives output that is identical after removing the line starting `| Generated |`, and the full outputs must differ (that row holds each timestamp).
+- **Supersedes / affects**: report_cli.rs `views_are_deterministic`; 03-05 verification
