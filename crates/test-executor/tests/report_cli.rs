@@ -1511,29 +1511,61 @@ fn views_are_deterministic() {
     let matrix_arg = path_arg(&matrix);
     let runs_arg = path_arg(&runs);
     // The new kinds emit no `| Generated |` line, so determinism is checked by
-    // byte-equality of two runs with identical inputs, plus the heading check.
+    // byte-equality of runs with identical inputs, plus the heading check.
+    // Runs with different `--generated-at` values must also match, so a
+    // timestamp leaking into any new kind fails this test.
+    const EARLY: &str = "2026-11-01T09:00:00Z";
+    const LATE: &str = "2026-11-02T09:00:00Z";
     for (kind, heading) in [
         ("summary", "# Run Summary"),
         ("gaps", "# Coverage Gaps"),
         ("problems", "# Problem Reports"),
     ] {
-        let args = [
-            "--matrix",
-            &matrix_arg,
-            "--runs",
-            &runs_arg,
-            "--kind",
-            kind,
-            "--generated-at",
-            GENERATED,
-        ];
-        let first = report(&args);
-        let second = report(&args);
+        let run = |generated_at: &str| {
+            let args = [
+                "--matrix",
+                &matrix_arg,
+                "--runs",
+                &runs_arg,
+                "--kind",
+                kind,
+                "--generated-at",
+                generated_at,
+            ];
+            report(&args)
+        };
+        let first = run(GENERATED);
+        let second = run(GENERATED);
         assert_eq!(first.status.code(), Some(0), "{}", stderr(&first));
         let out = stdout(&first);
         assert!(out.contains(heading), "{kind}: missing {heading}\n{out}");
         assert_eq!(out, stdout(&second), "{kind} differs between runs");
+
+        // Per D-03-G3: the `| Generated |` row carries the timestamp, so the
+        // full outputs differ, but nothing else may depend on `--generated-at`.
+        let early = run(EARLY);
+        let late = run(LATE);
+        assert_eq!(early.status.code(), Some(0), "{}", stderr(&early));
+        assert_eq!(late.status.code(), Some(0), "{}", stderr(&late));
+        let (early, late) = (stdout(&early), stdout(&late));
+        assert!(early.contains(EARLY), "{kind}: missing {EARLY}\n{early}");
+        assert!(late.contains(LATE), "{kind}: missing {LATE}\n{late}");
+        assert_ne!(early, late, "{kind} ignores --generated-at");
+        assert_eq!(
+            without_generated_row(&early),
+            without_generated_row(&late),
+            "{kind} depends on --generated-at outside the Generated row"
+        );
     }
+}
+
+/// Drops the `| Generated |` header row, the only line allowed to vary with
+/// `--generated-at` (D-03-G3).
+fn without_generated_row(out: &str) -> String {
+    out.lines()
+        .filter(|line| !line.starts_with("| Generated |"))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 #[test]
