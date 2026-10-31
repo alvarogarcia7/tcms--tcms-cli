@@ -1,17 +1,17 @@
 # Backlog ETA
 
-Updated: 2026-10-31 09:37 +04 (Asia/Dubai)
+Updated: 2026-10-31 09:57 +04 (Asia/Dubai)
 
-Estimated finish: 2026-10-31 23:37 +04 (Asia/Dubai)
+Estimated finish: 2026-10-31 21:57 +04 (Asia/Dubai)
 
 ## Done
 - Phase 1: verified passed
-- Phase 2: plans 02-01 to 02-05 done; 02-05 review passed (0f75467); phase gates and E2E (tcms-43.2.9) pending
+- Phase 2: plans 02-01 to 02-06 done and reviewed; phase gates and E2E (tcms-43.2.9) pending
 - Phase 3: plans 03-01 to 03-05 done and reviewed; E2E tests d8882bf; coverage rerun and verification pending
 - Phase 7: context decided (07-CONTEXT.md, D-07-1 to D-07-6)
 
 ## Remaining
-- Phase 2: plan 02-06 (report shapes A and B, decided D-02-G4), E2E tcms-43.2.9, gates, verification
+- Phase 2: plans 02-01 to 02-06 done and reviewed; phase gates and E2E (tcms-43.2.9) pending
 - Phase 3: coverage result, verification, close
 - Phase 4: 4 plans, E2E, gates, verification
 - Phase 5: 3 plans, E2E, gates, verification
