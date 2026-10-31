@@ -183,6 +183,15 @@ enum Commands {
         #[arg(long = "kind", value_enum, value_name = "KIND")]
         kinds: Vec<ReportKind>,
 
+        /// Traceability layout: grid (default), a or b. a and b require `--kind traceability`
+        #[arg(
+            long = "shape",
+            value_enum,
+            value_name = "SHAPE",
+            default_value = "grid"
+        )]
+        shape: ReportShape,
+
         /// Output file (defaults to stdout)
         #[arg(short, long, value_name = "OUTPUT_FILE")]
         output: Option<PathBuf>,
@@ -555,6 +564,17 @@ enum ReportKind {
     Problems,
 }
 
+/// Traceability layouts accepted by `report --shape` (D-02-6-2). Each is a view over one model.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
+enum ReportShape {
+    #[value(name = "grid")]
+    Grid,
+    #[value(name = "a")]
+    A,
+    #[value(name = "b")]
+    B,
+}
+
 impl ReportKind {
     const ALL: [ReportKind; 4] = [
         ReportKind::Traceability,
@@ -632,9 +652,25 @@ fn report(
     matrix: &Path,
     run_paths: &[PathBuf],
     kinds: &[ReportKind],
+    shape: ReportShape,
     output: Option<PathBuf>,
     options: ReportOptions<'_>,
 ) -> Result<()> {
+    // Usage error (exit 2) before any input is read or output is written (D-02-6-2, D-02-6-4)
+    let only_traceability = {
+        let mut requested = kinds.to_vec();
+        requested.sort();
+        requested.dedup();
+        requested == [ReportKind::Traceability]
+    };
+    if shape != ReportShape::Grid && !only_traceability {
+        clap::Error::raw(
+            clap::error::ErrorKind::ArgumentConflict,
+            "--shape a|b requires --kind traceability as the only --kind (without --kind, all kinds are shown)",
+        )
+        .exit();
+    }
+
     // Any input error returns here, before anything is written (T-01-14)
     let inputs = testcase_reporting::load::load_inputs(matrix, run_paths, "schemas/")?;
     let selection = testcase_reporting::select::select_results(&inputs.runs);
@@ -671,9 +707,11 @@ fn report(
     };
     let body = |kind: ReportKind| -> String {
         match kind {
-            ReportKind::Traceability => {
-                testcase_reporting::render_markdown::render_markdown(&model)
-            }
+            ReportKind::Traceability => match shape {
+                ReportShape::Grid => testcase_reporting::render_markdown::render_markdown(&model),
+                ReportShape::A => testcase_reporting::render_shapes::render_shape_a(&model),
+                ReportShape::B => testcase_reporting::render_shapes::render_shape_b(&model),
+            },
             ReportKind::Summary => testcase_reporting::summary::render_summary_markdown(
                 &testcase_reporting::summary::build_summary(view),
             ),
@@ -1403,6 +1441,7 @@ fn main() -> Result<()> {
             matrix,
             runs,
             kinds,
+            shape,
             output,
             test_cases,
             requirements_export,
@@ -1411,6 +1450,7 @@ fn main() -> Result<()> {
             &matrix,
             &runs,
             &kinds,
+            shape,
             output,
             ReportOptions {
                 test_cases: test_cases.as_deref(),
