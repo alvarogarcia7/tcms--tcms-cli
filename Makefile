@@ -464,7 +464,7 @@ coverage-e2e:
 	cargo llvm-cov clean --workspace
 	cargo llvm-cov --all-features --workspace --no-report --ignore-filename-regex '$(COVERAGE_EXCLUDE_REGEX)'
 	${MAKE} test-e2e BASE_REF=$(or $(BASE_REF),main)
-	cargo llvm-cov report --ignore-filename-regex '$(COVERAGE_EXCLUDE_REGEX)' --fail-under-lines 70
+	cargo llvm-cov report --workspace --ignore-filename-regex '$(COVERAGE_EXCLUDE_REGEX)' --fail-under-lines 70
 .PHONY: coverage-e2e
 
 coverage-html:
@@ -473,7 +473,7 @@ coverage-html:
 
 coverage-html-e2e:
 	${MAKE} coverage-e2e
-	cargo llvm-cov report --ignore-filename-regex '$(COVERAGE_EXCLUDE_REGEX)' --html --open
+	cargo llvm-cov report --workspace --ignore-filename-regex '$(COVERAGE_EXCLUDE_REGEX)' --html --open
 .PHONY: coverage-html-e2e
 
 coverage-lcov:
@@ -481,7 +481,7 @@ coverage-lcov:
 .PHONY: coverage-lcov
 
 coverage-report:
-	cargo llvm-cov report --ignore-filename-regex '$(COVERAGE_EXCLUDE_REGEX)'
+	cargo llvm-cov report --workspace --ignore-filename-regex '$(COVERAGE_EXCLUDE_REGEX)'
 .PHONY: coverage-report
 
 coverage-report-e2e:
@@ -489,7 +489,7 @@ coverage-report-e2e:
 	cargo llvm-cov clean --workspace
 	cargo llvm-cov --all-features --workspace --no-report --ignore-filename-regex '$(COVERAGE_EXCLUDE_REGEX)'
 	${MAKE} test-e2e BASE_REF=$(or $(BASE_REF),main)
-	cargo llvm-cov report --ignore-filename-regex '$(COVERAGE_EXCLUDE_REGEX)'
+	cargo llvm-cov report --workspace --ignore-filename-regex '$(COVERAGE_EXCLUDE_REGEX)'
 .PHONY: coverage-report-e2e
 
 clean:
