@@ -1,0 +1,122 @@
+name: Release
+
+# Binary release (mirrors the GitLab release:build / release:publish jobs in .gitlab-ci.yml, TCMS-39).
+#  - Only runs for tags starting with "v" (e.g. v1, v1.0.1, v2-rc1)
+#  - Tags containing "-rc" are published as GitHub pre-releases
+#  - The shipped binaries are detected dynamically from the workspace metadata
+#  - One zip per architecture: testcase-manager-<tag>-<label>.zip
+#  - Each architecture is built natively on its own runner (no cross-compilation)
+
+on:
+  push:
+    tags: [ "v*" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.label }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: linux-amd64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - label: linux-arm64
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+          - label: macos-arm64
+            runner: macos-latest
+            target: aarch64-apple-darwin
+          - label: macos-amd64
+            runner: macos-15-intel
+            target: x86_64-apple-darwin
+    env:
+      # Disable sccache here; the release does not share the build cache used by CI.
+      RUSTC_WRAPPER: ""
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.95"
+          targets: ${{ matrix.target }}
+
+      - name: Detect release binaries
+        id: bins
+        run: |
+          bins=$(cargo metadata --format-version 1 --no-deps | jq -r '[.packages[].targets[] | select((.kind | index("bin")) and ((.["required-features"] // []) | length == 0)) | .name] | unique | join(" ")')
+          echo "Detected release binaries -- $bins"
+          echo "bins=$bins" >> "$GITHUB_OUTPUT"
+
+      - name: Build release binaries
+        run: cargo build --release --workspace --bins --target "${{ matrix.target }}"
+
+      - name: Package
+        env:
+          TAG: ${{ github.ref_name }}
+          LABEL: ${{ matrix.label }}
+          TARGET: ${{ matrix.target }}
+          BINS: ${{ steps.bins.outputs.bins }}
+        run: |
+          stage="testcase-manager-${TAG}-${LABEL}"
+          rm -rf "$stage"; mkdir -p "$stage" dist
+          for b in $BINS; do
+            cp "target/${TARGET}/release/${b}" "$stage/"
+          done
+          cp README.md README_INSTALL.md "$stage/" 2>/dev/null || true
+          # macOS: ship the quarantine remover and the env helper that runs it next to the binaries
+          # (downloaded files get com.apple.quarantine)
+          if [[ "$LABEL" == macos-* ]]; then
+            cp scripts/remove-quarantine.sh .env.sh "$stage/"
+          fi
+          (cd "$stage" && zip -r "../dist/${stage}.zip" .)
+          ls -la dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.label }}
+          path: dist/*.zip
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Check archives
+        run: |
+          ls -la dist/
+          count=$(ls dist/*.zip | wc -l | tr -d ' ')
+          if [ "$count" -ne 4 ]; then
+            echo "Expected 4 archives, found $count"
+            exit 1
+          fi
+
+      - name: Create or update release
+        run: |
+          prerelease=""
+          case "$TAG" in *-rc*) prerelease="--prerelease" ;; esac
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/*.zip --clobber
+          else
+            gh release create "$TAG" dist/*.zip \
+              --verify-tag \
+              --title "Release $TAG" \
+              --notes "Binary release of testcase-manager for $TAG (linux amd64, linux arm64, macos arm64, macos amd64)." \
+              $prerelease
+          fi
