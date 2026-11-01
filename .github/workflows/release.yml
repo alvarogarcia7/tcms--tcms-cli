@@ -68,6 +68,10 @@ jobs:
             cp "target/${TARGET}/release/${b}" "$stage/"
           done
           cp README.md README_INSTALL.md "$stage/" 2>/dev/null || true
+          # macOS: ship the quarantine remover next to the binaries (downloaded files get com.apple.quarantine)
+          if [[ "$LABEL" == macos-* ]]; then
+            cp scripts/remove-quarantine.sh "$stage/"
+          fi
           (cd "$stage" && zip -r "../dist/${stage}.zip" .)
           ls -la dist/
 

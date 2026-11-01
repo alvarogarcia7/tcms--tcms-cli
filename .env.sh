@@ -5,3 +5,7 @@
 export GIT_AUTHOR_EMAIL="alvarogarcia7@users.noreply.github.com"
 export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
 
+# macOS: strip the Gatekeeper quarantine flag from the release binaries in the current directory
+if [[ "$(uname -s)" == "Darwin" && -x ./remove-quarantine.sh ]]; then
+    ./remove-quarantine.sh .
+fi
