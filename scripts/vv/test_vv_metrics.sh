@@ -84,7 +84,7 @@ expect_fields() {
     jq -e '
         (.generatedAt | type == "string")
         and (.run | has("runId") and has("startedAt") and has("finishedAt") and has("provisional"))
-        and (.gate | has("thresholdPercent") and has("denominator") and has("counts") and has("passRate")
+        and (.gate | has("gateThresholdPercent") and has("denominator") and has("counts") and has("passRate")
                      and has("verdict") and has("provisional") and has("deltaFromPrevious") and has("previousRunId"))
         and (.vvRun | has("totalTestCases") and has("passedTestCases") and has("vvPassRate")
                       and has("totalSteps") and has("passedSteps") and has("stepCoverage"))
@@ -103,7 +103,9 @@ FIXTURE_TABLE='sut-1|RUN-32921|PASSED|100|0|100|100
 derived/failing-run|RUN-DERIVED-FAIL-01|FAILED|50|-50|50|83
 derived/no-data-run|RUN-DERIVED-NODATA-01|NO_DATA|null|null|0|null
 derived/blocked-only-run|RUN-DERIVED-BLOCKED-01|FAILED|0|-100|0|0
-derived/skipped-outside-denominator|RUN-DERIVED-SKIP-01|PASSED|100|0|50|50'
+derived/skipped-outside-denominator|RUN-DERIVED-SKIP-01|PASSED|100|0|50|50
+derived/uncovered-requirement|RUN-DERIVED-UNCOVERED-01|PASSED|100|0|100|100
+derived/missing-case-result|RUN-DERIVED-MISSING-01|PASSED|100|0|50|50'
 
 while IFS='|' read -r rel run verdict pass delta vv steps; do
     name="${rel//\//_}"

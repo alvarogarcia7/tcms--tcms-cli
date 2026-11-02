@@ -447,7 +447,7 @@ fn build_report(
             "provisional": provisional,
         },
         "gate": {
-            "thresholdPercent": gate,
+            "gateThresholdPercent": gate,
             "denominator": gate_result.counts.denominator(),
             "counts": {
                 "passed": counts.passed,

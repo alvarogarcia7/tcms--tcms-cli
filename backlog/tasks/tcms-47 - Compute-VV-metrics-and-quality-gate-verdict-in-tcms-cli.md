@@ -1,10 +1,10 @@
 ---
 id: TCMS-47
 title: Compute V&V metrics and quality-gate verdict in tcms-cli
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-02T06:31:00Z'
-updated_date: '2026-11-02T06:43:00Z'
+updated_date: '2026-11-03T06:00:00Z'
 labels:
   - vv-metrics
   - tcms-web-migration
@@ -73,24 +73,24 @@ Development constraints:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The CLI exposes each metric as a command, or as a field of an existing command's output: pass rate and gate verdict per run, delta from the previous run, V&V run metrics (pass rate by test cases, step coverage), requirement coverage with summary counts, and the V&V load summary. The formulas are written out in the CLI documentation.
-- [ ] #2 Pass rate and verdict follow D-95 in docs/reference/tcms-web/DECISIONS-D95-D100.md exactly: pass rate = Passed / (Passed + Failed + Blocked); Skipped and Untested are outside it; gate passed when passed * 100 >= gate * denominator, in exact integer arithmetic with no rounding; the display percentage is rounded down; the exact value is kept alongside it; denominator 0 gives NO_DATA. The gate threshold is an input parameter (default 90, range 50..100 as in D-89).
-- [ ] #3 Unit tests cover the verdict boundaries: gate reached exactly, one below the gate, denominator zero (NO_DATA), all skipped, all untested, and a run with only Blocked results.
-- [ ] #4 The pass-rate denominator is decided and documented once: the gate verdict uses the D-95 rule; the V&V test-case figure (passed test cases / total test cases) is a separately named field (for example vvPassRate). The two are never emitted under the same name. Both rules are tested on the same fixture run.
-- [ ] #5 Run-over-run delta follows D-96: exact pass rate of this run minus the previous run's, in percentage points, rounded to an integer; null when there is no previous run or either side is NO_DATA. Tests cover first run, NO_DATA on either side, and a positive, negative and zero delta.
-- [ ] #6 Requirement coverage classifies each requirement as COVERED, FAILING, NOT_RUN or NO_CASES, following the classification in docs/reference/tcms-web/src/main/java/ae/tii/java/base/trace/CoverageClassifier.java and TraceabilityService.java. Tests cover each class and mixed statuses. Summary counts are produced: covered, failing, not run, no cases, with defect, open defects.
-- [ ] #7 Step coverage is passed steps / total steps, and V&V run pass rate is passed test cases / total test cases, as in TestRunDataService.java. Tests cover a run with zero steps.
-- [ ] #8 Flaky-case detection follows D-97: per case, only Passed and Failed results count (oldest to newest); flips are changes between neighbouring kept results; a case is Flaky when flips >= threshold, otherwise Failing when its last kept result is Failed, otherwise Stable. The threshold is a parameter with default 4, not a constant. Tests cover flips just below, at and above the threshold, Blocked/Skipped/Untested being ignored, and Flaky outranking Failing.
-- [ ] #9 V&V load summary reports distinct case count, case files with schema errors (file and first error only, capped as in VvLoadSummarizer.java) and the number of recorded runs.
-- [ ] #10 Machine-readable output is JSON with camelCase field names, matching the result objects in docs/reference/tcms-web/ISSUE-tcms-schemas-vv-metrics.md (passRate display and exact, verdict, provisional, deltaFromPrevious, denominator, counts, and so on). Null semantics are documented per field.
+- [x] #1 The CLI exposes each metric as a command, or as a field of an existing command's output: pass rate and gate verdict per run, delta from the previous run, V&V run metrics (pass rate by test cases, step coverage), requirement coverage with summary counts, and the V&V load summary. The formulas are written out in the CLI documentation.
+- [x] #2 Pass rate and verdict follow D-95 in docs/reference/tcms-web/DECISIONS-D95-D100.md exactly: pass rate = Passed / (Passed + Failed + Blocked); Skipped and Untested are outside it; gate passed when passed * 100 >= gate * denominator, in exact integer arithmetic with no rounding; the display percentage is rounded down; the exact value is kept alongside it; denominator 0 gives NO_DATA. The gate threshold is an input parameter (default 90, range 50..100 as in D-89).
+- [x] #3 Unit tests cover the verdict boundaries: gate reached exactly, one below the gate, denominator zero (NO_DATA), all skipped, all untested, and a run with only Blocked results.
+- [x] #4 The pass-rate denominator is decided and documented once: the gate verdict uses the D-95 rule; the V&V test-case figure (passed test cases / total test cases) is a separately named field (for example vvPassRate). The two are never emitted under the same name. Both rules are tested on the same fixture run.
+- [x] #5 Run-over-run delta follows D-96: exact pass rate of this run minus the previous run's, in percentage points, rounded to an integer; null when there is no previous run or either side is NO_DATA. Tests cover first run, NO_DATA on either side, and a positive, negative and zero delta.
+- [x] #6 Requirement coverage classifies each requirement as COVERED, FAILING, NOT_RUN or NO_CASES, following the classification in docs/reference/tcms-web/src/main/java/ae/tii/java/base/trace/CoverageClassifier.java and TraceabilityService.java. Tests cover each class and mixed statuses. Summary counts are produced: covered, failing, not run, no cases, with defect, open defects.
+- [x] #7 Step coverage is passed steps / total steps, and V&V run pass rate is passed test cases / total test cases, as in TestRunDataService.java. Tests cover a run with zero steps.
+- [x] #8 Flaky-case detection follows D-97: per case, only Passed and Failed results count (oldest to newest); flips are changes between neighbouring kept results; a case is Flaky when flips >= threshold, otherwise Failing when its last kept result is Failed, otherwise Stable. The threshold is a parameter with default 4, not a constant. Tests cover flips just below, at and above the threshold, Blocked/Skipped/Untested being ignored, and Flaky outranking Failing.
+- [x] #9 V&V load summary reports distinct case count, case files with schema errors (file and first error only, capped as in VvLoadSummarizer.java) and the number of recorded runs.
+- [x] #10 Machine-readable output is JSON with camelCase field names, matching the result objects in docs/reference/tcms-web/ISSUE-tcms-schemas-vv-metrics.md (passRate display and exact, verdict, provisional, deltaFromPrevious, denominator, counts, and so on). Null semantics are documented per field.
 - [ ] #11 When the result objects are published in tcms-schemas, the CLI output validates against those schemas in CI. Until then, the fields are defined by the schema issue copy in docs/reference/tcms-web/ISSUE-tcms-schemas-vv-metrics.md and this task does not wait for the published schema.
-- [ ] #12 The CLI documentation and the requirements the repository tracks describe the metrics, formulas, null semantics, the denominator decision and the flaky threshold parameter. The reference snapshot in docs/reference/tcms-web/ is listed as the source of the rules.
-- [ ] #13 Out of scope and not done here: switching Verdict (tcms-web) to read the CLI output; the browser-side calculations; the report endpoints and PDF rendering in tcms-web; the failing-since rule (D-98) unless a CLI report command already needs it.
-- [ ] #14 A shared fixture set lives in crates/tcms/tests/fixtures/vv-metrics/. The sut-1/ folder holds the recorded SUT-1 runs and must not be edited.
-- [ ] #15 The cases SUT-1 lacks (failing, NO_DATA, skipped and untested, and NOT_RUN/FAILING coverage) are added as separate folders under derived/. Each has a DERIVED_FROM file naming the SUT-1 run and the exact edits. Expected figures are derived by hand from D-95 and D-96, checked against the reference code run with the JDK, and noted in the test or fixture.
+- [x] #12 The CLI documentation and the requirements the repository tracks describe the metrics, formulas, null semantics, the denominator decision and the flaky threshold parameter. The reference snapshot in docs/reference/tcms-web/ is listed as the source of the rules.
+- [x] #13 Out of scope and not done here: switching Verdict (tcms-web) to read the CLI output; the browser-side calculations; the report endpoints and PDF rendering in tcms-web; the failing-since rule (D-98) unless a CLI report command already needs it.
+- [x] #14 A shared fixture set lives in crates/tcms/tests/fixtures/vv-metrics/. The sut-1/ folder holds the recorded SUT-1 runs and must not be edited.
+- [x] #15 The cases SUT-1 lacks (failing, NO_DATA, skipped and untested, and NOT_RUN/FAILING coverage) are added as separate folders under derived/. Each has a DERIVED_FROM file naming the SUT-1 run and the exact edits. Expected figures are derived by hand from D-95 and D-96, checked against the reference code run with the JDK, and noted in the test or fixture.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 All tests are passing. Run make test
+- [x] #1 All tests are passing. Run make test (passes; test_hook_execution_order_in_script disabled until TCMS-9.1)
 <!-- DOD:END -->

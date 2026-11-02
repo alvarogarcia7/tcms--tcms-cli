@@ -118,7 +118,7 @@ fn gate_is_exactly_reached_at_the_threshold_and_missed_one_above() {
     // 1 of 2 is 50 percent: passed at gate 50 (exact), failed at gate 51.
     let at = json(&derived("failing-run"), &["--gate", "50"]);
     assert_eq!(at["gate"]["verdict"], "PASSED");
-    assert_eq!(at["gate"]["thresholdPercent"], 50);
+    assert_eq!(at["gate"]["gateThresholdPercent"], 50);
     let above = json(&derived("failing-run"), &["--gate", "51"]);
     assert_eq!(above["gate"]["verdict"], "FAILED");
 }

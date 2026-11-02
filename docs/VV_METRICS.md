@@ -53,7 +53,7 @@ exits non-zero and names the run); it is not reported as `NO_DATA`.
 - `denominator` = Passed + Failed + Blocked. Skipped and Untested are outside it.
 - `passRate.exact` = Passed / denominator × 100, not rounded.
 - `passRate.display` = the exact value rounded **down** (integer). A badge never reads "90% FAILED".
-- `verdict` = `PASSED` when `passed × 100 ≥ thresholdPercent × denominator` (exact integer arithmetic, no
+- `verdict` = `PASSED` when `passed × 100 ≥ gateThresholdPercent × denominator` (exact integer arithmetic, no
   rounding), otherwise `FAILED`. A denominator of 0 gives `NO_DATA`.
 - `provisional` is `true` while the run has no `finished_at`.
 
@@ -116,7 +116,7 @@ All field names are camelCase. Nullable fields are `null` as described.
 ```json
 {
   "run":          { "runId", "startedAt", "finishedAt" (null while in progress), "provisional" },
-  "gate":         { "thresholdPercent", "denominator", "counts": {passed, failed, blocked, skipped, untested},
+  "gate":         { "gateThresholdPercent", "denominator", "counts": {passed, failed, blocked, skipped, untested},
                     "passRate": {"display", "exact"} | null, "verdict": PASSED|FAILED|NO_DATA,
                     "provisional", "deltaFromPrevious": int | null, "previousRunId": string | null },
   "vvRun":        { "totalTestCases", "passedTestCases", "vvPassRate": {"display","exact"} | null,
