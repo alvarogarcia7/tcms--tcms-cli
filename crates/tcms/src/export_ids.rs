@@ -1,14 +1,29 @@
 //! `tcms requirements export-ids`: read the product requirements file, check every ID with the
 //! `locate` lookup, write the IDs the source finds. Writes only the `--output` file.
 
-#![cfg_attr(not(test), allow(dead_code))]
-
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context as _, Result};
 use serde::{Deserialize, Serialize};
 
 use crate::locate::{self, LocateResult};
+use crate::refcmd::Context;
+
+#[derive(clap::Args)]
+pub struct ExportIdsArgs {
+    /// Product requirements file: {"product_id": ..., "requirements": [{"id": ...}]} (default: ./requirements.json)
+    #[arg(long, default_value = "requirements.json")]
+    pub requirements: PathBuf,
+    /// Write the valid IDs here instead of stdout
+    #[arg(long)]
+    pub output: Option<PathBuf>,
+    /// StrictDoc IDs: local JSON export of the document set (assumed layout, see docs/JIRA_INTEGRATION.md); no URL
+    #[arg(long)]
+    pub input: Option<PathBuf>,
+    /// Acting TCMS user for the Jira read (default: $TCMS_USER, then $USER)
+    #[arg(long = "as")]
+    pub actor: Option<String>,
+}
 
 /// One requirement of the product requirements file.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -42,7 +57,10 @@ fn check_file(file: &RequirementsFile, configured: &str, path: &Path) -> Result<
         );
     }
     if file.requirements.is_empty() {
-        bail!("requirements file {}: 'requirements' is empty", path.display());
+        bail!(
+            "requirements file {}: 'requirements' is empty",
+            path.display()
+        );
     }
     Ok(())
 }
@@ -78,8 +96,58 @@ fn invalid_lines(results: &[LocateResult]) -> Vec<String> {
         .filter(|r| !r.found)
         .map(|r| format!("invalid: {}", locate::render_line(r)))
         .collect();
-    lines.push(format!("invalid: {missing} of {} requirement IDs", results.len()));
+    lines.push(format!(
+        "invalid: {missing} of {} requirement IDs",
+        results.len()
+    ));
     lines
+}
+
+/// Read, check and look up the requirements file. Nothing is printed or written here (D-11, D-12).
+fn export_ids(ctx: &Context, args: &ExportIdsArgs) -> Result<(String, Vec<LocateResult>)> {
+    let cfg = ctx.load_config()?;
+    let text = std::fs::read_to_string(&args.requirements)
+        .with_context(|| format!("read requirements file {}", args.requirements.display()))?;
+    let file = parse_requirements(&text, &args.requirements)?;
+    check_file(&file, &cfg.product_id, &args.requirements)?;
+    let results = locate::lookup(
+        &cfg,
+        &file_ids(&file),
+        args.input.as_deref(),
+        args.actor.clone(),
+    )?;
+    Ok((render_output(&cfg.product_id, &results), results))
+}
+
+/// Run `tcms requirements export-ids` and return the process exit code (0, 1 or 2). Valid IDs are
+/// written also when some ID is invalid (exit 1).
+pub fn run(ctx: &Context, args: ExportIdsArgs) -> i32 {
+    let (json, results) = match export_ids(ctx, &args) {
+        Ok(out) => out,
+        Err(e) => {
+            eprintln!("error: {e:#}");
+            return locate::EXIT_ERROR;
+        }
+    };
+    match &args.output {
+        Some(path) => {
+            if let Err(e) =
+                std::fs::write(path, &json).with_context(|| format!("write {}", path.display()))
+            {
+                eprintln!("error: {e:#}");
+                return locate::EXIT_ERROR;
+            }
+        }
+        None => print!("{json}"),
+    }
+    for line in invalid_lines(&results) {
+        eprintln!("{line}");
+    }
+    if results.iter().any(|r| !r.found) {
+        locate::EXIT_NOT_FOUND
+    } else {
+        locate::EXIT_FOUND
+    }
 }
 
 #[cfg(test)]
@@ -177,7 +245,10 @@ mod tests {
     #[test]
     fn empty_requirements_is_refused() {
         let err = check_file(&file("PROD-001", &[]), "PROD-001", &p()).unwrap_err();
-        assert!(format!("{err:#}").contains("'requirements' is empty"), "{err:#}");
+        assert!(
+            format!("{err:#}").contains("'requirements' is empty"),
+            "{err:#}"
+        );
     }
 
     #[test]
@@ -189,7 +260,11 @@ mod tests {
     fn file_ids_keep_order_and_repeats() {
         assert_eq!(
             file_ids(&file("PROD-001", &["PAY-2", "PAY-99", "PAY-2"])),
-            vec!["PAY-2".to_string(), "PAY-99".to_string(), "PAY-2".to_string()]
+            vec![
+                "PAY-2".to_string(),
+                "PAY-99".to_string(),
+                "PAY-2".to_string()
+            ]
         );
     }
 

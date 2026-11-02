@@ -1,5 +1,6 @@
 //! `tcms requirements import`: write requirement YAML from the configured requirement source.
 //! `tcms requirements locate`: check that requirement IDs exist in their source (read-only).
+//! `tcms requirements export-ids`: write the IDs of the requirements file that exist in their source.
 
 use std::path::PathBuf;
 
@@ -36,6 +37,8 @@ pub enum RequirementsCommand {
     },
     /// Check that requirement IDs exist in their source (Jira issue or StrictDoc export item); read-only
     Locate(crate::locate::LocateArgs),
+    /// Write the IDs of the product requirements file that exist in their source (same lookup as locate)
+    ExportIds(crate::export_ids::ExportIdsArgs),
 }
 
 /// Run a `requirements` subcommand. Returns the process exit code: `import` is 0 on success and
@@ -97,5 +100,6 @@ pub fn run(ctx: &Context, cmd: RequirementsCommand) -> Result<i32> {
             Ok(0)
         }
         RequirementsCommand::Locate(args) => Ok(crate::locate::run(ctx, args)),
+        RequirementsCommand::ExportIds(args) => Ok(crate::export_ids::run(ctx, args)),
     }
 }
