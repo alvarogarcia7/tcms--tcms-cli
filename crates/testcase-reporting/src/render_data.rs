@@ -5,7 +5,7 @@
 //! reads, no clock, no environment. The CLI loads the schema from `schemas/` (plan 04-04).
 
 use crate::model::ReportModel;
-use crate::report_document::{build_document, validate_document};
+use crate::report_document::{build_document, validate_document, ReportDocument};
 use serde_json::Value;
 use std::fmt;
 
@@ -64,9 +64,68 @@ pub fn render_yaml(model: &ReportModel, schema: &Value) -> Result<String, Output
     Ok(text)
 }
 
+/// One or more report documents as JSON, in the given order. One document gives the text of
+/// `render_json`; several give one pretty JSON array of the documents. Every document is checked
+/// before any text is returned; each message starts with the kind of its document.
+pub fn render_documents_json(
+    documents: &[ReportDocument],
+    schema: &Value,
+) -> Result<String, OutputError> {
+    let values = documents
+        .iter()
+        .map(|d| serde_json::to_value(d).map_err(|e| OutputError::Serialize(e.to_string())))
+        .collect::<Result<Vec<Value>, OutputError>>()?;
+    check_all(&values, schema)?;
+    let mut text = if documents.len() == 1 {
+        serde_json::to_string_pretty(&documents[0])
+    } else {
+        serde_json::to_string_pretty(documents)
+    }
+    .map_err(|e| OutputError::Serialize(e.to_string()))?;
+    text.push('\n');
+    Ok(text)
+}
+
+/// One or more report documents as YAML, in the given order. One document gives the text of
+/// `render_yaml`; several give the texts joined by `---` lines. Each text is parsed back and the
+/// parsed value is checked before any text is returned.
+pub fn render_documents_yaml(
+    documents: &[ReportDocument],
+    schema: &Value,
+) -> Result<String, OutputError> {
+    let mut texts = Vec::with_capacity(documents.len());
+    let mut values = Vec::with_capacity(documents.len());
+    for document in documents {
+        let text =
+            serde_yaml::to_string(document).map_err(|e| OutputError::Serialize(e.to_string()))?;
+        let parsed: Value = serde_yaml::from_str(&text)
+            .map_err(|e| OutputError::Serialize(format!("parse back: {e}")))?;
+        values.push(parsed);
+        texts.push(text);
+    }
+    check_all(&values, schema)?;
+    Ok(texts.join("---\n"))
+}
+
 /// Validate one instance; a failed check becomes `OutputError::Schema` with every message.
 fn check(instance: &Value, schema: &Value) -> Result<(), OutputError> {
     validate_document(instance, schema).map_err(OutputError::Schema)
+}
+
+/// Validate every document; the messages of each document start with its kind.
+fn check_all(values: &[Value], schema: &Value) -> Result<(), OutputError> {
+    let mut messages = Vec::new();
+    for value in values {
+        let kind = value["kind"].as_str().unwrap_or("unknown");
+        if let Err(found) = validate_document(value, schema) {
+            messages.extend(found.into_iter().map(|m| format!("{kind}: {m}")));
+        }
+    }
+    if messages.is_empty() {
+        Ok(())
+    } else {
+        Err(OutputError::Schema(messages))
+    }
 }
 
 #[cfg(test)]
@@ -775,4 +834,129 @@ mod round_trip_tests {
         "  - ENV-1",
     ];
     const GOLDEN_YAML_LINES: usize = 46;
+}
+
+#[cfg(test)]
+mod documents_tests {
+    use super::*;
+    use crate::report_document::{
+        build_document, build_gaps_document, build_problems_document, build_summary_document,
+        ReportDocument,
+    };
+    use crate::view::{test_support::fixture, ViewInput};
+
+    fn schema() -> Value {
+        serde_json::from_str(include_str!("../../../schemas/tcms/report.schema.v1.json"))
+            .expect("report schema is JSON")
+    }
+
+    /// The schema with one more required top-level property, so every document violates it.
+    fn schema_requiring_missing_field() -> Value {
+        let mut schema = schema();
+        schema["required"]
+            .as_array_mut()
+            .expect("top-level required list")
+            .push(Value::from("nonexistent_field"));
+        schema
+    }
+
+    /// The four documents of one model, in the fixed order of the CLI.
+    fn four_documents() -> Vec<ReportDocument> {
+        let (model, selection) = fixture();
+        let input = ViewInput {
+            model: &model,
+            selection: &selection,
+        };
+        vec![
+            build_document(&model),
+            build_summary_document(input),
+            build_gaps_document(input),
+            build_problems_document(input),
+        ]
+    }
+
+    #[test]
+    fn one_document_json_equals_render_json() {
+        let (model, _) = fixture();
+        let text = render_documents_json(&[build_document(&model)], &schema())
+            .expect("one document renders");
+        assert_eq!(text, render_json(&model, &schema()).expect("renders"));
+    }
+
+    #[test]
+    fn four_documents_json_is_an_array_in_the_given_order() {
+        let documents = four_documents();
+        let text = render_documents_json(&documents, &schema()).expect("four documents render");
+        assert!(text.starts_with("[\n"), "{text}");
+        assert!(text.ends_with("]\n"), "{text}");
+        let parsed: Value = serde_json::from_str(&text).expect("JSON parses");
+        let expected: Vec<Value> = documents
+            .iter()
+            .map(|d| serde_json::to_value(d).expect("serialises"))
+            .collect();
+        assert_eq!(parsed, Value::Array(expected));
+        let kinds: Vec<&str> = parsed
+            .as_array()
+            .expect("array")
+            .iter()
+            .map(|d| d["kind"].as_str().expect("kind"))
+            .collect();
+        assert_eq!(kinds, ["traceability", "summary", "gaps", "problems"]);
+    }
+
+    #[test]
+    fn json_violation_names_the_kind_and_gives_no_text() {
+        let result = render_documents_json(&four_documents(), &schema_requiring_missing_field());
+        match result {
+            Err(OutputError::Schema(messages)) => {
+                assert!(messages[0].starts_with("traceability: "), "{messages:?}");
+                assert!(
+                    messages.iter().any(|m| m.starts_with("problems: ")),
+                    "{messages:?}"
+                );
+                assert!(messages.iter().any(|m| m.contains("nonexistent_field")));
+            }
+            other => panic!("expected a schema error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn one_document_yaml_equals_render_yaml() {
+        let (model, _) = fixture();
+        let text = render_documents_yaml(&[build_document(&model)], &schema())
+            .expect("one document renders");
+        assert_eq!(text, render_yaml(&model, &schema()).expect("renders"));
+    }
+
+    #[test]
+    fn four_documents_yaml_parse_to_the_same_values_as_json() {
+        let documents = four_documents();
+        let yaml = render_documents_yaml(&documents, &schema()).expect("four documents render");
+        assert!(yaml.lines().any(|l| l == "---"), "{yaml}");
+        let from_yaml: Vec<Value> = serde_yaml::Deserializer::from_str(&yaml)
+            .map(|doc| {
+                let value: serde_yaml::Value =
+                    serde::Deserialize::deserialize(doc).expect("document parses");
+                serde_json::to_value(value).expect("converts")
+            })
+            .collect();
+        let json = render_documents_json(&documents, &schema()).expect("renders");
+        let from_json: Vec<Value> = serde_json::from_str::<Value>(&json)
+            .expect("JSON parses")
+            .as_array()
+            .expect("array")
+            .clone();
+        assert_eq!(from_yaml, from_json);
+    }
+
+    #[test]
+    fn yaml_violation_names_the_kind_and_gives_no_text() {
+        let result = render_documents_yaml(&four_documents(), &schema_requiring_missing_field());
+        match result {
+            Err(OutputError::Schema(messages)) => {
+                assert!(messages[0].starts_with("traceability: "), "{messages:?}");
+            }
+            other => panic!("expected a schema error, got {other:?}"),
+        }
+    }
 }

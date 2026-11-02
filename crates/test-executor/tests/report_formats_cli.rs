@@ -60,7 +60,7 @@ fn stderr(output: &Output) -> String {
     text(&output.stderr)
 }
 
-fn with_format<'a>(format: &'a str) -> Vec<&'a str> {
+fn with_format(format: &str) -> Vec<&str> {
     let mut args = base_args();
     args.extend(["--format", format]);
     args
@@ -147,8 +147,15 @@ fn asciidoc_all_kinds() {
     assert!(!out.lines().any(|l| l.starts_with("| ---")), "{out}");
     let fences = out.lines().filter(|l| *l == "|===").count();
     assert_eq!(fences % 2, 0, "unbalanced table fences\n{out}");
-    assert!(!out.contains("Reconciliation"), "input summary on stdout\n{out}");
-    assert!(stderr(&output).contains("Reconciliation"), "{}", stderr(&output));
+    assert!(
+        !out.contains("Reconciliation"),
+        "input summary on stdout\n{out}"
+    );
+    assert!(
+        stderr(&output).contains("Reconciliation"),
+        "{}",
+        stderr(&output)
+    );
 }
 
 #[test]
@@ -198,7 +205,10 @@ fn yaml_all_kinds() {
             serde_json::to_value(value).unwrap()
         })
         .collect();
-    assert_eq!(yaml_values, json_values, "YAML and JSON carry different data");
+    assert_eq!(
+        yaml_values, json_values,
+        "YAML and JSON carry different data"
+    );
 }
 
 #[test]
@@ -245,8 +255,22 @@ fn deterministic_per_format() {
     let run1 = abs(RUN);
     let run2 = runs_dir.join("run2.yaml").display().to_string();
     let matrix_arg = matrix.display().to_string();
-    let run_args_forward = ["--matrix", matrix_arg.as_str(), "--runs", run1.as_str(), "--runs", run2.as_str()];
-    let run_args_reverse = ["--matrix", matrix_arg.as_str(), "--runs", run2.as_str(), "--runs", run1.as_str()];
+    let run_args_forward = [
+        "--matrix",
+        matrix_arg.as_str(),
+        "--runs",
+        run1.as_str(),
+        "--runs",
+        run2.as_str(),
+    ];
+    let run_args_reverse = [
+        "--matrix",
+        matrix_arg.as_str(),
+        "--runs",
+        run2.as_str(),
+        "--runs",
+        run1.as_str(),
+    ];
 
     for format in ["asciidoc", "json", "yaml"] {
         let mut args = run_args_forward.to_vec();
@@ -254,7 +278,11 @@ fn deterministic_per_format() {
         let first = run_in(&root(), &args);
         assert!(first.status.success(), "{format}: {}", stderr(&first));
         let second = run_in(&root(), &args);
-        assert_eq!(stdout(&first), stdout(&second), "{format}: same args differ");
+        assert_eq!(
+            stdout(&first),
+            stdout(&second),
+            "{format}: same args differ"
+        );
 
         let reversed_args: Vec<&str> = run_args_reverse
             .iter()
@@ -263,7 +291,11 @@ fn deterministic_per_format() {
             .collect();
         let reversed = run_in(&root(), &reversed_args);
         assert!(reversed.status.success(), "{format}: {}", stderr(&reversed));
-        assert_eq!(stdout(&first), stdout(&reversed), "{format}: run order differs");
+        assert_eq!(
+            stdout(&first),
+            stdout(&reversed),
+            "{format}: run order differs"
+        );
 
         let later = "2026-11-02T08:00:00Z";
         let mut later_args = run_args_forward.to_vec();
@@ -272,7 +304,10 @@ fn deterministic_per_format() {
         assert!(other.status.success(), "{format}: {}", stderr(&other));
         let a = stdout(&first);
         let b = stdout(&other);
-        assert_ne!(a, b, "{format}: a new --generated-at must change the output");
+        assert_ne!(
+            a, b,
+            "{format}: a new --generated-at must change the output"
+        );
         let strip = |s: &str, stamp: &str| -> Vec<String> {
             s.lines()
                 .filter(|l| !l.contains(stamp))
@@ -354,7 +389,11 @@ fn hostile_strings_do_not_break_any_format() {
     assert!(output.status.success(), "{}", stderr(&output));
     let out = stdout(&output);
     for line in out.lines().filter(|l| l.starts_with('|') && *l != "|===") {
-        assert_eq!(line.matches('|').count(), 1, "cell line with extra pipe: {line}\n{out}");
+        assert_eq!(
+            line.matches('|').count(),
+            1,
+            "cell line with extra pipe: {line}\n{out}"
+        );
     }
     let level_zero: Vec<&str> = out.lines().filter(|l| l.starts_with("= ")).collect();
     assert_eq!(level_zero, ["= Traceability Report"], "{out}");
@@ -420,12 +459,20 @@ fn validation_failure_writes_nothing() {
             target_arg.as_str(),
         ];
         let output = run_in(dir.path(), &args);
-        assert_eq!(output.status.code(), Some(1), "{format}: {}", stdout(&output));
+        assert_eq!(
+            output.status.code(),
+            Some(1),
+            "{format}: {}",
+            stdout(&output)
+        );
         assert!(stdout(&output).is_empty(), "{format}: {}", stdout(&output));
         let err = stderr(&output);
         assert!(err.contains("report.schema.v1.json"), "{err}");
         assert!(err.contains("nonexistent_field"), "{err}");
-        assert!(!target.exists(), "{format}: file written despite the failure");
+        assert!(
+            !target.exists(),
+            "{format}: file written despite the failure"
+        );
     }
 
     for format in ["asciidoc", "markdown"] {
@@ -460,7 +507,12 @@ fn shape_with_new_format_is_a_usage_error() {
         args.extend_from_slice(extra);
         args.extend(["-o", target_arg.as_str()]);
         let output = report(&args);
-        assert_eq!(output.status.code(), Some(2), "{extra:?}: {}", stdout(&output));
+        assert_eq!(
+            output.status.code(),
+            Some(2),
+            "{extra:?}: {}",
+            stdout(&output)
+        );
         assert!(stdout(&output).is_empty(), "{extra:?}: {}", stdout(&output));
         let err = stderr(&output);
         assert!(err.contains("--shape"), "{extra:?}: {err}");
@@ -503,6 +555,10 @@ fn missing_schema_fails_naming_the_path_and_writes_nothing() {
     let output = run_in(dir.path(), &args);
     assert_eq!(output.status.code(), Some(1), "{}", stdout(&output));
     assert!(stdout(&output).is_empty());
-    assert!(stderr(&output).contains("report.schema.v1.json"), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("report.schema.v1.json"),
+        "{}",
+        stderr(&output)
+    );
     assert!(!target.exists());
 }

@@ -137,6 +137,36 @@ fn is_ordered_marker(body: &str) -> bool {
     digits || single_letter || roman
 }
 
+/// Joins AsciiDoc documents into one file. The first part keeps its text and ends with one newline.
+/// In every later part each line that starts with `=` gets one more `=`, so its level-0 title
+/// becomes level 1 and its level-1 headings become level 2. Parts are separated by one blank line.
+/// Safe because escaping (D-06) keeps model text off line starts, so only renderer titles start
+/// with `=`.
+pub fn join_asciidoc_documents(parts: &[String]) -> String {
+    let mut out = String::new();
+    for (index, part) in parts.iter().enumerate() {
+        let body = part.trim_end_matches('\n');
+        if index == 0 {
+            out.push_str(body);
+        } else {
+            out.push_str("\n\n");
+            let demoted: Vec<String> = body
+                .lines()
+                .map(|line| {
+                    if line.starts_with('=') {
+                        format!("={line}")
+                    } else {
+                        line.to_string()
+                    }
+                })
+                .collect();
+            out.push_str(&demoted.join("\n"));
+        }
+    }
+    out.push('\n');
+    out
+}
+
 /// Render the traceability report as one AsciiDoc document ending with exactly one newline
 /// (OUT-01). Section order and table columns follow `render_markdown::render_markdown`.
 pub fn render_asciidoc(model: &ReportModel) -> String {
@@ -158,6 +188,11 @@ pub(crate) fn inputs_block(details: &str) -> String {
     let mut paragraphs: Vec<String> = Vec::new();
     let mut current: Vec<String> = Vec::new();
     for line in details.lines() {
+        // The reconciliation heading belongs to the input summary on stderr, not to the document
+        // (D-04-5). Its detail lines stay; the Markdown renderers are not affected.
+        if line.trim() == "Reconciliation" {
+            continue;
+        }
         if line.trim().is_empty() {
             if !current.is_empty() {
                 paragraphs.push(current.join(" +\n"));
@@ -1176,5 +1211,51 @@ Without problem report: 1
         let text = render_asciidoc_problems(&report);
         assert!(text.contains("\nNo failed or errored results\n"), "{text}");
         assert!(text.contains("Failed or errored results: 0"), "{text}");
+    }
+}
+
+#[cfg(test)]
+mod join_tests {
+    use super::*;
+
+    #[test]
+    fn one_document_is_returned_unchanged() {
+        let a = "= Traceability Report\n\n== Inputs\n\ntext\n";
+        assert_eq!(join_asciidoc_documents(&[a.to_string()]), a);
+    }
+
+    #[test]
+    fn later_titles_are_demoted_one_level_and_separated_by_one_blank_line() {
+        let a = "= Traceability Report\n\n== Inputs\n\ntext\n".to_string();
+        let b = "= Run Summary\n\n== Results per run\n\nx\n|===\n| a\n|===\n".to_string();
+        let joined = join_asciidoc_documents(&[a, b]);
+        assert_eq!(
+            joined,
+            "= Traceability Report\n\n== Inputs\n\ntext\n\n== Run Summary\n\n=== Results per run\n\nx\n|===\n| a\n|===\n"
+        );
+    }
+
+    #[test]
+    fn table_fences_and_plain_lines_are_left_alone() {
+        let a = "= A\n".to_string();
+        let b = "= B\n|===\nplain line\n|===\n".to_string();
+        let joined = join_asciidoc_documents(&[a, b]);
+        let lines: Vec<&str> = joined.lines().collect();
+        assert_eq!(lines, ["= A", "", "== B", "|===", "plain line", "|==="]);
+        assert!(joined.ends_with("|===\n"));
+        assert!(!joined.ends_with("\n\n"));
+    }
+
+    #[test]
+    fn exactly_one_level_zero_title_is_kept_from_the_first_part() {
+        let parts = [
+            "= Traceability Report\n\n== Inputs\n".to_string(),
+            "= Run Summary\n".to_string(),
+            "= Coverage Gaps\n".to_string(),
+        ];
+        let joined = join_asciidoc_documents(&parts);
+        assert_eq!(joined.lines().filter(|l| l.starts_with("= ")).count(), 1);
+        assert!(joined.lines().any(|l| l == "== Run Summary"));
+        assert!(joined.lines().any(|l| l == "== Coverage Gaps"));
     }
 }

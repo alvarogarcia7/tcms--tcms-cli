@@ -155,3 +155,11 @@ Entry format:
 - **Options considered**: (a) exempt the header row (first cell line after the `options="header"` attribute line) from the one-pipe check; (b) drop the literal header requirement
 - **Decision**: (a). Body cell lines keep the exactly-one-pipe check, so value escaping stays tested; the header row is asserted by its literal. **Why**: header text is fixed words, not input values, so pipes there carry no injection risk, and the literal keeps parity with Markdown.
 - **Supersedes / affects**: 04-01 Task 3 acceptance criteria (lines 227, 263)
+
+## D-04-5: Input summary goes to stderr for non-Markdown formats
+- **Phase / stage**: 4 / plan (04-04)
+- **Question**: With `--format asciidoc` (also json/yaml), does the reconciliation (input summary) text go to stdout with the document?
+- **Options considered**: (a) stdout carries the document only; summary goes to stderr; (b) stdout carries summary and document for every format
+- **Decision**: (a). Current code in `report` (crates/test-executor/src/main.rs, `format != Markdown` branch) already does `eprint!(input_summary)` and prints only the rendered text to stdout. Markdown path is untouched (its summary stays inside stdout/file as today, byte-identical). The AsciiDoc Inputs section (grid and shapes, per D-04-3) is part of the document and does not contain the "Reconciliation" heading. **Why**: (b) would break JSON/YAML parseability on stdout and change Markdown behaviour; (a) needs no code change.
+- **Plan/test change required**: none. The existing `asciidoc_all_kinds` assertions (no "Reconciliation" on stdout, present on stderr) already match (a); do not add a stdout summary assertion.
+- **Supersedes / affects**: 04-04 report_formats_cli.rs asciidoc_all_kinds

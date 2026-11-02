@@ -173,8 +173,11 @@ enum Commands {
         no_coverage_check: bool,
     },
     /// Load a trace matrix and test run records strictly, select one result per test case, and
-    /// print the report. Every kind (traceability, summary, gaps, problems) is rendered as
-    /// Markdown from one model, in that order.
+    /// print the report. Every kind (traceability, summary, gaps, problems) is rendered from one
+    /// model, in that order, in the format given by --format (markdown by default).
+    /// JSON and YAML documents are validated against schemas/tcms/report.schema.v1.json before
+    /// anything is written. With several kinds, json prints one array of documents, yaml prints
+    /// the documents separated by `---` lines and asciidoc prints one file with one level-0 title.
     Report {
         /// Trace matrix YAML file
         #[arg(long, value_name = "FILE")]
@@ -187,6 +190,15 @@ enum Commands {
         /// Report kind to print (repeatable; defaults to all kinds)
         #[arg(long = "kind", value_enum, value_name = "KIND")]
         kinds: Vec<ReportKind>,
+
+        /// Output format: markdown (default), asciidoc, json or yaml
+        #[arg(
+            long = "format",
+            value_enum,
+            value_name = "FORMAT",
+            default_value = "markdown"
+        )]
+        format: ReportFormat,
 
         /// Traceability layout: grid (default), a or b. a and b require `--kind traceability`
         #[arg(
@@ -569,6 +581,16 @@ enum ReportKind {
     Problems,
 }
 
+/// Output formats accepted by `report --format` (D-01). Markdown is the default and the only format
+/// with the `--shape` layouts.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
+enum ReportFormat {
+    Markdown,
+    Asciidoc,
+    Json,
+    Yaml,
+}
+
 /// Traceability layouts accepted by `report --shape` (D-02-6-2). Each is a view over one model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
 enum ReportShape {
@@ -653,11 +675,84 @@ struct ReportOptions<'a> {
     generated_at: Option<&'a str>,
 }
 
+/// The report schema, loaded from `schemas/` through the URI the documents name (D-04).
+fn load_report_schema() -> Result<serde_json::Value> {
+    let path = testcase_common::envelope::resolve_schema_uri(
+        testcase_reporting::report_document::REPORT_SCHEMA_URI,
+        "schemas/",
+    )?;
+    let text = fs::read_to_string(&path)
+        .with_context(|| format!("Failed to read report schema {}", path.display()))?;
+    serde_json::from_str(&text)
+        .with_context(|| format!("report schema {} is not JSON", path.display()))
+}
+
+/// The selected kinds in one of the non-Markdown formats, in the order of `selected` (D-01, D-02).
+/// Returns the complete text; JSON and YAML are validated before any text is returned.
+fn render_formatted(
+    format: ReportFormat,
+    selected: &[ReportKind],
+    model: &testcase_reporting::model::ReportModel,
+    view: testcase_reporting::view::ViewInput<'_>,
+) -> Result<String> {
+    match format {
+        ReportFormat::Markdown => unreachable!("Markdown is rendered by fn report"),
+        ReportFormat::Asciidoc => {
+            let parts: Vec<String> = selected
+                .iter()
+                .map(|kind| match kind {
+                    ReportKind::Traceability => {
+                        testcase_reporting::render_asciidoc::render_asciidoc(model)
+                    }
+                    ReportKind::Summary => {
+                        testcase_reporting::render_asciidoc::render_asciidoc_summary(
+                            &testcase_reporting::summary::build_summary(view),
+                        )
+                    }
+                    ReportKind::Gaps => testcase_reporting::render_asciidoc::render_asciidoc_gaps(
+                        &testcase_reporting::gaps::build_gaps(view),
+                    ),
+                    ReportKind::Problems => {
+                        testcase_reporting::render_asciidoc::render_asciidoc_problems(
+                            &testcase_reporting::problems::build_problems(view),
+                        )
+                    }
+                })
+                .collect();
+            if let [only] = parts.as_slice() {
+                Ok(only.clone())
+            } else {
+                Ok(testcase_reporting::render_asciidoc::join_asciidoc_documents(&parts))
+            }
+        }
+        ReportFormat::Json | ReportFormat::Yaml => {
+            use testcase_reporting::report_document as rd;
+            let documents: Vec<rd::ReportDocument> = selected
+                .iter()
+                .map(|kind| match kind {
+                    ReportKind::Traceability => rd::build_document(model),
+                    ReportKind::Summary => rd::build_summary_document(view),
+                    ReportKind::Gaps => rd::build_gaps_document(view),
+                    ReportKind::Problems => rd::build_problems_document(view),
+                })
+                .collect();
+            let schema = load_report_schema()?;
+            let text = if format == ReportFormat::Json {
+                testcase_reporting::render_data::render_documents_json(&documents, &schema)
+            } else {
+                testcase_reporting::render_data::render_documents_yaml(&documents, &schema)
+            };
+            text.map_err(|error| anyhow::anyhow!("{error}"))
+        }
+    }
+}
+
 fn report(
     matrix: &Path,
     run_paths: &[PathBuf],
     kinds: &[ReportKind],
     shape: ReportShape,
+    format: ReportFormat,
     output: Option<PathBuf>,
     options: ReportOptions<'_>,
 ) -> Result<()> {
@@ -668,6 +763,13 @@ fn report(
         requested.dedup();
         requested == [ReportKind::Traceability]
     };
+    if shape != ReportShape::Grid && format != ReportFormat::Markdown {
+        clap::Error::raw(
+            clap::error::ErrorKind::ArgumentConflict,
+            "--shape a|b requires --format markdown (shapes are not rendered in asciidoc, json or yaml)",
+        )
+        .exit();
+    }
     if shape != ReportShape::Grid && !only_traceability {
         clap::Error::raw(
             clap::error::ErrorKind::ArgumentConflict,
@@ -710,6 +812,18 @@ fn report(
         model: &model,
         selection: &selection,
     };
+    if format != ReportFormat::Markdown {
+        // The document(s) only on stdout or in the file; the input summary goes to stderr. Nothing
+        // is written unless every document rendered and validated (D-04, T-01-14).
+        let text = render_formatted(format, &selected, &model, view)?;
+        eprint!("{}", testcase_reporting::input_summary(&inputs, &selection));
+        match output {
+            Some(path) => fs::write(&path, &text)
+                .context(format!("Failed to write report: {}", path.display()))?,
+            None => print!("{text}"),
+        }
+        return Ok(());
+    }
     let body = |kind: ReportKind| -> String {
         match kind {
             ReportKind::Traceability => match shape {
@@ -1469,6 +1583,7 @@ fn main() -> Result<()> {
             runs,
             kinds,
             shape,
+            format,
             output,
             test_cases,
             requirements_export,
@@ -1478,6 +1593,7 @@ fn main() -> Result<()> {
             &runs,
             &kinds,
             shape,
+            format,
             output,
             ReportOptions {
                 test_cases: test_cases.as_deref(),
