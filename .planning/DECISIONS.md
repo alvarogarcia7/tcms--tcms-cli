@@ -186,3 +186,19 @@ Entry format:
 - **Phase / stage**: 4 / verification gap (tcms-43.4.3 AC #3)
 - **Decision**: Write 04-E2E-SUMMARY.md (12 tests, commit ca70196, all passed). Left uncommitted for the user's commit.
 - **Supersedes / affects**: tcms-43.4.3 AC #3
+
+## D-05-1: Exit codes of `report`: clap parse errors exit 1, the --shape conflict stays exit 2
+- **Phase / stage**: 5 / plan (05-02)
+- **Question**: 05-02 says every usage error of `report` exits 1, but D-02-6-2 locks the `--shape a|b` with non-traceability kind conflict at exit 2, and ten earlier tests assert 2.
+- **Options considered**: (1) all usage errors exit 1 (rewrite the --shape tests and amend D-02-6-2); (2) all usage errors stay 2 (violates ROADMAP SC1 and D-03 for bad input); (3) split: clap parse errors (missing --runs/--matrix, unknown option, invalid --kind/--format value) exit 1 per D-03 and SC1 (input errors); the semantic --shape conflict, raised inside `fn report`, keeps exit 2 per D-02-6-2.
+- **Decision**: (3). ROADMAP SC1 names only input or validation errors (1) and --fail-on-gaps (2); it does not cover a --shape conflict, so D-02-6-2 stays true. The 05-02 must-have wording "usage" is narrowed to clap parse errors.
+- **Code change**: in `fn report`, revert the `anyhow::bail!` to `clap::Error::raw(ErrorKind::ArgumentConflict, "...").exit()` (exit 2). `parse_cli` (try_parse, exit 1 for `report`) only wraps parse errors, so both stay distinct. Keep `Result<bool>` and the rest.
+- **Test change**: tests asserting 2 for shape conflicts stay; tests asserting 2 for clap errors (missing --runs, unknown --kind, other clap cases) change to 1. `assert_usage_error` helpers: split by case.
+- **Supersedes / affects**: 05-02 must-have 5 (narrowed); D-02-6-2 unchanged
+
+## D-05-2: `report --kind summary --format json` is valid (exit 0), not a usage error
+- **Phase / stage**: 5 / plan (05-03)
+- **Question**: 05-03 listed `--kind summary --format json` among the "errors win" cases (exit 1), but the code exits 0 and 05-02 recorded it as valid.
+- **Options considered**: (a) fix the plan criterion: summary JSON is a valid format since Phase 4 (D-04-2, plan 04-04), so it is not an error case; (b) make the code reject it, contradicting D-04-2.
+- **Decision**: (a). ROADMAP SC1 reserves exit 1 for input or validation errors; a valid format is neither. Case removed from 05-03 section D; the E2E already asserts exit 0 (section B, test_report_exit_codes_e2e.sh lines 284-291). No production code change.
+- **Supersedes / affects**: 05-03 plan task criterion D; D-04-5 and D-05-1 unchanged
