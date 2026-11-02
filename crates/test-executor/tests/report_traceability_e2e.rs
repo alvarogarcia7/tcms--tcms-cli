@@ -413,7 +413,7 @@ fn shape_with_a_conflicting_kind_exits_2_naming_both_options() {
 }
 
 #[test]
-fn unknown_shape_value_exits_2_naming_the_value() {
+fn unknown_shape_value_exits_1_naming_the_value() {
     let (_dir, matrix, runs) = status_fixture();
     let output = render(
         &matrix,
@@ -421,7 +421,11 @@ fn unknown_shape_value_exits_2_naming_the_value() {
         GENERATED,
         &["--kind", "traceability", "--shape", "xyz"],
     );
-    assert_usage_error(&output, &["--shape", "xyz"]);
+    // A clap parse error of `report` exits 1 (D-03, D-05-1 (a)); stdout stays empty
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(stdout(&output).is_empty(), "{}", stdout(&output));
+    assert!(stderr(&output).contains("--shape"), "{}", stderr(&output));
+    assert!(stderr(&output).contains("xyz"), "{}", stderr(&output));
 }
 
 // ---- Blank header values ----

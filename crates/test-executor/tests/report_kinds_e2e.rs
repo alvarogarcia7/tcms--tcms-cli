@@ -483,18 +483,20 @@ fn invalid_generated_at_exits_one_naming_the_value() {
 }
 
 #[test]
-fn missing_runs_flag_exits_two() {
+fn missing_runs_flag_exits_one() {
     let (_dir, matrix, _runs) = project(&[]);
     let matrix = path_arg(&matrix);
     let output = report(&["--matrix", matrix.as_str(), "--kind", "summary"]);
-    assert_eq!(output.status.code(), Some(2), "{}", stdout(&output));
+    // A clap parse error of `report` exits 1 (D-03, D-05-1 (a))
+    assert_eq!(output.status.code(), Some(1), "{}", stdout(&output));
     assert!(stderr(&output).contains("--runs"), "{}", stderr(&output));
 }
 
 #[test]
-fn unknown_kind_exits_two() {
+fn unknown_kind_exits_one() {
     let (_dir, matrix, runs) = scenario(None);
     let output = render(&matrix, &runs, "bogus", GENERATED);
-    assert_eq!(output.status.code(), Some(2), "{}", stdout(&output));
+    // A clap parse error of `report` exits 1 (D-03, D-05-1 (a))
+    assert_eq!(output.status.code(), Some(1), "{}", stdout(&output));
     assert!(stderr(&output).contains("bogus"), "{}", stderr(&output));
 }

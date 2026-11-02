@@ -570,8 +570,8 @@ fn exit_codes_for_usage_and_input_errors() {
 
     // (arguments, exit code, a word the message must contain)
     let cases: Vec<(Vec<&str>, i32, &str)> = vec![
-        (vec!["--runs", runs.as_str()], 2, "--matrix"),
-        (vec!["--matrix", matrix.as_str()], 2, "--runs"),
+        (vec!["--runs", runs.as_str()], 1, "--matrix"),
+        (vec!["--matrix", matrix.as_str()], 1, "--runs"),
         (
             vec![
                 "--matrix",
@@ -581,7 +581,7 @@ fn exit_codes_for_usage_and_input_errors() {
                 "--format",
                 "xml",
             ],
-            2,
+            1,
             "asciidoc",
         ),
         (
@@ -593,7 +593,7 @@ fn exit_codes_for_usage_and_input_errors() {
                 "--kind",
                 "bogus",
             ],
-            2,
+            1,
             "bogus",
         ),
         (

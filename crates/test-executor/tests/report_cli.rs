@@ -1727,14 +1727,18 @@ fn shape_without_traceability_kind_is_a_usage_error() {
 }
 
 #[test]
-fn unknown_shape_value_is_a_usage_error() {
+fn unknown_shape_value_is_a_parse_error_exit_1() {
     let (_dir, matrix, runs) = shape_fixture();
     let output = render(
         &matrix,
         &runs,
         &["--kind", "traceability", "--shape", "xyz"],
     );
-    assert_usage_error(&output, &["--shape", "xyz"]);
+    // A clap parse error of `report` exits 1 (D-03, D-05-1 (a)); stdout stays empty
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(stdout(&output).is_empty(), "{}", stdout(&output));
+    assert!(stderr(&output).contains("--shape"), "{}", stderr(&output));
+    assert!(stderr(&output).contains("xyz"), "{}", stderr(&output));
 }
 
 #[test]
