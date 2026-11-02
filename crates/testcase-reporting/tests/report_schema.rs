@@ -25,9 +25,20 @@ fn report_schema() -> Value {
     read_json(&repo_file("schemas/tcms/report.schema.v1.json"))
 }
 
+/// The envelope meta-schema. The report schema reaches it by `$ref: "../tcms-envelope.schema.json"`
+/// and has no `$id`, so jsonschema resolves that reference against its default root key.
+fn envelope_schema() -> Value {
+    serde_json::from_str(include_str!("../../../schemas/tcms-envelope.schema.json"))
+        .expect("envelope schema is JSON")
+}
+
 fn compiled() -> JSONSchema {
     JSONSchema::options()
         .with_draft(Draft::Draft7)
+        .with_document(
+            "json-schema:///tcms-envelope.schema.json".to_string(),
+            envelope_schema(),
+        )
         .compile(&report_schema())
         .expect("report schema compiles as Draft-07")
 }

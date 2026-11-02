@@ -24,6 +24,9 @@
   "additionalProperties": false,
   "allOf": [
     {
+      "$ref": "../tcms-envelope.schema.json"
+    },
+    {
       "if": {
         "required": ["kind"],
         "properties": { "kind": { "const": "traceability" } }

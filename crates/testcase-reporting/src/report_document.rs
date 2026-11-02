@@ -174,13 +174,13 @@ fn level_word(level: RequirementLevel) -> &'static str {
     }
 }
 
-/// `fail` or `error`. The problems view only produces these two; any other verdict is a bug in
-/// the view and stops the build with a message naming it.
-fn verdict_word(verdict: Verdict) -> &'static str {
+/// `fail` or `error`, by an explicit match. Any other verdict is not a problem verdict, so it
+/// gives `None` and the caller leaves that row out. Never panics.
+fn verdict_word(verdict: Verdict) -> Option<&'static str> {
     match verdict {
-        Verdict::Fail => "fail",
-        Verdict::Error => "error",
-        other => panic!("problems view produced verdict {other:?}, which is not a problem verdict"),
+        Verdict::Fail => Some("fail"),
+        Verdict::Error => Some("error"),
+        _ => None,
     }
 }
 
@@ -333,22 +333,22 @@ pub fn build_gaps_document(input: ViewInput) -> ReportDocument {
     )
 }
 
-fn problem_row_out(row: &ProblemRow) -> ProblemRowOut {
-    ProblemRowOut {
+fn problem_row_out(row: &ProblemRow) -> Option<ProblemRowOut> {
+    Some(ProblemRowOut {
         test_case_id: row.test_case_id.clone(),
-        verdict: verdict_word(row.verdict),
+        verdict: verdict_word(row.verdict)?,
         run_id: row.run_id.clone(),
         build_id: row.build_id.clone(),
         problem_report_id: row.problem_report_id.clone(),
         requirement_ids: row.requirement_ids.clone(),
-    }
+    })
 }
 
 /// The problems document: the Phase 3 `build_problems` output, field by field.
 pub fn build_problems_document(input: ViewInput) -> ReportDocument {
     let report = build_problems(input);
     let content = ProblemsContent {
-        rows: report.rows.iter().map(problem_row_out).collect(),
+        rows: report.rows.iter().filter_map(problem_row_out).collect(),
         missing_count: report.missing_count,
     };
     document(
@@ -358,12 +358,23 @@ pub fn build_problems_document(input: ViewInput) -> ReportDocument {
     )
 }
 
+/// The envelope meta-schema, embedded at compile time, and the key a relative
+/// `../tcms-envelope.schema.json` reference from a schema without `$id` resolves to.
+const ENVELOPE_SCHEMA_TEXT: &str = include_str!("../../../schemas/tcms-envelope.schema.json");
+const ENVELOPE_REF_KEY: &str = "json-schema:///tcms-envelope.schema.json";
+
 /// Check an instance against a Draft-07 schema value and return every violation, sorted, as
 /// `<instance path>: <message>` (the root path is `/`). Pure: the schema is passed in, not read.
 /// A schema that does not compile gives one message starting with `report schema does not compile`.
 pub fn validate_document(instance: &Value, schema: &Value) -> Result<(), Vec<String>> {
+    // The report schema composes with the envelope by `$ref` to `../tcms-envelope.schema.json`.
+    // It has no `$id`, so that reference resolves against jsonschema's default root; the envelope
+    // is registered under that resolved key.
+    let envelope: Value = serde_json::from_str(ENVELOPE_SCHEMA_TEXT)
+        .map_err(|e| vec![format!("report schema does not compile: envelope: {e}")])?;
     let compiled = jsonschema::JSONSchema::options()
         .with_draft(jsonschema::Draft::Draft7)
+        .with_document(ENVELOPE_REF_KEY.to_string(), envelope)
         .compile(schema)
         .map_err(|e| vec![format!("report schema does not compile: {e}")])?;
     let mut messages: Vec<String> = match compiled.validate(instance) {
@@ -839,6 +850,13 @@ mod tests {
             .map(|r| r["verdict"].as_str().expect("verdict"))
             .collect();
         assert_eq!(verdicts, ["fail", "error"]);
+    }
+
+    #[test]
+    fn verdict_word_gives_none_for_non_problem_verdicts_and_never_panics() {
+        assert_eq!(verdict_word(Verdict::Fail), Some("fail"));
+        assert_eq!(verdict_word(Verdict::Error), Some("error"));
+        assert_eq!(verdict_word(Verdict::Pass), None);
     }
 
     #[test]
