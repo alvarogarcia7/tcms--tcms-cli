@@ -1,6 +1,7 @@
 //! Layer 3: load, select (later: model, render) for `test-executor report`.
 //! Only `test-executor` depends on this crate.
 
+pub mod findings;
 pub mod gaps;
 pub mod legacy;
 pub mod load;
