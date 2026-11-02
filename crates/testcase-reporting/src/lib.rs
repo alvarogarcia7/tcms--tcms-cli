@@ -10,6 +10,7 @@ pub mod render_asciidoc;
 pub mod render_asciidoc_shapes;
 pub mod render_markdown;
 pub mod render_shapes;
+pub mod report_document;
 pub mod rollup;
 pub mod run;
 pub mod select;
