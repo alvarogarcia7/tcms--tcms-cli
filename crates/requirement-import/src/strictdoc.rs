@@ -21,6 +21,9 @@
 //! the UID in system `strictdoc`. A REQUIREMENT without a UID is skipped, since it cannot be
 //! addressed by an ID. A REQUIREMENT without a LEVEL makes the whole export refused; no level is
 //! derived from the UID prefix.
+//!
+//! `safety_related` and `security_related` are not read from StrictDoc exports; they are always
+//! false until a real export carrying them is added to the fixtures (D-07-8).
 
 use anyhow::{bail, Context, Result};
 use serde::Deserialize;
@@ -225,7 +228,9 @@ fn collect_items(title: &str, nodes: &[RawNode], out: &mut Vec<Item>) -> Result<
                     statement: node.statement.clone().unwrap_or_default(),
                     status: node.status.clone(),
                     parent_uids,
+                    // Not read from the export: always false until a real export carries them (D-07-8).
                     safety_related: false,
+                    // Not read from the export: always false until a real export carries them (D-07-8).
                     security_related: false,
                 });
             }

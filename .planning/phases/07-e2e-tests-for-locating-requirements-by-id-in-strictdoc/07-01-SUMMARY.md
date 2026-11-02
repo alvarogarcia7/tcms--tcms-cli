@@ -96,6 +96,7 @@ Applied after review of 07-01. Comments, wording and this summary only; no behav
 - Task 3 action listed `crates/tcms/src/export_ids.rs` edits; this contradicted `files_modified` and was not applied (see Blocker 2).
 - `crates/tcms/tests/requirements_cli.rs`, `requirements_locate_cli.rs` and `requirements_export_ids_cli.rs` module doc lines still described the fixture as assumed-format or assumed-layout. Not in the plan's changes; reworded to real-layout in the review fix below (comments only).
 - `cargo fmt` reformatted `strictdoc.rs` (this plan's own code).
+- `safety_related` and `security_related` are not read from StrictDoc exports; they are always false until a real export carrying them is added to the fixtures (D-07-8). Follow-up: read the flags only when a real export carrying them is added to the fixtures, through a new plan.
 
 ## Self-Check
 
