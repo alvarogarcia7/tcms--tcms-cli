@@ -692,6 +692,7 @@ fn load_report_schema() -> Result<serde_json::Value> {
 /// Returns the complete text; JSON and YAML are validated before any text is returned.
 fn render_formatted(
     format: ReportFormat,
+    shape: ReportShape,
     selected: &[ReportKind],
     model: &testcase_reporting::model::ReportModel,
     view: testcase_reporting::view::ViewInput<'_>,
@@ -704,9 +705,21 @@ fn render_formatted(
             let parts: Vec<String> = selected
                 .iter()
                 .map(|kind| match kind {
-                    ReportKind::Traceability => {
-                        testcase_reporting::render_asciidoc::render_asciidoc(model)
-                    }
+                    ReportKind::Traceability => match shape {
+                        ReportShape::Grid => {
+                            testcase_reporting::render_asciidoc::render_asciidoc(model)
+                        }
+                        ReportShape::A => {
+                            testcase_reporting::render_asciidoc_shapes::render_asciidoc_shape_a(
+                                model,
+                            )
+                        }
+                        ReportShape::B => {
+                            testcase_reporting::render_asciidoc_shapes::render_asciidoc_shape_b(
+                                model,
+                            )
+                        }
+                    },
                     ReportKind::Summary => {
                         testcase_reporting::render_asciidoc::render_asciidoc_summary(
                             &testcase_reporting::summary::build_summary(view),
@@ -733,7 +746,11 @@ fn render_formatted(
             let documents: Vec<rd::ReportDocument> = selected
                 .iter()
                 .map(|kind| match kind {
-                    ReportKind::Traceability => rd::build_document(model),
+                    ReportKind::Traceability => match shape {
+                        ReportShape::Grid => rd::build_document(model),
+                        ReportShape::A => rd::build_shape_document(model, rd::TraceShape::A),
+                        ReportShape::B => rd::build_shape_document(model, rd::TraceShape::B),
+                    },
                     ReportKind::Summary => rd::build_summary_document(view),
                     ReportKind::Gaps => rd::build_gaps_document(view),
                     ReportKind::Problems => rd::build_problems_document(view),
@@ -766,13 +783,6 @@ fn report(
         requested.dedup();
         requested == [ReportKind::Traceability]
     };
-    if shape != ReportShape::Grid && format != ReportFormat::Markdown {
-        clap::Error::raw(
-            clap::error::ErrorKind::ArgumentConflict,
-            "--shape a|b requires --format markdown (shapes are not rendered in asciidoc, json or yaml)",
-        )
-        .exit();
-    }
     if shape != ReportShape::Grid && !only_traceability {
         clap::Error::raw(
             clap::error::ErrorKind::ArgumentConflict,
@@ -815,10 +825,27 @@ fn report(
         model: &model,
         selection: &selection,
     };
+    // A shape document is validated before any byte is written, for every format (04-05, D-04-6).
+    let shape_document = match shape {
+        ReportShape::Grid => None,
+        ReportShape::A => Some(testcase_reporting::report_document::build_shape_document(
+            &model,
+            testcase_reporting::report_document::TraceShape::A,
+        )),
+        ReportShape::B => Some(testcase_reporting::report_document::build_shape_document(
+            &model,
+            testcase_reporting::report_document::TraceShape::B,
+        )),
+    };
+    if let Some(document) = shape_document {
+        let schema = load_report_schema()?;
+        testcase_reporting::render_data::check_document(&document, &schema)
+            .map_err(|error| anyhow::anyhow!("{error}"))?;
+    }
     if format != ReportFormat::Markdown {
         // The document(s) only on stdout or in the file; the input summary goes to stderr. Nothing
         // is written unless every document rendered and validated (D-04, T-01-14).
-        let text = render_formatted(format, &selected, &model, view)?;
+        let text = render_formatted(format, shape, &selected, &model, view)?;
         eprint!("{}", testcase_reporting::input_summary(&inputs, &selection));
         match output {
             Some(path) => fs::write(&path, &text)

@@ -29,11 +29,6 @@ fn report_in(cwd: &Path, args: &[&str]) -> Output {
         .expect("test-executor runs")
 }
 
-/// Runs the report from the workspace root.
-fn report(args: &[&str]) -> Output {
-    report_in(&root(), args)
-}
-
 fn text(bytes: &[u8]) -> String {
     String::from_utf8_lossy(bytes).into_owned()
 }
@@ -139,7 +134,10 @@ fn case_ids(document: &Value) -> Vec<String> {
 #[test]
 fn shape_a_and_b_json_and_yaml_write_valid_documents() {
     let dir = tempfile::tempdir().unwrap();
-    let grid = run(&root(), &args_with(&["--kind", "traceability", "--format", "json"]));
+    let grid = run(
+        &root(),
+        &args_with(&["--kind", "traceability", "--format", "json"]),
+    );
     assert!(grid.status.success(), "{}", stderr(&grid));
     let grid_doc = parse_json(&stdout(&grid));
 
@@ -160,8 +158,17 @@ fn shape_a_and_b_json_and_yaml_write_valid_documents() {
                     target_arg.as_str(),
                 ]),
             );
-            assert_eq!(output.status.code(), Some(0), "{format} {shape}: {}", stderr(&output));
-            assert!(stdout(&output).is_empty(), "{format} {shape}: {}", stdout(&output));
+            assert_eq!(
+                output.status.code(),
+                Some(0),
+                "{format} {shape}: {}",
+                stderr(&output)
+            );
+            assert!(
+                stdout(&output).is_empty(),
+                "{format} {shape}: {}",
+                stdout(&output)
+            );
             let written = std::fs::read_to_string(&target).expect("file written");
             let doc = if format == "json" {
                 parse_json(&written)
@@ -172,7 +179,11 @@ fn shape_a_and_b_json_and_yaml_write_valid_documents() {
             assert!(errors.is_ok(), "{format} {shape}: {errors:?}");
             assert_eq!(doc["kind"], "traceability");
             assert_eq!(doc["content"]["shape"], letter);
-            assert_eq!(requirement_ids(&doc), requirement_ids(&grid_doc), "{format} {shape}");
+            assert_eq!(
+                requirement_ids(&doc),
+                requirement_ids(&grid_doc),
+                "{format} {shape}"
+            );
             assert_eq!(case_ids(&doc), case_ids(&grid_doc), "{format} {shape}");
         }
     }
@@ -196,9 +207,17 @@ fn shape_markdown_writes_the_shape_text() {
             target_arg.as_str(),
         ]);
         let output = run(tampered.path(), &args);
-        assert_eq!(output.status.code(), Some(1), "{shape}: {}", stderr(&output));
+        assert_eq!(
+            output.status.code(),
+            Some(1),
+            "{shape}: {}",
+            stderr(&output)
+        );
         assert!(stdout(&output).is_empty(), "{shape}: {}", stdout(&output));
-        assert!(!target.exists(), "{shape}: file created despite failed validation");
+        assert!(
+            !target.exists(),
+            "{shape}: file created despite failed validation"
+        );
     }
 
     for shape in ["a", "b"] {
@@ -215,7 +234,12 @@ fn shape_markdown_writes_the_shape_text() {
             target_arg.as_str(),
         ]);
         let output = run(&root(), &args);
-        assert_eq!(output.status.code(), Some(0), "{shape}: {}", stderr(&output));
+        assert_eq!(
+            output.status.code(),
+            Some(0),
+            "{shape}: {}",
+            stderr(&output)
+        );
         let written = std::fs::read_to_string(&target).expect("file written");
         assert!(
             written.starts_with("# Traceability Report"),
@@ -244,9 +268,17 @@ fn shape_asciidoc_differs_from_grid() {
                 "asciidoc",
             ]),
         );
-        assert_eq!(output.status.code(), Some(0), "{shape}: {}", stderr(&output));
+        assert_eq!(
+            output.status.code(),
+            Some(0),
+            "{shape}: {}",
+            stderr(&output)
+        );
         let shape_text = stdout(&output);
-        assert!(shape_text.starts_with("= Traceability Report"), "{shape_text}");
+        assert!(
+            shape_text.starts_with("= Traceability Report"),
+            "{shape_text}"
+        );
         assert_ne!(shape_text, grid_text, "shape {shape} rendered the grid");
     }
 }
@@ -265,11 +297,19 @@ fn shape_with_non_traceability_kind_exits_2_and_writes_nothing() {
         let mut args = args_with(extra);
         args.extend(["--format", "json", "-o", target_arg.as_str()].map(String::from));
         let output = run(&root(), &args);
-        assert_eq!(output.status.code(), Some(2), "{extra:?}: {}", stderr(&output));
+        assert_eq!(
+            output.status.code(),
+            Some(2),
+            "{extra:?}: {}",
+            stderr(&output)
+        );
         assert!(stdout(&output).is_empty(), "{extra:?}: {}", stdout(&output));
         let err = stderr(&output);
         assert!(err.contains("--kind traceability"), "{extra:?}: {err}");
-        assert!(!err.contains("requires --format markdown"), "{extra:?}: {err}");
+        assert!(
+            !err.contains("requires --format markdown"),
+            "{extra:?}: {err}"
+        );
         assert!(!target.exists(), "{extra:?}: file created");
     }
 }
@@ -298,7 +338,12 @@ fn shape_failed_validation_writes_no_file_for_every_format() {
             ]);
             let output = run(tampered.path(), &args);
             let label = format!("{shape} {format}");
-            assert_eq!(output.status.code(), Some(1), "{label}: {}", stderr(&output));
+            assert_eq!(
+                output.status.code(),
+                Some(1),
+                "{label}: {}",
+                stderr(&output)
+            );
             assert!(stdout(&output).is_empty(), "{label}: {}", stdout(&output));
             assert!(!fresh.exists(), "{label}: file created");
 
@@ -313,7 +358,12 @@ fn shape_failed_validation_writes_no_file_for_every_format() {
                 existing_arg.as_str(),
             ]);
             let output = run(tampered.path(), &args);
-            assert_eq!(output.status.code(), Some(1), "{label}: {}", stderr(&output));
+            assert_eq!(
+                output.status.code(),
+                Some(1),
+                "{label}: {}",
+                stderr(&output)
+            );
             assert_eq!(
                 std::fs::read_to_string(&existing).unwrap(),
                 "SENTINEL\n",
