@@ -7,13 +7,14 @@ sequenceDiagram
     participant DUT as [System/Program=DUT - Quality: Under Inspection]<br>Device Under Test
     participant Verifier as [System=TCMS CLI - Quality: Alpha]<br>Test Verifier
     participant Reports as [System=TCMS Reports - Quality: Beta]<br>Documentation Generator
-    participant Plan as VV Plan (plans/, tcms-config/)
+    participant Plan as VV Plan (plans/)
     participant Exec as VV Exec (test-executor execute)
     participant Verif as VV Verifier (verifier)
     participant RunRec as VV Test run record (runs/)
     participant Matrix as VV Trace matrix (test-executor trace-matrix)
     participant Report as VV Report (test-executor report)
 
+    Note over Tester,Report: All paths in the V&V section are relative to the scenario folder that the acceptance driver creates, not the repo root. plans/, runs/, requirements/ and tcms-config/ sit under that folder.
 
     Tester ->> Generator: generate
     Tester ->> Editor: generate
@@ -26,7 +27,7 @@ sequenceDiagram
     %% vv-arrow A1
     Tester ->> Plan: validate test plan (no file written, stdout only)
     Note over Plan,Tester: A1 example: validate-yaml plans/TC-REQ001-NR.yaml
-    Note over Plan: S1 reads: plans/, tcms-config/ writes: nothing
+    Note over Plan: S1 reads: plans/ writes: nothing
 
     %% vv-arrow A2
     Plan ->> Exec: execute test case plan
@@ -41,7 +42,7 @@ sequenceDiagram
     %% vv-arrow A4
     Verif ->> RunRec: write test run record
     Note over Verif,RunRec: A4 example: verifier -f runs/logs -d plans -F yaml -o reports/verification/verification.yaml --run-id RUN-FAKE-001 --build-id FAKE-BUILD-1 --tester fake-tester --environment 'fake environment' --test-run runs/RUN-FAKE-001.yml
-    Note over RunRec: S4 reads: reports/verification/ writes: runs/
+    Note over RunRec: S4 reads: runs/logs/, plans/ writes: runs/
 
     %% vv-arrow A5
     RunRec ->> Matrix: build trace matrix from requirements and runs

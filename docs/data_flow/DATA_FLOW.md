@@ -851,6 +851,8 @@ Commands used: `validate-yaml`, `test-executor execute`, `verifier`, `test-execu
 
 Open question: `test-executor execute --help` has no output-path flag, so the location of the execution log written at S2 (`runs/logs/`) is not confirmed. The S2 row below marks it as to be confirmed.
 
+**Path base.** The directories `plans/`, `runs/`, `requirements/` and `tcms-config/` are relative to the scenario folder (the folder the acceptance driver creates for each scenario), not to the repo root. The paths in the examples and the step table below are written relative to that folder.
+
 **Arrows**
 
 | ID | From | To | Example invocation (fake data) |
@@ -869,10 +871,10 @@ A3 passes `--no-test-run` so that only A4 writes the test-run record.
 
 | ID | Step | Reads | Writes |
 |----|------|-------|--------|
-| S1 | Plan | plans/, tcms-config/ | nothing |
+| S1 | Plan | plans/ | nothing |
 | S2 | Exec | plans/ | runs/logs/ (location to be confirmed) |
 | S3 | Verif | runs/logs/, plans/ | reports/verification/ |
-| S4 | RunRec | reports/verification/ | runs/ |
+| S4 | RunRec | runs/logs/, plans/ | runs/ |
 | S5 | Matrix | requirements/, plans/, runs/ | reports/matrix/ |
 | S6 | Report | reports/matrix/, plans/, runs/ | reports/ |
 
