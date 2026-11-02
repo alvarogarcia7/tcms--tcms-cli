@@ -460,12 +460,23 @@ coverage:
 .PHONY: coverage
 
 coverage-e2e:
+	@if [ "$(SKIP_COVERAGE)" = "1" ]; then \
+		echo "SKIPPED coverage-e2e: SKIP_COVERAGE=1 (70% e2e coverage gate not run)."; \
+	elif ! cargo llvm-cov --version >/dev/null 2>&1; then \
+		echo "SKIPPED coverage-e2e: cargo-llvm-cov not available (target/llvm-cov-target not installed)."; \
+		echo "Run 'make install-coverage-tools' to enable the 70% gate."; \
+	else \
+		$(MAKE) coverage-e2e-run BASE_REF=$(or $(BASE_REF),main); \
+	fi
+.PHONY: coverage-e2e
+
+coverage-e2e-run:
 	@${MAKE} build BASE_REF=$(or $(BASE_REF),main)
 	cargo llvm-cov clean --workspace
 	cargo llvm-cov --all-features --workspace --no-report --ignore-filename-regex '$(COVERAGE_EXCLUDE_REGEX)'
 	${MAKE} test-e2e BASE_REF=$(or $(BASE_REF),main)
 	cargo llvm-cov report --workspace --ignore-filename-regex '$(COVERAGE_EXCLUDE_REGEX)' --fail-under-lines 70
-.PHONY: coverage-e2e
+.PHONY: coverage-e2e-run
 
 coverage-html:
 	cargo llvm-cov --all-features --workspace --tests --ignore-filename-regex '$(COVERAGE_EXCLUDE_REGEX)' --html --open

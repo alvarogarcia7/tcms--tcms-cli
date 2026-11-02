@@ -8,16 +8,16 @@ description: Security test with authentication token capture and API calls - dem
   secure credential handling and API testing
 hooks:
   setup_test:
-    command: test-acceptance/scripts/hooks/setup_test_workspace.sh
+    command: ../../scripts/hooks/setup_test_workspace.sh
     on_error: fail
   before_sequence:
-    command: test-acceptance/scripts/hooks/before_sequence_log.sh
+    command: ../../scripts/hooks/before_sequence_log.sh
     on_error: continue
   after_sequence:
-    command: test-acceptance/scripts/hooks/after_sequence_cleanup.sh
+    command: ../../scripts/hooks/after_sequence_cleanup.sh
     on_error: continue
   teardown_test:
-    command: test-acceptance/scripts/hooks/teardown_test_final.sh
+    command: ../../scripts/hooks/teardown_test_final.sh
     on_error: continue
 hydration_vars:
   API_BASE_URL:

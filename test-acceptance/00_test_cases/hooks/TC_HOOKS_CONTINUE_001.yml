@@ -14,25 +14,28 @@ initial_conditions:
   - Temporary directory /tmp is writable
 hooks:
   script_start:
+    on_error: continue
     command: 'echo "HOOK: script_start - This hook will succeed"
 
       echo "marker" > /tmp/tc_hooks_continue_001_start.txt
 
       '
   before_step:
+    on_error: continue
     command: "echo \"HOOK: before_step - Sequence ${TEST_SEQUENCE_ID:-unknown} Step\
       \ ${TEST_STEP:-unknown}\"\n# Intentionally fail for step 2\nif [ \"${TEST_STEP:-0}\"\
       \ = \"2\" ]; then\n  echo \"ERROR: before_step hook failing intentionally for\
       \ step 2\" >&2\n  exit 1\nfi\n"
   after_step:
+    on_error: continue
     command: 'echo "HOOK: after_step - Completed step ${TEST_STEP:-unknown}"
 
       '
   script_end:
+    on_error: continue
     command: 'echo "HOOK: script_end - Test completed even with hook failures"
 
       '
-  on_error: continue
 test_sequences:
 - id: 1
   name: Continue on Hook Errors

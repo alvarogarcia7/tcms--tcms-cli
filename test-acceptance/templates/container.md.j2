@@ -1,0 +1,17 @@
+# {{ title | default(value="Test Results") }}
+
+Project: {{ project | default(value="") }}
+
+{% for tr in test_results %}
+## {{ tr.test_case_id }}
+
+{{ tr.description | default(value="") }}
+
+| Sequence | Name | Steps | Passed | Failed |
+| --- | --- | --- | --- | --- |
+{% for seq in tr.sequences %}| {{ seq.sequence_id }} | {{ seq.name | default(value="") }} | {{ tr.total_steps }} | {{ tr.passed_steps }} | {{ tr.failed_steps }} |
+{% endfor %}
+
+Result: {% if tr.overall_pass %}PASS{% else %}FAIL{% endif %} ({{ tr.passed_steps }} passed, {{ tr.failed_steps }} failed, {{ tr.not_executed_steps }} not executed)
+
+{% endfor %}

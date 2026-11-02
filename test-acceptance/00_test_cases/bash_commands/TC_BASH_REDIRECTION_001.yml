@@ -28,7 +28,7 @@ test_sequences:
           output: "test output"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'test output' $COMMAND_OUTPUT"
+          output: "grep -q 'test output' <<< \"$COMMAND_OUTPUT\""
       - step: 2
         description: Append to file
         command: echo "line1" > /tmp/append_test.txt; echo "line2" >> /tmp/append_test.txt; cat /tmp/append_test.txt; rm -f /tmp/append_test.txt
@@ -38,14 +38,14 @@ test_sequences:
           output: "line2"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'line2' $COMMAND_OUTPUT"
+          output: "grep -q 'line2' <<< \"$COMMAND_OUTPUT\""
       - step: 3
         description: Redirect stderr to stdout
-        command: ls /nonexistent 2>&1 | grep -q "No such file" && echo "stderr captured"
+        command: (ls /nonexistent 2>&1 || true) | grep -q "No such file" && echo "stderr captured"
         expected:
           success: true
           result: "0"
           output: "stderr captured"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'stderr captured' $COMMAND_OUTPUT"
+          output: "grep -q 'stderr captured' <<< \"$COMMAND_OUTPUT\""

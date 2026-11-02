@@ -28,7 +28,7 @@ test_sequences:
           output: "0"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "[[ -n $(cat $COMMAND_OUTPUT) ]]"
+          output: "[[ -n \"$COMMAND_OUTPUT\" ]]"
       - step: 2
         description: Get exit status
         command: true; echo $?
@@ -38,7 +38,7 @@ test_sequences:
           output: "0"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q '0' $COMMAND_OUTPUT"
+          output: "grep -q '0' <<< \"$COMMAND_OUTPUT\""
       - step: 3
         description: Run command in background status
         command: sleep 0.1 & wait $!; echo "done"
@@ -48,4 +48,4 @@ test_sequences:
           output: "done"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'done' $COMMAND_OUTPUT"
+          output: "grep -q 'done' <<< \"$COMMAND_OUTPUT\""

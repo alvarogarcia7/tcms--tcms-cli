@@ -28,7 +28,7 @@ test_sequences:
           output: "Hello World"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'Hello World' $COMMAND_OUTPUT"
+          output: "grep -q 'Hello World' <<< \"$COMMAND_OUTPUT\""
       - step: 2
         description: String length
         command: str="testing"; echo ${#str}
@@ -38,7 +38,7 @@ test_sequences:
           output: "7"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q '7' $COMMAND_OUTPUT"
+          output: "grep -q '7' <<< \"$COMMAND_OUTPUT\""
       - step: 3
         description: Substring extraction
         command: str="Hello World"; echo ${str:0:5}
@@ -48,4 +48,4 @@ test_sequences:
           output: "Hello"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'Hello' $COMMAND_OUTPUT"
+          output: "grep -q 'Hello' <<< \"$COMMAND_OUTPUT\""

@@ -28,7 +28,7 @@ test_sequences:
           output: "test line"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'test line' $COMMAND_OUTPUT"
+          output: "grep -q 'test line' <<< \"$COMMAND_OUTPUT\""
       - step: 2
         description: Multiple commands with &&
         command: echo "first" && echo "second"
@@ -38,7 +38,7 @@ test_sequences:
           output: "second"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'second' $COMMAND_OUTPUT"
+          output: "grep -q 'second' <<< \"$COMMAND_OUTPUT\""
       - step: 3
         description: Command substitution
         command: echo "Current dir is $(pwd)"
@@ -48,4 +48,4 @@ test_sequences:
           output: "Current dir is"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'Current dir is' $COMMAND_OUTPUT"
+          output: "grep -q 'Current dir is' <<< \"$COMMAND_OUTPUT\""

@@ -8,16 +8,16 @@ description: Data-driven test with multiple iterations and aggregated results - 
   iterative testing patterns
 hooks:
   setup_test:
-    command: test-acceptance/scripts/hooks/setup_test_workspace.sh
+    command: ../../scripts/hooks/setup_test_workspace.sh
     on_error: fail
   before_sequence:
-    command: test-acceptance/scripts/hooks/before_sequence_log.sh
+    command: ../../scripts/hooks/before_sequence_log.sh
     on_error: continue
   after_sequence:
-    command: test-acceptance/scripts/hooks/after_sequence_cleanup.sh
+    command: ../../scripts/hooks/after_sequence_cleanup.sh
     on_error: continue
   teardown_test:
-    command: test-acceptance/scripts/hooks/teardown_test_final.sh
+    command: ../../scripts/hooks/teardown_test_final.sh
     on_error: continue
 hydration_vars:
   ITERATION_COUNT:

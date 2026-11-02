@@ -8,28 +8,28 @@ description: Multi-sequence test with hooks, variables, and manual steps - compr
   workflow with lifecycle management
 hooks:
   script_start:
-    command: test-acceptance/scripts/hooks/script_start_init.sh
+    command: ../../scripts/hooks/script_start_init.sh
     on_error: fail
   setup_test:
-    command: test-acceptance/scripts/hooks/setup_test_workspace.sh
+    command: ../../scripts/hooks/setup_test_workspace.sh
     on_error: fail
   before_sequence:
-    command: test-acceptance/scripts/hooks/before_sequence_log.sh
+    command: ../../scripts/hooks/before_sequence_log.sh
     on_error: continue
   after_sequence:
-    command: test-acceptance/scripts/hooks/after_sequence_cleanup.sh
+    command: ../../scripts/hooks/after_sequence_cleanup.sh
     on_error: continue
   before_step:
-    command: test-acceptance/scripts/hooks/before_step_validate.sh
+    command: ../../scripts/hooks/before_step_validate.sh
     on_error: continue
   after_step:
-    command: test-acceptance/scripts/hooks/after_step_metrics.sh
+    command: ../../scripts/hooks/after_step_metrics.sh
     on_error: continue
   teardown_test:
-    command: test-acceptance/scripts/hooks/teardown_test_final.sh
+    command: ../../scripts/hooks/teardown_test_final.sh
     on_error: continue
   script_end:
-    command: test-acceptance/scripts/hooks/script_end_summary.sh
+    command: ../../scripts/hooks/script_end_summary.sh
     on_error: continue
 hydration_vars:
   TEST_WORKSPACE:

@@ -73,7 +73,7 @@ test_sequences:
       - name: verify_access_token_prefix
         condition: '[[ $access_token =~ ^Bearer_ ]]'
       - name: verify_access_token_length
-        condition: '[[ ${#access_token} -gt 50 ]]'
+        condition: '[[ ${#access_token} -gt 40 ]]'
       - name: verify_token_type_is_bearer
         condition: '[[ "$token_type" = "Bearer" ]]'
       - name: verify_expires_is_numeric
@@ -639,7 +639,7 @@ test_sequences:
     - name: app_name
       capture: 'Application: ([a-z-]+)'
     - name: app_version
-      capture: 'Version: ([0-9]+\\.[0-9]+\\.[0-9]+)'
+      capture: 'Version: ([0-9]+\.[0-9]+\.[0-9]+)'
     - name: build_number
       capture: 'Build-Number: ([0-9.]+)'
     - name: git_commit

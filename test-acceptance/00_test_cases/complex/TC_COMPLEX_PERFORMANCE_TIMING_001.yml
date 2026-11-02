@@ -8,16 +8,16 @@ description: Performance test with timing capture and validation - demonstrates 
   metrics collection and analysis
 hooks:
   script_start:
-    command: test-acceptance/scripts/hooks/script_start_init.sh
+    command: ../../scripts/hooks/script_start_init.sh
     on_error: fail
   before_sequence:
-    command: test-acceptance/scripts/hooks/before_sequence_log.sh
+    command: ../../scripts/hooks/before_sequence_log.sh
     on_error: continue
   after_sequence:
-    command: test-acceptance/scripts/hooks/after_sequence_cleanup.sh
+    command: ../../scripts/hooks/after_sequence_cleanup.sh
     on_error: continue
   script_end:
-    command: test-acceptance/scripts/hooks/script_end_summary.sh
+    command: ../../scripts/hooks/script_end_summary.sh
     on_error: continue
 hydration_vars:
   PERF_TEST_ITERATIONS:

@@ -28,7 +28,7 @@ test_sequences:
           output: "3"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q '3' $COMMAND_OUTPUT"
+          output: "grep -q '3' <<< \"$COMMAND_OUTPUT\""
       - step: 2
         description: Command with subshell
         command: (echo "subshell"; echo "test")
@@ -38,7 +38,7 @@ test_sequences:
           output: "test"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'test' $COMMAND_OUTPUT"
+          output: "grep -q 'test' <<< \"$COMMAND_OUTPUT\""
       - step: 3
         description: Nested command substitution
         command: echo "Length is $(echo 'test' | wc -c)"
@@ -48,4 +48,4 @@ test_sequences:
           output: "Length is"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'Length is' $COMMAND_OUTPUT"
+          output: "grep -q 'Length is' <<< \"$COMMAND_OUTPUT\""

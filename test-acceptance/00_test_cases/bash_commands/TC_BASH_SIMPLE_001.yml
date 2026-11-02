@@ -28,7 +28,7 @@ test_sequences:
           output: "Hello World"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'Hello World' $COMMAND_OUTPUT"
+          output: "grep -q 'Hello World' <<< \"$COMMAND_OUTPUT\""
       - step: 2
         description: Echo with special characters
         command: 'echo "Test: 123 @#$%"'
@@ -38,7 +38,7 @@ test_sequences:
           output: "Test: 123 @#$%"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'Test: 123' $COMMAND_OUTPUT"
+          output: "grep -q 'Test: 123' <<< \"$COMMAND_OUTPUT\""
       - step: 3
         description: Check current working directory
         command: pwd
@@ -48,4 +48,4 @@ test_sequences:
           output: "/"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "[[ -n $(cat $COMMAND_OUTPUT) ]]"
+          output: "[[ -n \"$COMMAND_OUTPUT\" ]]"

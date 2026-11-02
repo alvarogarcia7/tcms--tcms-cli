@@ -498,9 +498,16 @@ impl TestExecutor {
             ));
             code.push_str("    HOOK_EXIT_CODE=127\n");
             code.push_str("fi\n");
-        } else {
-            // Execute other files
+        } else if !command.contains(char::is_whitespace) {
+            // A single token without spaces is a file path to execute
             code.push_str(&format!("{}\n", resolved_command));
+            code.push_str("HOOK_EXIT_CODE=$?\n");
+        } else {
+            // Anything else is shell code (one or more commands, possibly multi-line). Run it in a
+            // subshell so its exit code is captured without ending the main script.
+            code.push_str("(\n");
+            code.push_str(command.trim_end());
+            code.push_str("\n)\n");
             code.push_str("HOOK_EXIT_CODE=$?\n");
         }
 
@@ -814,7 +821,10 @@ impl TestExecutor {
                                 script.push_str("\"\n");
                                 script.push_str("    echo \"Exit code: $PREREQ_EXIT_CODE\"\n");
                                 script.push_str("    echo \"Output: $PREREQ_OUTPUT\"\n");
-                                script.push_str("    echo \"Continuing with test execution despite prerequisite failure...\"\n");
+                                // docs/PREREQUISITES.md: a failed automatic prerequisite stops execution
+                                // immediately; later prerequisites and steps are not run.
+                                script.push_str("    echo \"Stopping: automatic prerequisite failed, execution aborted.\"\n");
+                                script.push_str("    exit 1\n");
                                 script.push_str("else\n");
                                 script.push_str(&format!(
                                     "    echo \"[PASS] Prerequisite {} verified\"\n",
@@ -1341,20 +1351,12 @@ impl TestExecutor {
                 // Trim trailing whitespace and newlines from the command
                 let normalized_command = converted_command.trim_end().to_string();
 
-                // For commands without here-documents, remove internal newlines to avoid bash syntax errors
-                // This handles YAML commands that span multiple lines
-                let is_heredoc_command = normalized_command.contains("<<");
-                let normalized_command = if is_heredoc_command {
-                    // Keep internal newlines for heredocs
-                    normalized_command
-                } else {
-                    // Remove internal newlines for regular commands
-                    normalized_command
-                        .replace(['\n', '\r'], " ")
-                        .split_whitespace()
-                        .collect::<Vec<_>>()
-                        .join(" ")
-                };
+                // Multi-line commands (compound statements such as if/then/else/fi, loops, and
+                // heredocs) must keep their line structure: joining the lines turns `else` and
+                // `fi` into arguments of the preceding command. Such commands use the
+                // multi-line brace form below. Single-line commands are left untouched.
+                let is_heredoc_command =
+                    normalized_command.contains("<<") || normalized_command.contains('\n');
 
                 // Check if the command needs variable substitution
                 let needs_substitution =
@@ -1427,10 +1429,17 @@ impl TestExecutor {
                         {
                             if let Some(pattern) = capture_pattern {
                                 // Capture from COMMAND_OUTPUT using regex pattern
-                                let sed_pattern = convert_pcre_to_sed_pattern(&pattern);
+                                // Alternation (`a|b`) needs extended regex; basic sed would read `|`
+                                // as a literal character. `sed -E` is supported on BSD and GNU.
+                                let (sed_flags, sed_pattern) = if pattern.contains('|') {
+                                    ("-n -E", convert_pattern_to_sed_ere(&pattern))
+                                } else {
+                                    ("-n", convert_pcre_to_sed_pattern(&pattern))
+                                };
                                 script.push_str(&format!(
-                                    "{}=$(echo \"$COMMAND_OUTPUT\" | sed -n {} | head -n 1 || echo \"\")\n",
+                                    "{}=$(echo \"$COMMAND_OUTPUT\" | sed {} {} | head -n 1 || echo \"\")\n",
                                     var_name,
+                                    sed_flags,
                                     bash_escape(&sed_pattern)
                                 ));
                             } else if let Some(cmd) = command {
@@ -1610,7 +1619,7 @@ impl TestExecutor {
                     echo_desc.replace("\"", "\\\"")
                 ));
                 script.push_str("    echo \"  Command: ");
-                script.push_str(&converted_command.replace("\"", "\\\""));
+                script.push_str(&escape_for_double_quotes(&converted_command));
                 script.push_str("\"\n");
                 script.push_str("    echo \"  Exit code: $EXIT_CODE\"\n");
                 script.push_str("    echo \"  Output: $COMMAND_OUTPUT\"\n");
@@ -2283,6 +2292,61 @@ impl Default for TestExecutor {
     }
 }
 
+/// Escapes text so it can sit inside a double-quoted bash string without being expanded.
+///
+/// The command text is echoed in the failure report; an unescaped `$3` (awk field) would be
+/// expanded by bash and abort under `set -u`.
+fn escape_for_double_quotes(text: &str) -> String {
+    text.replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('$', "\\$")
+        .replace('`', "\\`")
+}
+
+/// Returns the padding that goes before a capture group in a `s/…/\1/p` sed command.
+///
+/// `sed` keeps the text before a match, so the padding must consume it. A plain `.*` is greedy:
+/// for a capture of digits it consumes all but the last digit (`75` captured as `5`). When the
+/// capture starts with a bracket class, the padding instead ends in a non-class character, so a
+/// run of class characters is taken whole. Anchored patterns (`^…`) get no padding.
+fn sed_leading_padding(pattern: &str, converted: &str) -> String {
+    if pattern.starts_with('^') {
+        return String::new();
+    }
+    if let Some(rest) = converted.strip_prefix("\\([") {
+        if let Some(end) = rest.find(']') {
+            let class = &rest[..end];
+            if !class.is_empty() && !class.starts_with('^') && !class.contains(['[', ':']) {
+                return format!("\\(.*[^{}]\\)\\{{0,1\\}}", class);
+            }
+        }
+    }
+    ".*".to_string()
+}
+
+/// The `sed` back-reference for the capture: `\\2` when the padding adds its own group, else `\\1`.
+fn sed_capture_reference(padding: &str) -> &'static str {
+    if padding.contains("\\(") {
+        "\\2"
+    } else {
+        "\\1"
+    }
+}
+
+/// Builds an extended-regex sed command for a capture that uses alternation.
+///
+/// The pattern is used as written (parentheses and `|` are already extended-regex syntax), with
+/// the same padding rules as the basic form: the match is taken from the leftmost position and
+/// the first group is the value.
+fn convert_pattern_to_sed_ere(pattern: &str) -> String {
+    let escaped = pattern.replace('/', "\\/");
+    let trail = if pattern.ends_with('$') { "" } else { ".*" };
+    let lead = if pattern.starts_with('^') { "" } else { ".*" };
+    let group = if escaped.starts_with('(') { "" } else { "" };
+    let _ = group;
+    format!("s/{}{}{}/\\1/p", lead, escaped, trail)
+}
+
 /// Converts a PCRE (Perl-compatible) regex pattern to a BSD-compatible sed pattern.
 ///
 /// This function handles common PCRE constructs and converts them to sed patterns that work
@@ -2413,24 +2477,29 @@ pub fn convert_pcre_to_sed_pattern(pattern: &str) -> String {
 
     // Handle character class with + quantifier: [^x]+ -> [^x]*
     // This is necessary because basic sed doesn't support + quantifier
+    // `X+` (one or more) becomes `X X*`, not `X*`: `X*` would also match an empty capture.
     let char_class_plus_re = Regex::new(r"\[\^([^\]]+)\]\+").unwrap();
     converted = char_class_plus_re
         .replace_all(&converted, |caps: &regex::Captures| {
-            format!("[^{}]*", &caps[1])
+            format!("[^{0}][^{0}]*", &caps[1])
         })
         .to_string();
 
-    // Also handle positive character classes with +: [a-zA-Z]+ -> [a-zA-Z]*
+    // Also handle positive character classes with +: [a-zA-Z]+ -> [a-zA-Z][a-zA-Z]*
     let char_class_plus_re2 = Regex::new(r"\[([^\[\]]+)\]\+").unwrap();
     converted = char_class_plus_re2
         .replace_all(&converted, |caps: &regex::Captures| {
-            format!("[{}]*", &caps[1])
+            format!("[{0}][{0}]*", &caps[1])
         })
         .to_string();
 
     // Handle {n,m} quantifiers: [0-9]{4} -> [0-9][0-9][0-9][0-9]
     // This converts exact repetition {n} to n copies of the preceding element
-    let brace_quant_re = Regex::new(r"([^\[\]]*)\{(\d+)(?:,(\d+))?\}").unwrap();
+    // The repeated element is the single atom before the quantifier: a bracket expression
+    // (`[0-9]{4}`), an escaped character (`\(`, `\.`), or one plain character. Matching a run of
+    // characters here would drop the quantifier after a bracket expression, because `]` is excluded.
+    let brace_quant_re =
+        Regex::new(r"(\[[^\]]*\]|\\.|[^\[\]\\])\{(\d+)(?:,(\d+))?\}").unwrap();
     let mut prev_pos = 0;
     let mut result_str = String::new();
     for caps in brace_quant_re.captures_iter(&converted) {
@@ -2458,13 +2527,23 @@ pub fn convert_pcre_to_sed_pattern(pattern: &str) -> String {
     // Convert PCRE parentheses to sed parentheses
     converted = converted.replace("(", r"\(").replace(")", r"\)");
 
+    // The pattern sits between `s/` and `/`, so a literal slash must be escaped.
+    converted = converted.replace('/', r"\/");
+
     // Check if pattern already has capture group
     if converted.contains(r"\(") {
-        // Pattern already has a capture group, use it directly
-        format!("s/.*{}.*/\\1/p", converted)
+        // Pattern already has a capture group, use it directly.
+        // An anchor (`$` at the end) must stay at the line boundary, so the trailing `.*` is
+        // only added when not anchored.
+        let trail = if pattern.ends_with('$') { "" } else { ".*" };
+        let padding = sed_leading_padding(pattern, &converted);
+        let group = sed_capture_reference(&padding);
+        format!("s/{}{}{}/{}/p", padding, converted, trail, group)
     } else {
         // No capture group in pattern, wrap entire pattern in one
-        format!("s/.*\\({}\\).*/\\1/p", converted)
+        let padding = sed_leading_padding(pattern, &converted);
+        let group = sed_capture_reference(&padding);
+        format!("s/{}\\({}\\).*/{}/p", padding, converted, group)
     }
 }
 
@@ -5158,5 +5237,61 @@ mod tests {
         assert!(script.contains("# Description: This is the first line of the description."));
         assert!(script.contains("# This is the second line of the description."));
         assert!(script.contains("# This is the third line of the description."));
+    }
+
+    #[test]
+    fn anchored_one_or_more_capture_is_converted_without_losing_anchors() {
+        // `^([0-9]+)$` must stay anchored and must not match an empty capture.
+        assert_eq!(
+            convert_pcre_to_sed_pattern("^([0-9]+)$"),
+            "s/^\\([0-9][0-9]*\\)$/\\1/p"
+        );
+    }
+
+    #[test]
+    fn brace_quantifier_after_bracket_expression_is_expanded() {
+        // `[0-9]{4}` must expand to four copies of `[0-9]`, not drop the quantifier.
+        let sed = convert_pcre_to_sed_pattern("([0-9]{4}-[0-9]{2})");
+        assert!(
+            sed.contains("[0-9][0-9][0-9][0-9]-[0-9][0-9]"),
+            "unexpected sed pattern: {sed}"
+        );
+    }
+
+    #[test]
+    fn capture_with_slash_is_escaped_for_sed() {
+        let sed = convert_pcre_to_sed_pattern("(/tmp/fileops_test)");
+        assert_eq!(sed, "s/.*\\(\\/tmp\\/fileops_test\\).*/\\1/p");
+    }
+
+    #[test]
+    fn unanchored_digit_capture_takes_the_whole_number() {
+        // A plain leading `.*` is greedy and would capture only the last digit of "75". The
+        // padding must end in a non-digit so the digit run is taken whole, and the capture is
+        // then group 2.
+        let sed = convert_pcre_to_sed_pattern("([0-9]+)");
+        assert_eq!(sed, "s/\\(.*[^0-9]\\)\\{0,1\\}\\([0-9][0-9]*\\).*/\\2/p");
+    }
+    #[test]
+    fn escape_for_double_quotes_protects_dollar_and_quotes() {
+        assert_eq!(escape_for_double_quotes("awk '{print $3}'"), "awk '{print \\$3}'");
+        assert_eq!(escape_for_double_quotes("say \"hi\""), "say \\\"hi\\\"");
+    }
+
+    #[test]
+    fn inline_hook_command_runs_in_subshell_not_as_a_path() {
+        let hook = testcase_models::HookConfig {
+            command: "echo \"inline hook\"\nexit 0".to_string(),
+            on_error: None,
+        };
+        let code = TestExecutor::generate_hook_execution("before_step", &hook, None);
+        assert!(code.contains("(\necho \"inline hook\"\nexit 0\n)"), "code: {code}");
+        assert!(!code.contains("Hook script"), "inline command must not be treated as a file");
+    }
+
+    #[test]
+    fn alternation_capture_uses_extended_regex() {
+        let sed = convert_pattern_to_sed_ere("\"enabled\":(true|false)");
+        assert_eq!(sed, "s/.*\"enabled\":(true|false).*/\\1/p");
     }
 }

@@ -164,8 +164,7 @@ test_sequences:
       output: '[[ "$COMMAND_OUTPUT" =~ ^[0-9]+\.[0-9]+$ ]]'
       general:
       - name: verify_average_in_range
-        condition: '[[ $(echo "$average_score > 80 && $average_score < 90" | bc) -eq
-          1 ]]'
+        condition: '[[ $(awk -v s="$average_score" "BEGIN{print (s > 80 && s < 90) ? 1 : 0}") -eq 1 ]]'
   - step: 2
     description: Extract and format log data
     command: 'cat << ''EOF'' | grep ''ERROR'' | sed -E ''s/.*\[([0-9:]+)\].*Code:([0-9]+).*/\1
@@ -184,9 +183,7 @@ test_sequences:
       '
     capture_vars:
     - name: error_times
-      command: 'cat << ''EOF'' | grep ''ERROR'' | wc -l [10:30:15] INFO: Request received
-        [10:30:16] ERROR: Database connection failed Code:500 [10:30:17] WARN: Retrying
-        connection [10:30:18] ERROR: Timeout occurred Code:408 EOF'
+      command: 'printf ''%s\n'' ''[10:30:15] INFO: Request received'' ''[10:30:16] ERROR: Database connection failed Code:500'' ''[10:30:17] WARN: Retrying connection'' ''[10:30:18] ERROR: Timeout occurred Code:408'' | grep ''ERROR'' | wc -l'
     expected:
       success: true
       result: '0'

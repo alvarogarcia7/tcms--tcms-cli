@@ -146,7 +146,8 @@ src/testcase_generator.egg-info/
 # Acceptance test suite artifacts (run_acceptance_suite.sh)
 test-acceptance/execution_logs/
 test-acceptance/verification_results/
-test-acceptance/scripts/
+test-acceptance/scripts/*
+!test-acceptance/scripts/hooks/
 test-acceptance/reports/
 test-acceptance/mock_execution_logs/
 test-acceptance/tpdg_conversion_output/

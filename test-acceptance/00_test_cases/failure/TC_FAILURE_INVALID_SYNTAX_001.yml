@@ -31,7 +31,7 @@ test_sequences:
       output: ''
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output: 'true'
+      output: grep -q 'NOT_IN_OUTPUT' <<< "$COMMAND_OUTPUT"
   - step: 2
     description: This step should not execute due to verification failure
     command: echo 'Step 2'

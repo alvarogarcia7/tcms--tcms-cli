@@ -28,7 +28,7 @@ test_sequences:
           output: "success test"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'success' $COMMAND_OUTPUT"
+          output: "grep -q 'success' <<< \"$COMMAND_OUTPUT\""
       - step: 2
         description: Verify with regex pattern
         command: echo "test123"
@@ -38,7 +38,7 @@ test_sequences:
           output: "test123"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -E '^test[0-9]+$' $COMMAND_OUTPUT"
+          output: "grep -E '^test[0-9]+$' <<< \"$COMMAND_OUTPUT\""
       - step: 3
         description: Verify multiple conditions
         command: echo "multi line" && echo "verification"
@@ -48,4 +48,4 @@ test_sequences:
           output: "verification"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'verification' $COMMAND_OUTPUT"
+          output: "grep -q 'verification' <<< \"$COMMAND_OUTPUT\""

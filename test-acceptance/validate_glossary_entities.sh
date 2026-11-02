@@ -191,7 +191,7 @@ scenario_runs_with_metadata() {
     for tc in TC_GLOSS_RUN_001 TC_GLOSS_RUN_002; do
         run_expect 0 "generate $tc with a run ID" "$dir/gen_$tc.out" \
             "$TEST_EXECUTOR" --no-audit generate --json-log --run-id RUN-GLOSS-1 \
-            "$RUN_CASES/$tc.yaml" --output "$dir/scripts/$tc.sh"
+            "$RUN_CASES/$tc.yml" --output "$dir/scripts/$tc.sh"
         (cd "$dir/exec" && bash "$dir/scripts/$tc.sh") >"$dir/exec_$tc.out" 2>&1
         local status=$?
         if [[ $status -eq 0 ]]; then

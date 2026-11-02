@@ -28,7 +28,7 @@ test_sequences:
           output: "8"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q '8' $COMMAND_OUTPUT"
+          output: "grep -q '8' <<< \"$COMMAND_OUTPUT\""
       - step: 2
         description: Multiplication and division
         command: echo $((10 * 2 / 4))
@@ -38,7 +38,7 @@ test_sequences:
           output: "5"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q '5' $COMMAND_OUTPUT"
+          output: "grep -q '5' <<< \"$COMMAND_OUTPUT\""
       - step: 3
         description: Modulo operation
         command: echo $((17 % 5))
@@ -48,4 +48,4 @@ test_sequences:
           output: "2"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q '2' $COMMAND_OUTPUT"
+          output: "grep -q '2' <<< \"$COMMAND_OUTPUT\""

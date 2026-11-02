@@ -28,7 +28,7 @@ test_sequences:
           output: "one"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'one' $COMMAND_OUTPUT"
+          output: "grep -q 'one' <<< \"$COMMAND_OUTPUT\""
       - step: 2
         description: Get array length
         command: arr=(a b c d); echo ${#arr[@]}
@@ -38,7 +38,7 @@ test_sequences:
           output: "4"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q '4' $COMMAND_OUTPUT"
+          output: "grep -q '4' <<< \"$COMMAND_OUTPUT\""
       - step: 3
         description: Iterate array elements
         command: arr=(x y z); for i in ${arr[@]}; do echo $i; done
@@ -48,4 +48,4 @@ test_sequences:
           output: "z"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'z' $COMMAND_OUTPUT"
+          output: "grep -q 'z' <<< \"$COMMAND_OUTPUT\""

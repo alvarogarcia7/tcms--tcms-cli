@@ -28,7 +28,7 @@ test_sequences:
           output: "hello"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'hello' $COMMAND_OUTPUT"
+          output: "grep -q 'hello' <<< \"$COMMAND_OUTPUT\""
       - step: 2
         description: Default value for unset variable
         command: echo ${UNDEFINED_VAR:-default_value}
@@ -38,7 +38,7 @@ test_sequences:
           output: "default_value"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'default_value' $COMMAND_OUTPUT"
+          output: "grep -q 'default_value' <<< \"$COMMAND_OUTPUT\""
       - step: 3
         description: Check if variable is set
         command: MYVAR="test"; if [ -n "$MYVAR" ]; then echo "set"; fi
@@ -48,4 +48,4 @@ test_sequences:
           output: "set"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'set' $COMMAND_OUTPUT"
+          output: "grep -q 'set' <<< \"$COMMAND_OUTPUT\""

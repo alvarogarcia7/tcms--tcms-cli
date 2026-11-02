@@ -105,7 +105,7 @@ test_sequences:
     - name: response_duration_ms
       capture: 'Response sent:.*duration: ([0-9]+)ms'
     - name: log_lines
-      command: grep -c '\[INFO\]' <<< "$COMMAND_OUTPUT"
+      command: grep -c ' INFO ' <<< "$COMMAND_OUTPUT"
     expected:
       success: true
       result: '0'
@@ -192,6 +192,6 @@ test_sequences:
       - name: verify_peak_gt_avg
         condition: '[[ $peak_response_ms -gt $avg_response_ms ]]'
       - name: verify_error_rate_low
-        condition: '[[ $(echo "$error_rate < 10" | bc) -eq 1 ]]'
+        condition: '[[ $(awk -v s="$error_rate" "BEGIN{print (s < 10) ? 1 : 0}") -eq 1 ]]'
       - name: verify_active_connections_reasonable
         condition: '[[ $active_conns -gt 0 && $active_conns -lt 100 ]]'

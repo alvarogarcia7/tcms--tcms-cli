@@ -48,6 +48,8 @@
 
 # Get script directory and source shared libraries
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Hydration variables used by the test cases; generated scripts run with these set.
+source "$SCRIPT_DIR/acceptance_env.sh"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$PROJECT_ROOT/scripts/lib/find-binary.sh" || exit 1
 source "$PROJECT_ROOT/scripts/lib/logger.sh" || exit 1
@@ -82,6 +84,9 @@ VALIDATE_JSON=$(find_binary "validate-json")
 
 # TPDG binary location
 TPDG_BIN="${TEST_PLAN_DOC_GEN:-test-plan-documentation-generator}"
+# tpdg renders one input with --single <schema> <template> <input>; templates live beside this script.
+TPDG_TEMPLATE_ADOC="$SCRIPT_DIR/templates/container.adoc.j2"
+TPDG_TEMPLATE_MD="$SCRIPT_DIR/templates/container.md.j2"
 
 # Statistics tracking
 declare -i TOTAL_TEST_CASES=0
@@ -282,7 +287,7 @@ validate_test_cases() {
     local yaml_files=()
     while IFS= read -r -d '' file; do
         yaml_files+=("$file")
-    done < <(find "$TEST_CASES_DIR" -type f -name "*.yaml" -print0 | sort -z)
+    done < <(find "$TEST_CASES_DIR" -type f -name "*.yml" -print0 | sort -z)
     
     TOTAL_TEST_CASES=${#yaml_files[@]}
     log_info "Found $TOTAL_TEST_CASES test case YAML files"
@@ -332,10 +337,10 @@ generate_test_scripts() {
     local yaml_files=()
     while IFS= read -r -d '' file; do
         yaml_files+=("$file")
-    done < <(find "$TEST_CASES_DIR" -type f -name "*.yaml" -print0 | sort -z)
+    done < <(find "$TEST_CASES_DIR" -type f -name "*.yml" -print0 | sort -z)
     
     for yaml_file in "${yaml_files[@]}"; do
-        local basename=$(basename "$yaml_file" .yaml)
+        local basename=$(basename "$yaml_file" .yml)
         local script_file="$SCRIPTS_DIR/${basename}.sh"
         
         log_verbose "Generating: $basename.sh"
@@ -437,11 +442,11 @@ execute_test_scripts() {
         # Find corresponding YAML file
         local found_yaml=""
         while IFS= read -r -d '' yaml; do
-            if [[ $(basename "$yaml" .yaml) == "$basename" ]]; then
+            if [[ $(basename "$yaml" .yml) == "$basename" ]]; then
                 found_yaml="$yaml"
                 break
             fi
-        done < <(find "$TEST_CASES_DIR" -type f -name "${basename}.yaml" -print0)
+        done < <(find "$TEST_CASES_DIR" -type f -name "${basename}.yml" -print0)
         
         # Check if this is a manual test
         if [[ -n "$found_yaml" ]] && is_manual_test "$found_yaml"; then
@@ -455,7 +460,7 @@ execute_test_scripts() {
         
         # Determine if this is a failure scenario test (expected to fail)
         local is_failure_test=0
-        if [[ "$basename" =~ FAILURE|PREREQ_AUTO_FAIL|PREREQ_PARTIAL_FAIL|CIRCULAR|SELF_REF ]]; then
+        if [[ "$basename" =~ FAILURE|PREREQ_AUTO_FAIL|PREREQ_PARTIAL_FAIL|CIRCULAR|SELF_REF|TEST_HOOK_(AFTER_SEQ|BEFORE_SEQ|SCRIPT_END|SCRIPT_START|SETUP_TEST|TEARDOWN)|TC_HOOKS_MISSING ]]; then
             is_failure_test=1
         fi
         
@@ -584,11 +589,11 @@ verify_execution_logs() {
         # Find corresponding test case YAML
         local test_case_yaml=""
         while IFS= read -r -d '' yaml; do
-            if [[ $(basename "$yaml" .yaml) == "$basename" ]]; then
+            if [[ $(basename "$yaml" .yml) == "$basename" ]]; then
                 test_case_yaml="$yaml"
                 break
             fi
-        done < <(find "$TEST_CASES_DIR" -type f -name "${basename}.yaml" -print0)
+        done < <(find "$TEST_CASES_DIR" -type f -name "${basename}.yml" -print0)
         
         if [[ -z "$test_case_yaml" ]]; then
             log_warning "Test case YAML not found for: $basename"
@@ -597,7 +602,7 @@ verify_execution_logs() {
         
         # Run verifier to generate container YAML
         # Extract test case ID from YAML file (using basename without extension)
-        local test_case_id=$(basename "$test_case_yaml" .yaml)
+        local test_case_id=$(basename "$test_case_yaml" .yml)
         
         # Use --success-on-completion flag to ensure verifier exits 0 even if test cases failed
         # This is important for acceptance testing where we expect some test cases to fail
@@ -742,20 +747,19 @@ generate_documentation() {
         # Find corresponding test case YAML
         local test_case_yaml=""
         while IFS= read -r -d '' yaml; do
-            if [[ $(basename "$yaml" .yaml) == "$basename" ]]; then
+            if [[ $(basename "$yaml" .yml) == "$basename" ]]; then
                 test_case_yaml="$yaml"
                 break
             fi
-        done < <(find "$TEST_CASES_DIR" -type f -name "${basename}.yaml" -print0)
+        done < <(find "$TEST_CASES_DIR" -type f -name "${basename}.yml" -print0)
         
         local doc_success=1
         
         # Generate AsciiDoc
         if "$TPDG_BIN" \
-            --input "$container_file" \
+            --single "$CONTAINER_SCHEMA" "$TPDG_TEMPLATE_ADOC" "$container_file" \
             --output "$asciidoc_file" \
-            --format asciidoc \
-            ${test_case_yaml:+--test-case "$test_case_yaml"} \
+            --format adoc \
             > "$TEMP_DIR/tpdg_asciidoc_output.txt" 2>&1; then
             
             log_verbose "  AsciiDoc: $basename.adoc"
@@ -769,10 +773,9 @@ generate_documentation() {
         
         # Generate Markdown
         if "$TPDG_BIN" \
-            --input "$container_file" \
+            --single "$CONTAINER_SCHEMA" "$TPDG_TEMPLATE_MD" "$container_file" \
             --output "$markdown_file" \
-            --format markdown \
-            ${test_case_yaml:+--test-case "$test_case_yaml"} \
+            --format md \
             > "$TEMP_DIR/tpdg_markdown_output.txt" 2>&1; then
             
             log_verbose "  Markdown: $basename.md"
@@ -848,8 +851,17 @@ generate_consolidated_documentation() {
     
     # Generate consolidated container YAML using verifier --folder mode
     # Use --success-on-completion flag to ensure verifier exits 0 even if test cases failed
+    # The verifier's --folder mode only reads *_execution_log.json files, while the suite stores
+    # logs as <test-id>.json. Stage renamed copies in a temp folder for this step only.
+    local consolidation_logs="$TEMP_DIR/consolidation_logs"
+    mkdir -p "$consolidation_logs"
+    local log
+    for log in "$EXECUTION_LOGS_DIR"/*.json; do
+        cp "$log" "$consolidation_logs/$(basename "$log" .json)_execution_log.json"
+    done
+
     if "$VERIFIER" \
-        --folder "$EXECUTION_LOGS_DIR" \
+        --folder "$consolidation_logs" \
         --test-case-dir "$TEST_CASES_DIR" \
         --title "Acceptance Test Suite - All Test Cases" \
         --project "Test Case Manager - Acceptance Suite" \
@@ -873,9 +885,9 @@ generate_consolidated_documentation() {
     # Generate AsciiDoc from consolidated container
     log_info "Generating AsciiDoc documentation..."
     if "$TPDG_BIN" \
-        --input "$consolidated_container" \
+        --single "$CONTAINER_SCHEMA" "$TPDG_TEMPLATE_ADOC" "$consolidated_container" \
         --output "$consolidated_asciidoc" \
-        --format asciidoc \
+        --format adoc \
         > "$TEMP_DIR/tpdg_consolidated_asciidoc.txt" 2>&1; then
         
         pass "all_tests.adoc"
@@ -891,9 +903,9 @@ generate_consolidated_documentation() {
     # Generate Markdown from consolidated container
     log_info "Generating Markdown documentation..."
     if "$TPDG_BIN" \
-        --input "$consolidated_container" \
+        --single "$CONTAINER_SCHEMA" "$TPDG_TEMPLATE_MD" "$consolidated_container" \
         --output "$consolidated_markdown" \
-        --format markdown \
+        --format md \
         > "$TEMP_DIR/tpdg_consolidated_markdown.txt" 2>&1; then
         
         pass "all_tests.md"

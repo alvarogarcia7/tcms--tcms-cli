@@ -28,7 +28,7 @@ test_sequences:
           output: "test"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'test' $COMMAND_OUTPUT"
+          output: "grep -q 'test' <<< \"$COMMAND_OUTPUT\""
       - step: 2
         description: Check if file exists
         command: touch /tmp/testfile_bash; if [ -f /tmp/testfile_bash ]; then echo "exists"; fi; rm -f /tmp/testfile_bash
@@ -38,7 +38,7 @@ test_sequences:
           output: "exists"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "grep -q 'exists' $COMMAND_OUTPUT"
+          output: "grep -q 'exists' <<< \"$COMMAND_OUTPUT\""
       - step: 3
         description: List directory contents
         command: ls /tmp | wc -l
@@ -48,4 +48,4 @@ test_sequences:
           output: "0"
         verification:
           result: "[[ $? -eq 0 ]]"
-          output: "[[ -n $(cat $COMMAND_OUTPUT) ]]"
+          output: "[[ -n \"$COMMAND_OUTPUT\" ]]"
