@@ -4,11 +4,12 @@
 //! no hash-ordered iteration, so the same model always gives the same bytes (D-05). Every string
 //! that comes from the model passes through `escape_adoc` (D-02, D-06).
 
+use crate::gaps::{GapCase, GapRequirement, GapsReport};
 use crate::model::{DocumentSection, Header, ReportModel, RequirementRow, TestColumn};
-use crate::gaps::GapsReport;
 use crate::non_blank;
-use crate::problems::ProblemsReport;
-use crate::summary::SummaryReport;
+use crate::problems::{ProblemRow, ProblemsReport};
+use crate::summary::{RequirementSummaryRow, RunSummaryRow, SummaryReport};
+use crate::view::ResultCounts;
 
 /// Start-of-line characters that are written as numeric references at the start of a cell or a
 /// paragraph line, so a value cannot begin a block, a heading, a list or an attribute entry.
@@ -276,37 +277,243 @@ fn yes_no(covered: bool) -> &'static str {
     }
 }
 
-/// Summary view as one AsciiDoc document (SUM-01, OUT-01). Stub for the RED commit.
+/// Summary view as one AsciiDoc document (SUM-01, OUT-01). Same title, sections, columns and
+/// fixed words as `summary::render_summary_markdown`; no Inputs section (D-04-3).
 pub fn render_asciidoc_summary(report: &SummaryReport) -> String {
-    let _ = report;
-    unimplemented!("04-01 Task 2: render_asciidoc_summary")
+    let runs = if report.runs.is_empty() {
+        SUMMARY_NO_RUNS.to_string()
+    } else {
+        let rows: Vec<Vec<String>> = report.runs.iter().map(run_cells).collect();
+        table(RUN_HEADER.len(), &RUN_HEADER, &rows)
+    };
+    let requirements = if report.requirements.is_empty() {
+        SUMMARY_NO_REQUIREMENTS.to_string()
+    } else {
+        let rows: Vec<Vec<String>> = report.requirements.iter().map(requirement_cells).collect();
+        table(REQUIREMENT_HEADER.len(), &REQUIREMENT_HEADER, &rows)
+    };
+    let blocks = [
+        "= Run Summary".to_string(),
+        header_block(&report.header),
+        format!("== Results per run\n\n{runs}"),
+        format!("== Results per requirement\n\n{requirements}"),
+        format!("== Linked test cases\n\n{}", counts_line(&report.linked)),
+    ];
+    join_document(&blocks)
 }
 
-/// Gaps view as one AsciiDoc document (GAP-01, OUT-01). Stub for the RED commit.
+const RUN_HEADER: [&str; 8] = [
+    "Run",
+    "Build",
+    "Used",
+    "pass",
+    "fail",
+    "not_executed",
+    "error",
+    "Total",
+];
+const REQUIREMENT_HEADER: [&str; 8] = [
+    "Requirement",
+    "Level",
+    "Status",
+    "pass",
+    "fail",
+    "not_executed",
+    "error",
+    "Total",
+];
+const SUMMARY_NO_RUNS: &str = "No runs loaded";
+const SUMMARY_NO_REQUIREMENTS: &str = "No requirements";
+
+fn run_cells(row: &RunSummaryRow) -> Vec<String> {
+    let used = if row.used {
+        "yes".to_string()
+    } else {
+        let reason = row.excluded_reason.as_deref().unwrap_or("excluded");
+        format!("no: {}", escape_adoc(reason))
+    };
+    let mut cells = vec![escape_adoc(&row.run_id), escape_adoc(&row.build_id), used];
+    cells.extend(count_cells(&row.counts));
+    cells
+}
+
+fn requirement_cells(row: &RequirementSummaryRow) -> Vec<String> {
+    let mut cells = vec![
+        escape_adoc(&row.requirement_id),
+        escape_adoc(&row.level.to_string()),
+        row.status.label().to_string(),
+    ];
+    cells.extend(count_cells(&row.counts));
+    cells
+}
+
+/// pass, fail, not_executed, error, total, in table order.
+fn count_cells(counts: &ResultCounts) -> Vec<String> {
+    [
+        counts.pass,
+        counts.fail,
+        counts.not_executed,
+        counts.error,
+        counts.total,
+    ]
+    .iter()
+    .map(usize::to_string)
+    .collect()
+}
+
+fn counts_line(counts: &ResultCounts) -> String {
+    format!(
+        "pass {}, fail {}, not_executed {}, error {}, total {}",
+        counts.pass, counts.fail, counts.not_executed, counts.error, counts.total
+    )
+}
+
+/// Gaps view as one AsciiDoc document (GAP-01, OUT-01). Same title, lists and headings as
+/// `gaps::render_gaps_markdown`; no Inputs section (D-04-3).
 pub fn render_asciidoc_gaps(report: &GapsReport) -> String {
-    let _ = report;
-    unimplemented!("04-01 Task 2: render_asciidoc_gaps")
+    let blocks = [
+        "= Coverage Gaps".to_string(),
+        header_block(&report.header),
+        requirement_block("Requirements with no test cases", &report.no_tests),
+        requirement_block(
+            "Requirements missing a normal-range test",
+            &report.missing_normal_range,
+        ),
+        requirement_block(
+            "Requirements missing a robustness test",
+            &report.missing_robustness,
+        ),
+        case_block("Test cases with no recorded result", &report.no_result),
+    ];
+    join_document(&blocks)
 }
 
-/// Problem reports view as one AsciiDoc document (PRB-01, OUT-01). Stub for the RED commit.
+const GAPS_NONE: &str = "None";
+
+fn requirement_block(title: &str, items: &[GapRequirement]) -> String {
+    let heading = format!("== {title} ({})", items.len());
+    if items.is_empty() {
+        return format!("{heading}\n\n{GAPS_NONE}");
+    }
+    let rows: Vec<Vec<String>> = items
+        .iter()
+        .map(|item| {
+            let document = non_blank(item.document.as_deref())
+                .map_or_else(|| NOT_RECORDED.to_string(), escape_adoc);
+            vec![
+                escape_adoc(&item.requirement_id),
+                escape_adoc(&item.level.to_string()),
+                document,
+            ]
+        })
+        .collect();
+    format!(
+        "{heading}\n\n{}",
+        table(3, &["Requirement", "Level", "Document"], &rows)
+    )
+}
+
+fn case_block(title: &str, items: &[GapCase]) -> String {
+    let heading = format!("== {title} ({})", items.len());
+    if items.is_empty() {
+        return format!("{heading}\n\n{GAPS_NONE}");
+    }
+    let rows: Vec<Vec<String>> = items
+        .iter()
+        .map(|item| {
+            let requirements = if item.requirement_ids.is_empty() {
+                EMPTY_CELL.to_string()
+            } else {
+                item.requirement_ids
+                    .iter()
+                    .map(|id| escape_adoc(id))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            };
+            vec![escape_adoc(&item.test_case_id), requirements]
+        })
+        .collect();
+    format!(
+        "{heading}\n\n{}",
+        table(2, &["Test case", "Requirements"], &rows)
+    )
+}
+
+/// Problem reports view as one AsciiDoc document (PRB-01, OUT-01). Same title, count lines and
+/// columns as `problems::render_problems_markdown`; no Inputs section (D-04-3).
 pub fn render_asciidoc_problems(report: &ProblemsReport) -> String {
-    let _ = report;
-    unimplemented!("04-01 Task 2: render_asciidoc_problems")
+    let body = if report.rows.is_empty() {
+        PROBLEMS_NONE.to_string()
+    } else {
+        let rows: Vec<Vec<String>> = report.rows.iter().map(problem_cells).collect();
+        table(PROBLEM_HEADER.len(), &PROBLEM_HEADER, &rows)
+    };
+    let blocks = [
+        "= Problem Reports".to_string(),
+        header_block(&report.header),
+        format!("Failed or errored results: {}", report.rows.len()),
+        format!("Without problem report: {}", report.missing_count),
+        body,
+    ];
+    join_document(&blocks)
+}
+
+const PROBLEM_HEADER: [&str; 6] = [
+    "Test case",
+    "Verdict",
+    "Run",
+    "Build",
+    "Problem report",
+    "Requirements",
+];
+const PROBLEMS_NONE: &str = "No failed or errored results";
+/// The visible flag for a missing problem report ID. A literal, not a model value (D-05).
+const PROBLEMS_MISSING_FLAG: &str = "**MISSING problem_report_id**";
+
+fn problem_cells(row: &ProblemRow) -> Vec<String> {
+    let problem_report = row
+        .problem_report_id
+        .as_deref()
+        .map_or_else(|| PROBLEMS_MISSING_FLAG.to_string(), escape_adoc);
+    let requirements = if row.requirement_ids.is_empty() {
+        EMPTY_CELL.to_string()
+    } else {
+        row.requirement_ids
+            .iter()
+            .map(|id| escape_adoc(id))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    vec![
+        escape_adoc(&row.test_case_id),
+        row.verdict.as_str().to_string(),
+        escape_adoc(&row.run_id),
+        escape_adoc(&row.build_id),
+        problem_report,
+        requirements,
+    ]
+}
+
+/// Join the blocks of one document with blank lines and end it with exactly one newline.
+fn join_document(blocks: &[String]) -> String {
+    let mut out = blocks.join("\n\n");
+    out.push('\n');
+    out
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::gaps::{GapCase, GapRequirement};
     use crate::model::{
         CaseEntry, DocumentSection, Header, InputsSection, RequirementRow, TestColumn,
     };
-    use crate::gaps::{GapCase, GapRequirement};
     use crate::problems::ProblemRow;
+    use crate::rollup::{CaseOutcome, VerificationStatus};
     use crate::summary::{RequirementSummaryRow, RunSummaryRow};
     use crate::view::ResultCounts;
-    use testcase_verification::Verdict;
-    use crate::rollup::{CaseOutcome, VerificationStatus};
     use testcase_verification::RequirementLevel;
+    use testcase_verification::Verdict;
 
     /// The same hand-built model as the Phase 2 Markdown golden test (render_markdown.rs).
     fn golden_model() -> ReportModel {
