@@ -14,16 +14,21 @@ The two commits from Task 1 were made without the `[ci skip]` suffix in their su
 
 ## Red run (Task 1, before the implementation)
 
-`collect_findings` was a stub returning zeros. Six of nine tests failed on the non-clean cases (`requirement_without_tests_counts_three_gap_entries`, `each_gap_list_alone_makes_findings_not_clean`, `decided_fail_and_error_count_as_failed_results`, `only_not_executed_record_is_a_no_result_gap_not_a_failure`, `fail_of_unlinked_test_case_still_counts`, `shuffled_inputs_give_equal_findings`). The clean, superseded and summary-text tests passed against the stub, as expected.
+`collect_findings` was a stub returning zeros. Six of nine tests failed on the non-clean cases (`requirement_without_tests_counts_three_gap_entries`, `each_gap_list_alone_makes_findings_not_clean`, `decided_fail_and_error_count_as_failed_results`, `only_not_executed_record_is_a_no_result_gap_not_a_failure`, `fail_of_unlinked_test_case_still_counts`, `shuffled_inputs_give_equal_findings`).
+
+Review fix (stricter tests): the clean, superseded and summary-text tests passed against the stub, so each now has a control that the stub cannot pass. `nothing_wrong_is_clean` also asserts a decided fail gives 1 failed result. `fail_superseded_by_later_pass_is_clean` also asserts that a live fail of a second case gives exactly 1 failed result. `summary_text_is_fixed` also asserts the summary of collected findings (`3 gap entries, 1 failed results`). Re-run with the stub's `collect_findings` body: all 13 findings tests fail.
+
+The four gap-list cases are now four `#[test]` functions (`gap_list_no_tests_alone_…`, `gap_list_missing_normal_range_alone_…`, `gap_list_missing_robustness_alone_…`, `gap_list_no_result_alone_…`) sharing one helper.
 
 ## Gate results
 
 | Gate | Result |
 |------|--------|
-| `env -u CARGO_TARGET_DIR cargo fmt -p testcase-reporting -p test-executor -- --check` | exit 0 |
-| `env -u CARGO_TARGET_DIR cargo clippy -p testcase-reporting -p test-executor --all-targets -- -D warnings` | exit 101: pre-existing `if` with identical blocks at `crates/testcase-execution/src/executor.rs:2351`, a dependency this plan does not touch |
-| `... cargo clippy -p testcase-reporting -p test-executor --all-targets --no-deps -- -D warnings` | exit 0 |
-| `env -u CARGO_TARGET_DIR cargo test -p testcase-reporting -p test-executor` | exit 0: 415 passed, 0 failed (10 of them in `findings`) |
+| `env -u CARGO_TARGET_DIR cargo fmt --check -p testcase-reporting -p test-executor` | exit 0 |
+| `env -u CARGO_TARGET_DIR cargo clippy -p testcase-reporting --all-targets -- -D warnings` | exit 0 |
+| `env -u CARGO_TARGET_DIR cargo test -p testcase-reporting -p test-executor` | exit 0, all test binaries `ok`, 0 failed |
+
+An earlier run that also covered `-p test-executor` in clippy hit a pre-existing `if` with identical blocks at `crates/testcase-execution/src/executor.rs:2351`, a dependency this plan does not touch. The gate as specified (testcase-reporting only) does not compile that crate's lints and passes.
 
 `make test`, `make acceptance-test` and `make coverage-e2e` were not run, per instruction.
 

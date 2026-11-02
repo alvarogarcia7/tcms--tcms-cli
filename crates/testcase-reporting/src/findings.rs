@@ -138,6 +138,24 @@ mod tests {
             }
         );
         assert!(findings.is_clean());
+
+        // Control: the same requirement with a decided fail in a later run is not clean and has
+        // one failed result. Without it, a function that always returns zeros would pass above.
+        let failing = findings_of(
+            vec![link("HLR-1", &["T1"], true, true)],
+            vec![
+                run("RUN-1", "b1", EARLY, &[("T1", Verdict::Pass)]),
+                run("RUN-2", "b2", LATE, &[("T1", Verdict::Fail)]),
+            ],
+        );
+        assert_eq!(
+            failing,
+            Findings {
+                gap_entries: 0,
+                failed_results: 1
+            }
+        );
+        assert!(!failing.is_clean());
     }
 
     #[test]
@@ -155,39 +173,51 @@ mod tests {
         assert!(!findings.is_clean());
     }
 
+    /// Asserts a fixture whose only finding is exactly one entry in one gap list.
+    fn assert_one_gap_entry(links: Vec<TraceLink>, runs: Vec<LoadedRun>) {
+        let findings = findings_of(links, runs);
+        assert_eq!(
+            findings,
+            Findings {
+                gap_entries: 1,
+                failed_results: 0
+            }
+        );
+        assert!(!findings.is_clean());
+    }
+
     #[test]
-    fn each_gap_list_alone_makes_findings_not_clean() {
-        let scenarios: Vec<(&str, Vec<TraceLink>, Vec<LoadedRun>)> = vec![
-            (
-                "no tests (flags true, so only the no-tests list)",
-                vec![
-                    link("HLR-1", &["T1"], true, true),
-                    link("HLR-2", &[], true, true),
-                ],
-                vec![run("RUN-1", "b1", EARLY, &[("T1", Verdict::Pass)])],
-            ),
-            (
-                "missing normal-range test",
-                vec![link("HLR-1", &["T1"], false, true)],
-                vec![run("RUN-1", "b1", EARLY, &[("T1", Verdict::Pass)])],
-            ),
-            (
-                "missing robustness test",
-                vec![link("HLR-1", &["T1"], true, false)],
-                vec![run("RUN-1", "b1", EARLY, &[("T1", Verdict::Pass)])],
-            ),
-            (
-                "linked case with no recorded result",
-                vec![link("HLR-1", &["T1"], true, true)],
-                Vec::new(),
-            ),
-        ];
-        for (label, links, runs) in scenarios {
-            let findings = findings_of(links, runs);
-            assert_eq!(findings.gap_entries, 1, "{label}");
-            assert_eq!(findings.failed_results, 0, "{label}");
-            assert!(!findings.is_clean(), "{label}");
-        }
+    fn gap_list_no_tests_alone_makes_findings_not_clean() {
+        // Flags are true, so the only list the requirement appears in is the no-tests list.
+        assert_one_gap_entry(
+            vec![
+                link("HLR-1", &["T1"], true, true),
+                link("HLR-2", &[], true, true),
+            ],
+            vec![run("RUN-1", "b1", EARLY, &[("T1", Verdict::Pass)])],
+        );
+    }
+
+    #[test]
+    fn gap_list_missing_normal_range_alone_makes_findings_not_clean() {
+        assert_one_gap_entry(
+            vec![link("HLR-1", &["T1"], false, true)],
+            vec![run("RUN-1", "b1", EARLY, &[("T1", Verdict::Pass)])],
+        );
+    }
+
+    #[test]
+    fn gap_list_missing_robustness_alone_makes_findings_not_clean() {
+        assert_one_gap_entry(
+            vec![link("HLR-1", &["T1"], true, false)],
+            vec![run("RUN-1", "b1", EARLY, &[("T1", Verdict::Pass)])],
+        );
+    }
+
+    #[test]
+    fn gap_list_no_result_alone_makes_findings_not_clean() {
+        // T1 is linked and has no record in any run.
+        assert_one_gap_entry(vec![link("HLR-1", &["T1"], true, true)], Vec::new());
     }
 
     #[test]
@@ -211,6 +241,7 @@ mod tests {
 
     #[test]
     fn fail_superseded_by_later_pass_is_clean() {
+        // T1 fails in RUN-1 and passes in RUN-2: the plan says this is clean.
         let findings = findings_of(
             vec![link("HLR-1", &["T1"], true, true)],
             vec![
@@ -218,8 +249,37 @@ mod tests {
                 run("RUN-2", "b2", LATE, &[("T1", Verdict::Pass)]),
             ],
         );
-        assert_eq!(findings.failed_results, 0);
+        assert_eq!(
+            findings,
+            Findings {
+                gap_entries: 0,
+                failed_results: 0
+            }
+        );
         assert!(findings.is_clean());
+
+        // Control: add a second linked case, T2, that fails in RUN-2. Only T2 is a failed
+        // result. If the superseded T1 fail were counted, failed_results would be 2.
+        let with_live_fail = findings_of(
+            vec![link("HLR-1", &["T1", "T2"], true, true)],
+            vec![
+                run("RUN-1", "b1", EARLY, &[("T1", Verdict::Fail)]),
+                run(
+                    "RUN-2",
+                    "b2",
+                    LATE,
+                    &[("T1", Verdict::Pass), ("T2", Verdict::Fail)],
+                ),
+            ],
+        );
+        assert_eq!(
+            with_live_fail,
+            Findings {
+                gap_entries: 0,
+                failed_results: 1
+            }
+        );
+        assert!(!with_live_fail.is_clean());
     }
 
     #[test]
@@ -298,11 +358,22 @@ mod tests {
 
     #[test]
     fn summary_text_is_fixed() {
-        let findings = Findings {
+        let literal = Findings {
             gap_entries: 2,
             failed_results: 1,
         };
-        assert_eq!(findings.summary(), "2 gap entries, 1 failed results");
+        assert_eq!(literal.summary(), "2 gap entries, 1 failed results");
+
+        // The summary of the function's own output: a requirement with no tests (3 gap entries)
+        // and one decided fail (1 failed result). A stub that returns zeros cannot produce this.
+        let findings = findings_of(
+            vec![
+                link("HLR-1", &["T1"], true, true),
+                link("HLR-2", &[], false, false),
+            ],
+            vec![run("RUN-1", "b1", EARLY, &[("T1", Verdict::Fail)])],
+        );
+        assert_eq!(findings.summary(), "3 gap entries, 1 failed results");
     }
 
     /// The integer at the end of each `## ... (N)` heading of the gaps Markdown. The `## Report
