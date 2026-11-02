@@ -11,7 +11,7 @@ page describes what the CLI implements. Parts are verified only against mocks, s
 | `id-resolver` | 3 | Config types and loader, id to URL and URL to id, `external_refs` fill |
 | `jira-client` | 3 | Jira Cloud and Data Center client, write guard, audit entries, mock (TCMS-42.2) |
 | `requirement-import` | 3 | Requirement adapters: Jira features, StrictDoc export (TCMS-42.3) |
-| `tcms` | 5 | Binary `tcms`: `ref`, `jira test-connection`, `requirements import` |
+| `tcms` | 5 | Binary `tcms`: `ref`, `jira test-connection`, `requirements import`, `requirements locate` |
 
 ## Configuration
 
@@ -134,6 +134,84 @@ assumed shape, not StrictDoc's documented output:
 The fixture `crates/requirement-import/tests/fixtures/strictdoc_export.json` follows it. If a real
 export differs, only `crates/requirement-import/src/strictdoc.rs` changes. Nothing in this
 repository has run StrictDoc.
+
+## Requirement lookup: `tcms requirements locate`
+
+Crate `tcms` (`crates/tcms/src/locate.rs`). It checks that requirement IDs exist in their source and
+prints where each one was found. It is read-only: it reads Jira or a StrictDoc export and writes no
+record, audit entry or state.
+
+```
+tcms requirements locate PAY-2 PAY-3                                 # Jira IDs
+tcms requirements locate HLR-12 SYS-4 --input srs.json               # StrictDoc IDs
+tcms requirements locate PAY-2 HLR-12 --input srs.json --format json
+```
+
+The config is found as for every command: `--config`, then `$TCMS_INTEGRATION_CONFIG`, then
+`./integration-config.yaml`. `--as USER` sets the acting user of the Jira read (default `$TCMS_USER`,
+then `$USER`).
+
+* **Routing.** Each ID is routed by the `id_pattern` of the systems, as `tcms ref` does. Every ID is
+  resolved before any lookup is sent (D-02): an ID that matches no system, or more than one, is an
+  error naming the ID, and nothing is searched. An ID that resolves to a system that is neither
+  Jira nor StrictDoc is an error too.
+* **Jira.** One search per Jira system for all its IDs: JQL `key in ("PAY-2", "PAY-3")` (each key
+  escaped), fields `summary,status`. Each returned issue is matched to an ID by its exact `key`. Any
+  issue type counts (D-04); `project_keys` and `feature_issue_types` are not used. The token is read
+  only from the environment variable named by `auth.secret_ref`; a missing or empty variable stops
+  the command before the first search (D-08).
+* **StrictDoc.** An ID of a StrictDoc system needs `--input <export.json>`, a local export in the
+  assumed layout of the section above; there is no URL. The export is read once per run. Every
+  item is found whatever its level (D-05), and the output line shows the level. An export that the
+  importer refuses is an error (D-09): an unknown level or status, the wrong layout, or a UID that
+  appears twice.
+* **Repeated IDs** are reported once, at their first position.
+
+### Output
+
+Results are printed in command-line order. The result line of each ID (the `text` and `plaintext`
+formats print these lines; `text` adds a marker in front):
+
+| Result | Line |
+|--------|------|
+| found in Jira | `PAY-2: found in jira (jira) "Pay by card" [In progress] https://example.atlassian.net/browse/PAY-2` |
+| found in StrictDoc | `SYS-4: found in strictdoc (strictdoc) at level system "Remote profile management" https://example.com/system-requirements.html#SYS-4` |
+| not found | `PAY-99: not found in jira (jira)` |
+
+The text in brackets after the system name is the Jira status (`[In progress]`) or, for StrictDoc, the
+level (`at level system`). A part the source does not carry is left out, and an empty title prints
+as `""`.
+
+Formats (`--format`, D-07):
+
+* `text` (default): each line starts with `✓` (found) or `✗` (not found), then a summary line
+  `N of M requirement IDs found`. Green and red markers only when stdout is a terminal and `NO_COLOR`
+  is unset.
+* `plaintext`: the bare result lines, with no marker, no colour and no summary.
+* `json`: one array with one object per ID, keys `id`, `found`, `source` (`jira` or `strictdoc`),
+  `system`, `level` (StrictDoc only), `title`, `status`, `url`. A missing value, including every
+  `level` of a Jira result and the `title`, `level` and `status` of a missing ID, is `null`.
+
+### Exit codes (D-06)
+
+| Code | Meaning |
+|------|---------|
+| 0 | every ID was found |
+| 1 | at least one ID was not found; stderr gets `not found: K of M requirement IDs` |
+| 2 | error, nothing on stdout; stderr gets `error: ...`. Unknown or ambiguous ID, StrictDoc ID without `--input`, missing or empty credential, configuration problem, unreadable or invalid export, Jira HTTP error |
+
+### Verified and not verified
+
+* Verified against `jira_client::mock` (Cloud and Data Center layouts) and against the assumed-layout
+  StrictDoc fixture only, through the `tcms` binary (`crates/tcms/tests/requirements_locate_cli.rs`).
+  No real Jira site was used, and StrictDoc has not produced the export read here.
+* ASSUMPTION: a real Jira may answer a JQL that names a non-existent key with HTTP 400 instead of an
+  empty result. In that case the command exits 2 instead of reporting the key as not found.
+* ASSUMPTION: an issue moved to another key comes back under its new key, so the old ID is reported
+  not found.
+* The StrictDoc export layout is the one of "ASSUMPTION: StrictDoc export layout" above. An export in
+  another layout is refused with exit 2 (for example, when the `documents` array is missing); the
+  reader in `crates/requirement-import/src/strictdoc.rs` is then the only place to change.
 
 ## Limits
 

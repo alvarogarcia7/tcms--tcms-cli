@@ -2,7 +2,7 @@
 name = "tcms"
 version = "0.1.0"
 edition = "2021"
-description = "TCMS command line: external references, Jira integration, requirement import"
+description = "TCMS command line: external references, Jira integration, requirement import and lookup"
 
 [[bin]]
 name = "tcms"
