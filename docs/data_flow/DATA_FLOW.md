@@ -843,6 +843,39 @@ pub struct ReportSummary {
 }
 ```
 
+### 4.5 V&V data flow (Phase 8)
+
+The sequence diagram source is `docs/data_flow/2026-01-20_diagram_steps.mermaid`. It is the file map for the Phase 8 acceptance scenarios: each arrow carries one example invocation, and each step lists the directories it reads and writes. The examples use fake IDs only (REQ-001, TC-REQ001-NR, RUN-FAKE-001, BL-FAKE-001, TM-FAKE-001, FAKE-BUILD-1, fake-tester, "fake environment"). Every flag was checked against the `--help` output of the built binaries.
+
+Commands used: `validate-yaml`, `test-executor execute`, `verifier`, `test-executor trace-matrix`, `test-executor report`. The `tcms` crate has no report command; reports come from `test-executor report`.
+
+Open question: `test-executor execute --help` has no output-path flag, so the location of the execution log written at S2 (`runs/logs/`) is not confirmed. The S2 row below marks it as to be confirmed.
+
+**Arrows**
+
+| ID | From | To | Example invocation (fake data) |
+|----|------|----|--------------------------------|
+| A1 | Tester | Plan | `validate-yaml plans/TC-REQ001-NR.yaml` |
+| A2 | Plan | Exec | `test-executor execute plans/TC-REQ001-NR.yaml` |
+| A3 | Exec | Verif | `verifier -f runs/logs -d plans -F yaml -o reports/verification/verification.yaml --run-id RUN-FAKE-001 --build-id FAKE-BUILD-1 --tester fake-tester --environment 'fake environment' --no-test-run` |
+| A4 | Verif | RunRec | `verifier -f runs/logs -d plans -F yaml -o reports/verification/verification.yaml --run-id RUN-FAKE-001 --build-id FAKE-BUILD-1 --tester fake-tester --environment 'fake environment' --test-run runs/RUN-FAKE-001.yml` |
+| A5 | RunRec | Matrix | `test-executor trace-matrix plans --requirements requirements/requirements.txt --runs runs --id TM-FAKE-001 --baseline-id BL-FAKE-001 -o reports/matrix/trace_matrix.yaml --no-coverage-check` |
+| A6 | Matrix | Report | `test-executor report --matrix reports/matrix/trace_matrix.yaml --runs runs --kind traceability --format markdown --test-cases plans --generated-at 2026-11-01T12:00:00Z -o reports/traceability.md` |
+| A7 | Matrix | Report | `test-executor report --matrix reports/matrix/trace_matrix.yaml --runs runs --kind traceability --format asciidoc --test-cases plans --generated-at 2026-11-01T12:00:00Z -o reports/traceability.adoc` |
+
+A3 passes `--no-test-run` so that only A4 writes the test-run record.
+
+**Steps (file map)**
+
+| ID | Step | Reads | Writes |
+|----|------|-------|--------|
+| S1 | Plan | plans/, tcms-config/ | nothing |
+| S2 | Exec | plans/ | runs/logs/ (location to be confirmed) |
+| S3 | Verif | runs/logs/, plans/ | reports/verification/ |
+| S4 | RunRec | reports/verification/ | runs/ |
+| S5 | Matrix | requirements/, plans/, runs/ | reports/matrix/ |
+| S6 | Report | reports/matrix/, plans/, runs/ | reports/ |
+
 ---
 
 ## 5. Data Transformation Pipeline

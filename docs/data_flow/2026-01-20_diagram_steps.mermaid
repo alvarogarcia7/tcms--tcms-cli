@@ -7,18 +7,55 @@ sequenceDiagram
     participant DUT as [System/Program=DUT - Quality: Under Inspection]<br>Device Under Test
     participant Verifier as [System=TCMS CLI - Quality: Alpha]<br>Test Verifier
     participant Reports as [System=TCMS Reports - Quality: Beta]<br>Documentation Generator
-    participant TODO as TODO_???
+    participant Plan as VV Plan (plans/, tcms-config/)
+    participant Exec as VV Exec (test-executor execute)
+    participant Verif as VV Verifier (verifier)
+    participant RunRec as VV Test run record (runs/)
+    participant Matrix as VV Trace matrix (test-executor trace-matrix)
+    participant Report as VV Report (test-executor report)
 
-    
+
     Tester ->> Generator: generate
     Tester ->> Editor: generate
     Note over Editor,Tester: Produces Artifact: Test Case (YAML)<br>PK={id}
 
-    Tester ->> Generate: Create Test Case Shell Script (input: Test Case YAML)    
+    Tester ->> Generate: Create Test Case Shell Script (input: Test Case YAML)
     Note over Generate,Tester: Artifact: Test Case Shell Script (.sh)
 
-    Tester ->> TODO: Start Test Campaign Execution (input: set of Test Case YAML [.yaml])
-    Note over TODO,Tester: Artifact: Test Campaign Execution Log (.json) PK={id,dut_version,timestamp}
+    %% V&V path: plan -> execute -> verify -> test-run record -> trace matrix -> report (IDs A1..A7, S1..S6)
+    %% vv-arrow A1
+    Tester ->> Plan: validate test plan (no file written, stdout only)
+    Note over Plan,Tester: A1 example: validate-yaml plans/TC-REQ001-NR.yaml
+    Note over Plan: S1 reads: plans/, tcms-config/ writes: nothing
+
+    %% vv-arrow A2
+    Plan ->> Exec: execute test case plan
+    Note over Plan,Exec: A2 example: test-executor execute plans/TC-REQ001-NR.yaml
+    Note over Exec: S2 reads: plans/ writes: runs/logs/ (location to be confirmed)
+
+    %% vv-arrow A3
+    Exec ->> Verif: verify execution logs against plans (no test-run record)
+    Note over Exec,Verif: A3 example: verifier -f runs/logs -d plans -F yaml -o reports/verification/verification.yaml --run-id RUN-FAKE-001 --build-id FAKE-BUILD-1 --tester fake-tester --environment 'fake environment' --no-test-run
+    Note over Verif: S3 reads: runs/logs/, plans/ writes: reports/verification/
+
+    %% vv-arrow A4
+    Verif ->> RunRec: write test run record
+    Note over Verif,RunRec: A4 example: verifier -f runs/logs -d plans -F yaml -o reports/verification/verification.yaml --run-id RUN-FAKE-001 --build-id FAKE-BUILD-1 --tester fake-tester --environment 'fake environment' --test-run runs/RUN-FAKE-001.yml
+    Note over RunRec: S4 reads: reports/verification/ writes: runs/
+
+    %% vv-arrow A5
+    RunRec ->> Matrix: build trace matrix from requirements and runs
+    Note over RunRec,Matrix: A5 example: test-executor trace-matrix plans --requirements requirements/requirements.txt --runs runs --id TM-FAKE-001 --baseline-id BL-FAKE-001 -o reports/matrix/trace_matrix.yaml --no-coverage-check
+    Note over Matrix: S5 reads: requirements/, plans/, runs/ writes: reports/matrix/
+
+    %% vv-arrow A6
+    Matrix ->> Report: render traceability report (Markdown)
+    Note over Matrix,Report: A6 example: test-executor report --matrix reports/matrix/trace_matrix.yaml --runs runs --kind traceability --format markdown --test-cases plans --generated-at 2026-11-01T12:00:00Z -o reports/traceability.md
+    Note over Report: S6 reads: reports/matrix/, plans/, runs/ writes: reports/
+
+    %% vv-arrow A7
+    Matrix ->> Report: render traceability report (AsciiDoc)
+    Note over Matrix,Report: A7 example: test-executor report --matrix reports/matrix/trace_matrix.yaml --runs runs --kind traceability --format asciidoc --test-cases plans --generated-at 2026-11-01T12:00:00Z -o reports/traceability.adoc
 
     Tester ->> Bash: Execute test case <br>input: Test Case Shell Script
     %% replaced single execution step with alternative paths
@@ -35,7 +72,7 @@ sequenceDiagram
 
     Tester ->> Verifier: Verify Test Execution<br>input: Test Case Execution Log, Test Case YAML
     Verifier ->> Verifier: verify expectations
-    Note over Verifier,Tester: Artifact: <br>1. Test Verification Log (.json, schema=TODO) PK={id,timestamp} <br> 2. Test Execution Result (.xml) PK={id,version,timestamp}
+    Note over Verifier,Tester: Artifact: <br>1. Test Verification Log (.json) PK={id,timestamp} <br> 2. Test Execution Result (.xml) PK={id,version,timestamp}
 
     Tester ->> Reports: Generate Test Plan Documentation (input: set of (Test Execution Result [.xml] + Test Case YAML [.yaml]))
     Note over Reports,Tester: Artifact: Test Plan Documentation (.adoc/.html/.pdf)<br>PK={id,version,timestamp}
