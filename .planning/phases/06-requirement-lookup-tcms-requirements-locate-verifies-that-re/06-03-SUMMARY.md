@@ -37,7 +37,7 @@ None beyond the locked decisions in `.planning/DECISIONS.md`.
 
 - **JSON test parses the output** with `serde_json` and checks each field, instead of matching the compact string `"id":"PAY-2","found":true,...`. The output is pretty-printed, so the compact string could not match. The assertions are the same fields and values.
 - **`--format=json` form** is used in the JSON test, so the plan's literal grep criterion matches. rustfmt splits the argument array across lines, and the single-token form is the same argument to clap.
-- **Mixed-source tests use the Cloud layout only**, as the plan's wording ("Cloud mock seeded with PAY-2") states. The Data Center path is covered by the Jira-only tests.
+- **Mixed-source tests use the Cloud layout only.** This follows the plan, which specifies a Cloud mock seeded with PAY-2; it is not a deviation. The Data Center path is covered by the Jira-only tests.
 - **Cargo gates** ran as `env -u CARGO_TARGET_DIR` without the `CARGO_HOME=$HOME/.cargo-user` prefix that the plan's commands carry, as instructed for this run.
 - **Literal grep forms**: one assertion was written as `assert_eq!(search_requests(&mock).len(), 1, ...)` so the plan's grep criterion matches. Behaviour is unchanged.
 

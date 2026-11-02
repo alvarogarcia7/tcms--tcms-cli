@@ -264,23 +264,15 @@ fn jira_batch_finds_any_issue_type(layout: Layout) {
     let (stdout, stderr) = text(&o);
     assert_eq!(o.status.code(), Some(0), "{layout:?}: {stderr}");
     let base = mock.base_url();
-    let want = [
-        format!(
-            "✓ PAY-2: found in jira (jira) \"Pay by card\" [In progress] {base}/browse/PAY-2\n"
-        ),
-        "✓ PAY-3: found in jira (jira) \"Crash on refund\" [Open]".to_string(),
-        "✓ OTH-1: found in jira (jira)".to_string(),
-    ];
-    for line in &want {
-        assert!(
-            stdout.contains(line.as_str()),
-            "{layout:?}: {line}\n{stdout}"
-        );
-    }
-    assert!(
-        stdout.ends_with("4 of 4 requirement IDs found\n"),
-        "{stdout}"
+    // command-line order; the text format is one line per ID plus the summary
+    let expected = format!(
+        "✓ PAY-2: found in jira (jira) \"Pay by card\" [In progress] {base}/browse/PAY-2\n\
+         ✓ PAY-3: found in jira (jira) \"Crash on refund\" [Open] {base}/browse/PAY-3\n\
+         ✓ OTH-1: found in jira (jira) \"Other team story\" [Done] {base}/browse/OTH-1\n\
+         ✓ PAY-1: found in jira (jira) \"Payments\" [In progress] {base}/browse/PAY-1\n\
+         4 of 4 requirement IDs found\n"
     );
+    assert_eq!(stdout, expected, "{layout:?}");
 
     // D-03: one batch search for all four IDs
     assert_eq!(search_requests(&mock).len(), 1, "{layout:?}");
@@ -294,7 +286,14 @@ fn jira_batch_finds_any_issue_type(layout: Layout) {
     assert!(!q.contains("project in"), "{q}");
     assert!(!q.contains("issuetype in"), "{q}");
 
-    // the token reaches the request header only
+    // the token reaches the request header only: no recorded URL carries it
+    for r in mock.requests() {
+        assert!(
+            !percent_decode(&r.path).contains(TOKEN),
+            "{layout:?}: token in request path {}",
+            r.path
+        );
+    }
     assert!(!stdout.contains(TOKEN) && !stderr.contains(TOKEN));
     assert_eq!(
         snapshot(dir.path()),
@@ -326,19 +325,17 @@ fn jira_matches_the_exact_key(layout: Layout) {
     );
     let (stdout, stderr) = text(&o);
     assert_eq!(o.status.code(), Some(1), "{layout:?}: {stderr}");
-    assert!(stdout.contains("✓ PAY-2: found in jira (jira)"), "{stdout}");
-    assert!(
-        stdout.contains("✗ PAY-99: not found in jira (jira)"),
-        "{stdout}"
+    let base = mock.base_url();
+    let expected = format!(
+        "✓ PAY-2: found in jira (jira) \"Pay by card\" [In progress] {base}/browse/PAY-2\n\
+         ✗ PAY-99: not found in jira (jira)\n\
+         1 of 2 requirement IDs found\n"
     );
+    assert_eq!(stdout, expected, "{layout:?}");
     // the mock returned these too; only asked keys count
     for other in ["PAY-4", "PAY-1", "PAY-3", "OTH-1"] {
         assert!(!stdout.contains(other), "{other} leaked into {stdout}");
     }
-    assert!(
-        stdout.ends_with("1 of 2 requirement IDs found\n"),
-        "{stdout}"
-    );
     assert!(
         stderr.contains("not found: 1 of 2 requirement IDs"),
         "{stderr}"
@@ -428,7 +425,15 @@ fn locate_without_ids_is_a_usage_error() {
     let dir = tempfile::tempdir().unwrap();
     let cfg = write(dir.path(), &jira_yaml(Layout::Cloud, "http://127.0.0.1:9"));
     let o = tcms(&cfg, &["requirements", "locate"], Some(TOKEN));
-    assert_eq!(o.status.code(), Some(2), "{:?}", text(&o));
+    let (stdout, stderr) = text(&o);
+    assert_eq!(o.status.code(), Some(2), "{stderr}");
+    // clap's missing-IDs error, not "unrecognized subcommand"
+    assert!(
+        stderr.contains("required arguments were not provided"),
+        "{stderr}"
+    );
+    assert!(stderr.contains("<IDS>"), "{stderr}");
+    assert!(stdout.is_empty(), "{stdout}");
 }
 
 // ---------------------------------------------------------------- StrictDoc
@@ -455,23 +460,14 @@ fn locate_strictdoc_reports_every_level() {
     );
     let (stdout, stderr) = text(&o);
     assert_eq!(o.status.code(), Some(0), "{stderr}");
-    assert!(
-        stdout.contains("✓ HLR-12: found in strictdoc (strictdoc) at level HLR \"Update profile metadata over SMS\" [approved] https://pages.example.com/srs/software-requirements.html#HLR-12\n"),
-        "{stdout}"
-    );
-    // D-05: level system is found
-    assert!(
-        stdout.contains("✓ SYS-4: found in strictdoc (strictdoc) at level system \"Remote profile management\" [approved] https://pages.example.com/srs/system-requirements.html#SYS-4\n"),
-        "{stdout}"
-    );
-    assert!(
-        stdout.contains("✓ HLR-3: found in strictdoc (strictdoc) at level HLR \"Reject unsigned profiles\" [in_review] https://pages.example.com/srs/software-requirements.html#HLR-3\n"),
-        "{stdout}"
-    );
-    assert!(
-        stdout.ends_with("3 of 3 requirement IDs found\n"),
-        "{stdout}"
-    );
+    // D-05: level system is found, alongside the HLR levels
+    let expected = "\
+✓ HLR-12: found in strictdoc (strictdoc) at level HLR \"Update profile metadata over SMS\" [approved] https://pages.example.com/srs/software-requirements.html#HLR-12
+✓ SYS-4: found in strictdoc (strictdoc) at level system \"Remote profile management\" [approved] https://pages.example.com/srs/system-requirements.html#SYS-4
+✓ HLR-3: found in strictdoc (strictdoc) at level HLR \"Reject unsigned profiles\" [in_review] https://pages.example.com/srs/software-requirements.html#HLR-3
+3 of 3 requirement IDs found
+";
+    assert_eq!(stdout, expected);
     assert_eq!(snapshot(dir.path()), before, "locate wrote a file");
 }
 
@@ -487,10 +483,12 @@ fn locate_strictdoc_missing_uid_exits_1() {
     );
     let (stdout, stderr) = text(&o);
     assert_eq!(o.status.code(), Some(1), "{stderr}");
-    assert!(
-        stdout.contains("✗ HLR-99: not found in strictdoc (strictdoc)"),
-        "{stdout}"
-    );
+    let expected = "\
+✓ HLR-12: found in strictdoc (strictdoc) at level HLR \"Update profile metadata over SMS\" [approved] https://pages.example.com/srs/software-requirements.html#HLR-12
+✗ HLR-99: not found in strictdoc (strictdoc)
+1 of 2 requirement IDs found
+";
+    assert_eq!(stdout, expected);
     assert!(
         stderr.contains("not found: 1 of 2 requirement IDs"),
         "{stderr}"
@@ -601,21 +599,13 @@ fn locate_mixed_sources_one_search() {
     );
     let (stdout, stderr) = text(&o);
     assert_eq!(o.status.code(), Some(0), "{stderr}");
-    assert!(
-        stdout.contains(&format!(
-            "✓ PAY-2: found in jira (jira) \"Pay by card\" [In progress] {}/browse/PAY-2\n",
-            mock.base_url()
-        )),
-        "{stdout}"
+    let expected = format!(
+        "✓ PAY-2: found in jira (jira) \"Pay by card\" [In progress] {}/browse/PAY-2\n\
+         ✓ HLR-12: found in strictdoc (strictdoc) at level HLR \"Update profile metadata over SMS\" [approved] https://pages.example.com/srs/software-requirements.html#HLR-12\n\
+         2 of 2 requirement IDs found\n",
+        mock.base_url()
     );
-    assert!(
-        stdout.contains("✓ HLR-12: found in strictdoc (strictdoc) at level HLR"),
-        "{stdout}"
-    );
-    assert!(
-        stdout.ends_with("2 of 2 requirement IDs found\n"),
-        "{stdout}"
-    );
+    assert_eq!(stdout, expected);
 
     let searches = search_requests(&mock);
     assert_eq!(searches.len(), 1, "{searches:?}");
@@ -638,6 +628,8 @@ fn locate_mixed_strictdoc_without_input_sends_nothing() {
     );
     let (stdout, stderr) = text(&o);
     assert_eq!(o.status.code(), Some(2), "{stderr}");
+    assert!(stderr.contains("HLR-12"), "{stderr}");
+    assert!(stderr.contains("--input"), "{stderr}");
     assert!(stdout.is_empty(), "{stdout}");
     assert_eq!(mock.request_count(), 0);
 }
@@ -731,7 +723,7 @@ fn locate_format_plaintext() {
 #[test]
 fn locate_text_has_no_colour_when_not_a_terminal() {
     let dir = tempfile::tempdir().unwrap();
-    let (_mock, cfg, fx) = mixed_setup(dir.path());
+    let (mock, cfg, fx) = mixed_setup(dir.path());
     let o = tcms(
         &cfg,
         &["requirements", "locate", "PAY-2", "HLR-12", "--input", &fx],
@@ -739,7 +731,13 @@ fn locate_text_has_no_colour_when_not_a_terminal() {
     );
     let (stdout, stderr) = text(&o);
     assert_eq!(o.status.code(), Some(0), "{stderr}");
-    assert!(stdout.contains("✓ PAY-2"), "{stdout}");
+    let expected = format!(
+        "✓ PAY-2: found in jira (jira) \"Pay by card\" [In progress] {}/browse/PAY-2\n\
+         ✓ HLR-12: found in strictdoc (strictdoc) at level HLR \"Update profile metadata over SMS\" [approved] https://pages.example.com/srs/software-requirements.html#HLR-12\n\
+         2 of 2 requirement IDs found\n",
+        mock.base_url()
+    );
+    assert_eq!(stdout, expected);
     assert!(!stdout.contains("\x1b["), "{stdout:?}");
 }
 
@@ -761,5 +759,10 @@ fn locate_rejects_an_unknown_format() {
         ],
         None,
     );
-    assert_eq!(o.status.code(), Some(2), "{:?}", text(&o));
+    let (stdout, stderr) = text(&o);
+    assert_eq!(o.status.code(), Some(2), "{stderr}");
+    // clap's rejection of the value, naming the bad value and the flag
+    assert!(stderr.contains("invalid value 'xml'"), "{stderr}");
+    assert!(stderr.contains("--format"), "{stderr}");
+    assert!(stdout.is_empty(), "{stdout}");
 }
