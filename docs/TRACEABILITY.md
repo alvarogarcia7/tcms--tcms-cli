@@ -84,6 +84,7 @@ test-executor report --matrix trace-matrix.yaml --runs test-runs/ --kind traceab
 | `--matrix FILE` | Trace matrix YAML file (required) |
 | `--runs PATH` | Test run record file or directory of them. Repeatable. Required |
 | `--kind KIND` | Report kind: `traceability`, `summary`, `gaps` or `problems`. Repeatable. Default: all four |
+| `--format FORMAT` | Output format: `markdown` (default), `asciidoc`, `json` or `yaml`. See [Output formats](#output-formats) |
 | `--output FILE` | Write the text to a file instead of stdout |
 | `--test-cases DIR` | Test cases, searched recursively. Supplies each case's test type (the report columns) and obsolete status. Without it every case is shown in the `other` column and the obsolete count is `not recorded` |
 | `--requirements-export FILE` | StrictDoc JSON export (same assumed layout as the matrix's `.json` requirements). Supplies the source document of each requirement. Without it every row sits under `## Document: not recorded` |
@@ -95,8 +96,8 @@ whatever order `--kind` was given in. The traceability kind is one Markdown docu
 with `# Traceability Report` (see [Traceability report](#traceability-report-markdown)); its
 first section, `## Inputs`, holds the input and run-selection details described below. When
 traceability is not selected, the input block and a `Report kinds` list come first, and each
-selected kind follows as its own Markdown document. AsciiDoc, JSON and YAML output are not
-available yet.
+selected kind follows as its own Markdown document. The same four kinds are available in
+AsciiDoc, JSON and YAML with `--format` (see [Output formats](#output-formats)).
 
 ### Inputs are strict
 
@@ -203,6 +204,53 @@ Grouping and order:
 clock read is the default generation time, the current UTC time, used when `--generated-at` is
 absent.
 
+### Output formats
+
+`--format` picks the document format. `markdown` is the default and is unchanged. `asciidoc`,
+`json` and `yaml` are new and render the same model, so their numbers agree with Markdown.
+All four kinds (traceability, summary, gaps, problems) are available in every format.
+
+For `asciidoc`, `json` and `yaml`, stdout (or the `--output` file) holds only the document or
+documents. The input summary (the reconciliation block) goes to stderr, so stdout can be parsed
+directly. In AsciiDoc the Inputs section of the traceability document shows the matrix and run
+lines but not the `Reconciliation` heading.
+
+Layout of the documents:
+
+- **One kind:** one JSON object, or one YAML document, or one AsciiDoc document with one level-0
+  title (`= Traceability Report`, `= Run Summary`, `= Coverage Gaps` or `= Problem Reports`).
+- **Several kinds:** in the fixed order traceability, summary, gaps, problems. JSON is one array
+  of the documents. YAML is the documents separated by `---` lines. AsciiDoc is one file with one
+  level-0 title, the first kind's; each later kind's titles are one level down (`== Run Summary`,
+  `=== Results per run`).
+
+JSON and YAML documents share one layout, defined by `schemas/tcms/report.schema.v1.json`:
+`type` is `report`, `schema` is `tcms/report.schema.v1.json`, `kind` is the report kind, `header`
+holds the report header (matrix ID, baseline ID, run IDs, build IDs, environments, testers,
+generated time, excluded obsolete count) and `content` holds the kind's data. A missing value is `null` (or an empty list) in JSON and YAML. Markdown and AsciiDoc print
+the text `not recorded` in its place.
+
+AsciiDoc escaping: characters that AsciiDoc reads as markup (`|`, `*`, `_`, `[`, `]`, `<`, `>`,
+`&`, `{`, `}`, `` ` ``, `#`, `+`, `^`, `~`, `\`, `@`, and a colon that would start an admonition
+or a line start) are written as numeric character references. A value from the inputs is therefore
+shown as its text, and it cannot open a table cell, a heading or a block.
+
+Validation: every JSON and YAML document is checked against `schemas/tcms/report.schema.v1.json`
+before anything is written. A violation exits with code 1 and names the kind and each violated
+path on stderr. No file is created and stdout is empty. The schema is read from `schemas/` in the
+current directory; the report does not use or change the shared `schemas/tcms-schemas/` files.
+
+`--shape a|b` works only with `--format markdown` and `--kind traceability`. With `--format
+asciidoc`, `json` or `yaml`, or with any other `--kind` combination, `--shape a|b` is a usage
+error: exit code 2, nothing on stdout, no `--output` file.
+
+Extension points: the `kind` value and the schema version (`v1`) are the places where a new
+report kind or an incompatible layout change is recorded. A new kind adds one `build_*_document`
+and one renderer per format; the `kind` string is part of the document contract.
+
+**Determinism:** in every format the same inputs and the same `--generated-at` give identical bytes.
+Changing the run order given on the command line does not change the output.
+
 ### Report shapes
 
 `--shape` picks the layout of the traceability report. Both shapes are views over the same
@@ -212,6 +260,9 @@ layout described above, and `--shape grid` prints the same bytes as no `--shape`
 `--shape a` and `--shape b` need `--kind traceability` as the only `--kind`. Any other use (no
 `--kind`, or `--kind summary`, `gaps` or `problems`) is a usage error: exit code 2, nothing on
 stdout, and stderr names `--shape` and `--kind`. An unknown shape value is also exit code 2.
+They also need `--format markdown` (the default). With `--format asciidoc`, `json` or `yaml`,
+`--shape a` and `--shape b` exit with code 2 and write nothing, as described in
+[Output formats](#output-formats).
 
 Both shapes keep the document top (title, `## Inputs`, `## Report header`) and one
 `## Document: <path>` section per document, with `No traceable content` for a document without
@@ -339,5 +390,9 @@ table counts only linked live cases. The two tables therefore need not have equa
 RFC 3339 timestamp, `--test-cases` or `--requirements-export` cannot be read, or the output cannot
 be written. An error names the input at fault and nothing is written. The three-state exit code is
 a later phase.
+
+With `--format json` or `--format yaml`, 1 also when a document fails validation against
+`schemas/tcms/report.schema.v1.json`. The message names the kind and each violated path, and no
+output file is created. A `--shape` used outside `--format markdown --kind traceability` exits 2.
 
 `trace-matrix --runs` keeps its previous lenient behaviour. It does not use the strict loader.
