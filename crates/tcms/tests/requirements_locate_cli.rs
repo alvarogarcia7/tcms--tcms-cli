@@ -1,5 +1,5 @@
 //! `tcms requirements locate` run as the real binary: Jira against the mock (Cloud and Data
-//! Center), StrictDoc against the assumed-layout fixture. Verified against the mock only.
+//! Center), StrictDoc against the real-layout fixture. Verified against the mock only.
 
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};

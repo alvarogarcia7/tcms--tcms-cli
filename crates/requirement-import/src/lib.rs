@@ -6,8 +6,8 @@
 //! and reviews read them unchanged.
 //!
 //! * [`jira`]: issues of `feature_issue_types` in `project_keys` (Epic = system, Story/Feature = HLR).
-//! * [`strictdoc`]: items of a StrictDoc JSON export taken at a commit. The export layout is an
-//!   ASSUMPTION (see the module docs).
+//! * [`strictdoc`]: items of a StrictDoc JSON export taken at a commit. The layout is the real
+//!   StrictDoc export layout (`DOCUMENTS` and `NODES`); see the module docs.
 //!
 //! [`write_requirements`] is idempotent: a record whose YAML is unchanged is not rewritten, so a
 //! re-import produces no diff.

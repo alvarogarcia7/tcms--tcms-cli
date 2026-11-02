@@ -57,7 +57,7 @@ Follow-up pass: all four gates re-run and green (fmt, clippy with `--no-deps`, `
 | requirement-import: clippy `-D warnings` | MET | no warnings reported |
 | test-executor trace_matrix tests ok | MET | 12 ok in `trace_matrix_cli`, 2 unit tests ok |
 | test-executor: `cargo test -p test-executor` exit 0 | MET | exit 0 after `d76c0ed` (the `report_cli` test that failed now passes) |
-| test-executor: clippy `-D warnings` | MET with `--no-deps` | plain run stops on pre-existing `testcase-execution/src/executor.rs:2435:45` lint |
+| test-executor: clippy `-D warnings` | NOT MET | plain `cargo clippy -p test-executor --all-targets -- -D warnings` exits 101 on the pre-existing lint `crates/testcase-execution/src/executor.rs:2435` (`if` with identical blocks), outside this plan. The `--no-deps` run (`cargo clippy --no-deps -p tcms -p test-executor -p requirement-import -p testcase-reporting --all-targets -- -D warnings`) exits 0 |
 | tcms: `cargo fmt --check -p tcms` | MET | exit 0 |
 | tcms: `cargo clippy -p tcms --all-targets -- -D warnings` | MET | exit 0 |
 | tcms: `cargo test -p tcms` | MET | all binaries ok, exit 0 |
@@ -65,8 +65,23 @@ Follow-up pass: all four gates re-run and green (fmt, clippy with `--no-deps`, `
 | `cargo fmt --all -- --check` | MET | exit 0 |
 | `grep "assumed layout"` in strictdoc.rs and `ASSUMPTION` count 0 | MET | 0 and 0 |
 | `locate --input` help text describes the real export (`locate.rs`) | MET | `57de018`: "written by `strictdoc export --formats json`" |
-| "assumed layout" help text in `export_ids.rs` and `reqcmd.rs` | NOT MET | files outside `files_modified`; see Blocker 2 |
-| Plan Task 3 grep gate (no old layout outside the two excluded files) | NOT MET | see Blocker 2 |
+| "assumed layout" help text in `export_ids.rs` and `reqcmd.rs` | DEFERRED to 07-05 | `export_ids.rs:20`, `reqcmd.rs:22`; see D-07-7 |
+| Plan Task 3 grep gate (no old layout outside the two excluded files) | DEFERRED to 07-05 (narrowed) | the two hits above (`export_ids.rs`, `reqcmd.rs`). The `documents` hits are the report schema's own key, not StrictDoc residue. Narrowed pattern `'assumed layout\|"documents":\[{"path"'` assigned to 07-05 and added to its acceptance criteria |
+
+## Deferred to 07-05 (D-07-7)
+
+The help-text wording and the grep gate hits in `crates/tcms/src/export_ids.rs:20` and `crates/tcms/src/reqcmd.rs:22` ("assumed layout") are DEFERRED, not failed: wording only, outside 07-01 `files_modified`, owned by 07-05 (D-07-6), which now lists both files. The five `documents` hits in testcase-reporting and test-executor are the report schema's own key and are not StrictDoc residue.
+
+## Review Fixes
+
+Applied after review of 07-01. Comments, wording and this summary only; no behaviour change.
+
+- Fixed: `crates/requirement-import/src/lib.rs` module doc now names the real StrictDoc export layout (`DOCUMENTS` and `NODES`) instead of an ASSUMPTION.
+- Fixed: module doc line 2 of `crates/tcms/tests/requirements_cli.rs`, `crates/tcms/tests/requirements_locate_cli.rs` and `crates/tcms/tests/requirements_export_ids_cli.rs` now says "real-layout fixture" (was "assumed-format" or "assumed-layout").
+- Gate table corrected: the test-executor clippy row is NOT MET (see the table). The `--no-deps` run passes.
+- Grep gate narrowed and assigned to 07-05 (see the table). The acceptance line is in `07-05-PLAN.md`.
+- Not changed: the review named always-false `safety_related` and `security_related` fields in `crates/testcase-reporting/src/strictdoc.rs`, which does not exist. The fields are in `crates/requirement-import/src/strictdoc.rs` (`Item`). `parse_export` reads them and copies them into `RequirementRecord`, so they stay, and the assertions at lines 283 and 288 stay. Open question: an export that carries no flags could map to `None` instead of `Some(false)`, but that changes the YAML output and is a behaviour change.
+- Gates run for this fix: `cargo fmt --check` exit 0; `cargo clippy --no-deps ... -D warnings` exit 0; `cargo test` for tcms (178 passed), test-executor (156), requirement-import (34), testcase-reporting (279), all exit 0.
 
 ## Blocker
 
@@ -79,7 +94,7 @@ Follow-up pass: all four gates re-run and green (fmt, clippy with `--no-deps`, `
 ## Deviations from Plan
 
 - Task 3 action listed `crates/tcms/src/export_ids.rs` edits; this contradicted `files_modified` and was not applied (see Blocker 2).
-- `crates/tcms/tests/requirements_cli.rs` and `crates/tcms/tests/requirements_locate_cli.rs` module doc lines still describe the fixture as assumed-format; not in the plan's changes, left as is.
+- `crates/tcms/tests/requirements_cli.rs`, `requirements_locate_cli.rs` and `requirements_export_ids_cli.rs` module doc lines still described the fixture as assumed-format or assumed-layout. Not in the plan's changes; reworded to real-layout in the review fix below (comments only).
 - `cargo fmt` reformatted `strictdoc.rs` (this plan's own code).
 
 ## Self-Check
