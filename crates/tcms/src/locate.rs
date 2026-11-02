@@ -41,7 +41,7 @@ pub struct LocateArgs {
     /// Requirement IDs, for example PAY-2231 HLR-12
     #[arg(required = true, num_args = 1..)]
     pub ids: Vec<String>,
-    /// StrictDoc IDs: local JSON export of the document set (assumed layout, see docs/JIRA_INTEGRATION.md); no URL
+    /// StrictDoc IDs: local JSON export written by `strictdoc export --formats json` (the index.json file); no URL
     #[arg(long)]
     pub input: Option<PathBuf>,
     /// Output format

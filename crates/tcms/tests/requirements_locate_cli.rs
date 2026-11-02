@@ -536,7 +536,7 @@ fn locate_strictdoc_wrong_layout() {
     );
     let (_, stderr) = text(&o);
     assert_eq!(o.status.code(), Some(2), "{stderr}");
-    assert!(stderr.contains("assumed layout"), "{stderr}");
+    assert!(stderr.contains("DOCUMENTS"), "{stderr}");
 }
 
 #[test]
@@ -545,7 +545,7 @@ fn locate_strictdoc_refused_level() {
     let cfg = write(dir.path(), STRICTDOC_YAML);
     let bad = strictdoc_fixture_with(
         dir.path(),
-        r#"{"documents":[{"path":"d.sdoc","requirements":[{"uid":"HLR-1","level":"chapter"}]}]}"#,
+        r#"{"DOCUMENTS":[{"TITLE":"d","NODES":[{"_NODE_TYPE":"REQUIREMENT","UID":"HLR-1","LEVEL":"chapter"}]}]}"#,
     );
     let bad_s = bad.to_string_lossy().into_owned();
     let o = tcms(
@@ -564,7 +564,7 @@ fn locate_strictdoc_duplicate_uid() {
     let cfg = write(dir.path(), STRICTDOC_YAML);
     let bad = strictdoc_fixture_with(
         dir.path(),
-        r#"{"documents":[{"path":"d.sdoc","requirements":[{"uid":"HLR-1","level":"HLR"},{"uid":"HLR-1","level":"HLR"}]}]}"#,
+        r#"{"DOCUMENTS":[{"TITLE":"d","NODES":[{"_NODE_TYPE":"REQUIREMENT","UID":"HLR-1","LEVEL":"HLR"},{"_NODE_TYPE":"REQUIREMENT","UID":"HLR-1","LEVEL":"HLR"}]}]}"#,
     );
     let bad_s = bad.to_string_lossy().into_owned();
     let o = tcms(
@@ -576,6 +576,49 @@ fn locate_strictdoc_duplicate_uid() {
     assert_eq!(o.status.code(), Some(2), "{stderr}");
     assert!(stderr.contains("HLR-1"), "{stderr}");
     assert!(stderr.contains("more than once"), "{stderr}");
+}
+
+#[test]
+fn locate_strictdoc_old_lowercase_layout_is_refused() {
+    let dir = tempfile::tempdir().unwrap();
+    let cfg = write(dir.path(), STRICTDOC_YAML);
+    let old = strictdoc_fixture_with(
+        dir.path(),
+        r#"{"documents":[{"path":"d.sdoc","requirements":[{"uid":"HLR-1","level":"HLR"}]}]}"#,
+    );
+    let old_s = old.to_string_lossy().into_owned();
+    let o = tcms(
+        &cfg,
+        &["requirements", "locate", "HLR-1", "--input", &old_s],
+        None,
+    );
+    let (stdout, stderr) = text(&o);
+    assert_eq!(o.status.code(), Some(2), "{stderr}");
+    assert!(stderr.contains("DOCUMENTS"), "{stderr}");
+    assert!(stdout.is_empty(), "{stdout}");
+}
+
+#[test]
+fn locate_strictdoc_item_without_level_exits_2() {
+    let dir = tempfile::tempdir().unwrap();
+    let cfg = write(dir.path(), STRICTDOC_YAML);
+    let bad = strictdoc_fixture_with(
+        dir.path(),
+        r#"{"DOCUMENTS":[{"TITLE":"d","NODES":[{"_NODE_TYPE":"REQUIREMENT","UID":"HLR-1"}]}]}"#,
+    );
+    let bad_s = bad.to_string_lossy().into_owned();
+    let o = tcms(
+        &cfg,
+        &["requirements", "locate", "HLR-1", "--input", &bad_s],
+        None,
+    );
+    let (stdout, stderr) = text(&o);
+    assert_eq!(o.status.code(), Some(2), "{stderr}");
+    assert!(
+        stderr.contains("HLR-1") && stderr.contains("has no LEVEL"),
+        "{stderr}"
+    );
+    assert!(stdout.is_empty(), "{stdout}");
 }
 
 // ---------------------------------------------------------------- mixed sources

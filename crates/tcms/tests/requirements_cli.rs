@@ -190,7 +190,10 @@ fn strictdoc_import_records_path_uid_and_commit_and_is_idempotent() {
     assert!(o.status.success(), "{stderr}");
     assert!(stdout.contains("3 created"), "{stdout}");
     let hlr = std::fs::read_to_string(out.join("HLR-12.yaml")).unwrap();
-    assert!(hlr.contains("source: docs/srs.sdoc#HLR-12"), "{hlr}");
+    assert!(
+        hlr.contains("source: Software Requirements#HLR-12"),
+        "{hlr}"
+    );
     assert!(
         hlr.contains("version: '9f1c2ab'") || hlr.contains("version: 9f1c2ab"),
         "{hlr}"
