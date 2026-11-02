@@ -57,10 +57,13 @@ pub fn collect_findings(model: &ReportModel, selection: &RunSelection) -> Findin
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::gaps::{build_gaps, render_gaps_markdown};
     use crate::load::{LoadedInputs, Reconciliation};
     use crate::model::{build_model, ReportInputs};
+    use crate::problems::{build_problems, render_problems_markdown};
     use crate::run::{test_support::record, LoadedRun};
     use crate::select::select_results;
+    use crate::view::ViewInput;
     use testcase_verification::{RequirementLevel, TraceLink, TraceMatrix, Verdict};
 
     const EARLY: &str = "2026-10-01T10:00:00Z";
@@ -300,5 +303,76 @@ mod tests {
             failed_results: 1,
         };
         assert_eq!(findings.summary(), "2 gap entries, 1 failed results");
+    }
+
+    /// The integer at the end of each `## ... (N)` heading of the gaps Markdown. The `## Report
+    /// header` heading has no count and is skipped.
+    fn gap_heading_counts(markdown: &str) -> Vec<usize> {
+        markdown
+            .lines()
+            .filter(|line| line.starts_with("## ") && line.ends_with(')'))
+            .map(|line| {
+                let open = line.rfind('(').expect("count opens");
+                let close = line.rfind(')').expect("count closes");
+                line[open + 1..close].parse().expect("count is an integer")
+            })
+            .collect()
+    }
+
+    /// The N of the `Failed or errored results: N` line of the problems Markdown.
+    fn rendered_failed_count(markdown: &str) -> usize {
+        const PREFIX: &str = "Failed or errored results: ";
+        let line = markdown
+            .lines()
+            .find(|line| line.starts_with(PREFIX))
+            .expect("problems report prints the count line");
+        line[PREFIX.len()..]
+            .trim()
+            .parse()
+            .expect("count is an integer")
+    }
+
+    #[test]
+    fn collect_findings_agrees_with_rendered_reports() {
+        let covered = || link("HLR-1", &["T1"], true, true);
+        let gap = || link("HLR-2", &[], false, false);
+        let pass = || run("RUN-1", "b1", EARLY, &[("T1", Verdict::Pass)]);
+        let fail = || run("RUN-1", "b1", EARLY, &[("T1", Verdict::Fail)]);
+        let error = || run("RUN-1", "b1", EARLY, &[("T1", Verdict::Error)]);
+
+        // (name, links, runs, expected gap entries, expected failed results)
+        type Scenario = (&'static str, Vec<TraceLink>, Vec<LoadedRun>, usize, usize);
+        let scenarios: Vec<Scenario> = vec![
+            ("clean", vec![covered()], vec![pass()], 0, 0),
+            ("gap_only", vec![covered(), gap()], vec![pass()], 3, 0),
+            ("fail_only", vec![covered()], vec![fail()], 0, 1),
+            ("error_only", vec![covered()], vec![error()], 0, 1),
+            ("gap_and_fail", vec![covered(), gap()], vec![fail()], 3, 1),
+        ];
+        for (name, links, runs, gap_expected, failed_expected) in scenarios {
+            let (model, selection) = pipeline(links, runs);
+            let input = ViewInput {
+                model: &model,
+                selection: &selection,
+            };
+            let gaps = render_gaps_markdown(&build_gaps(input));
+            let problems = render_problems_markdown(&build_problems(input));
+
+            let headings = gap_heading_counts(&gaps);
+            assert_eq!(headings.len(), 4, "{name}: four gap headings\n{gaps}");
+            let gap_sum: usize = headings.iter().sum();
+            let failed = rendered_failed_count(&problems);
+
+            let findings = collect_findings(&model, &selection);
+            assert_eq!(findings.gap_entries, gap_sum, "{name}\n{gaps}");
+            assert_eq!(findings.failed_results, failed, "{name}\n{problems}");
+            assert_eq!(gap_sum, gap_expected, "{name}\n{gaps}");
+            assert_eq!(failed, failed_expected, "{name}\n{problems}");
+            assert_eq!(
+                findings.is_clean(),
+                headings.iter().all(|n| *n == 0) && failed == 0,
+                "{name}"
+            );
+        }
     }
 }
