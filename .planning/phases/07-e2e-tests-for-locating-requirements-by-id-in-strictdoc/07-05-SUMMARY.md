@@ -1,10 +1,10 @@
 # Phase 7 Plan 05: Docs for the verified StrictDoc layout and quality gates Summary
 
-**The StrictDoc export is documented as verified (StrictDoc 0.20.0 output, checked-in exports, e2e tests), the "assumed layout" wording is gone from the docs and the two help strings, and the gates that were run pass. The make-level gates (`make test`, `make coverage-e2e`, `make acceptance-test`) were not run because tcms-45 and tcms-46 are open. Plan status: NOT PASSED, one grep criterion is NOT MET.**
+**The StrictDoc export is documented as verified (StrictDoc 0.20.0 output, checked-in exports, e2e tests), the "assumed layout" wording is gone from the docs and the two help strings, and the gates that were run pass. The make-level gates (`make test`, `make coverage-e2e`, `make acceptance-test`) were not run because tcms-45 and tcms-46 are open. Plan status: PASSED with the grep criterion amended under D-07-9 (MET after amendment).**
 
 ## Status
 
-Plan NOT complete. Task 1 is done and committed, except one narrowed grep criterion (NOT MET, see Criteria). Task 2 gates that were run are green. The rest are DEFERRED, not run.
+Plan complete. The narrowed grep criterion is MET after the D-07-9 amendment (see Criteria). Task 2 gates that were run are green. The rest are DEFERRED, not run.
 
 ## Commits
 
@@ -36,8 +36,8 @@ Gates were run with `env -u CARGO_TARGET_DIR` as the run instructions require. C
 | `cargo fmt --all -- --check` (plan) | not run | DEFERRED; the four-crate fmt check above passed |
 | `cargo clippy --workspace --all-targets -- -D warnings` (plan) | not run | DEFERRED; the four-crate `--no-deps` clippy above passed |
 | `cargo test --all-features` (plan) | not run | DEFERRED; the four per-crate test runs above passed; the no-network run was not done |
-| `make build` (plan) | not run | DEFERRED |
-| `make lint` (plan) | not run | DEFERRED |
+| `make build` (plan) | not run | DEFERRED; the workspace build is covered by the per-crate builds above, and make targets were held back with the open make gates (tcms-45, tcms-46) |
+| `make lint` (plan) | not run | DEFERRED; lint is covered by the per-crate fmt and clippy above, and make lint hits the pre-existing testcase-execution lint (tcms-46 scope) |
 | `make test` (plan) | not run | NOT RUN by instruction: tcms-45 is open |
 | `make coverage-e2e` (plan) | not run | NOT RUN by instruction: tcms-46 is open |
 | `make acceptance-test` (plan) | not run | NOT RUN by instruction: tcms-45 and tcms-46 are open |
@@ -49,7 +49,7 @@ Task 1
 | Criterion | Status | Evidence |
 |---|---|---|
 | Grep gate `assumed layout\|ASSUMPTION: StrictDoc\|Nothing in this repository has run StrictDoc` over docs and crates prints 0 | MET | `0` |
-| Narrowed grep `assumed layout\|"documents":\[{"path"` over crates `*.rs` and `*.json`, excluding `strictdoc.rs` and `requirements_locate_cli.rs`, prints nothing | NOT MET | prints `crates/tcms/tests/requirements_locate_strictdoc_e2e.rs`, line 442: `r#"{"documents":[{"path":"d.sdoc","requirements":[{"uid":"HLR-1","level":"HLR"}]}]}"#`. This is the 07-03 old-layout refusal fixture (intended). The plan's exclusion list names only `strictdoc.rs` and `requirements_locate_cli.rs`, and the file is outside `files_modified`, so it was not edited. Fix needs a plan amendment (add the file to the exclusions) or a test edit under a new plan |
+| Narrowed grep `assumed layout\|"documents":\[{"path"` over crates `*.rs` and `*.json`, excluding `strictdoc.rs` and `requirements_locate_cli.rs`, prints nothing | MET (amended under D-07-9; line-scoped exclusion of the deliberate refusal fixture, count 0) | was: prints `crates/tcms/tests/requirements_locate_strictdoc_e2e.rs`, line 442: `r#"{"documents":[{"path":"d.sdoc","requirements":[{"uid":"HLR-1","level":"HLR"}]}]}"#`. This is the 07-03 old-layout refusal fixture (intended). The plan's exclusion list names only `strictdoc.rs` and `requirements_locate_cli.rs`, and the file is outside `files_modified`, so it was not edited. Fix needs a plan amendment (add the file to the exclusions) or a test edit under a new plan |
 | `grep -c "strictdoc export --formats json"` at least 1 in both docs | MET | JIRA 3, TRACEABILITY 1 |
 | `DOCUMENTS` at least 1 and "no LEVEL" wording at least 1 in JIRA doc | MET | 4 and 1 |
 | `make strictdoc-regen-test-fixtures` named, `cargo test` said not to run it | MET | section "StrictDoc export layout" |

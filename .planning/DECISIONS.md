@@ -216,3 +216,10 @@ Entry format:
 - **Options considered**: (a) read the flags from StrictDoc node fields; (b) keep false, document that StrictDoc exports are not read for these flags, and name the follow-up.
 - **Decision**: (b). The checked-in real export (`crates/requirement-import/tests/fixtures/strictdoc_export.json`) and the 07-01 and 07-05 plans show no safety or security field, so (a) would need an invented field name. Keep `Some(false)`; the None-versus-Some(false) question stays out of scope (it changes YAML output). Fixer: add a module doc paragraph in strictdoc.rs and a comment at the two `false` lines saying the flags are not read from StrictDoc exports and are always false; add the same sentence to 07-01-SUMMARY.md; tests at lines 283-288 stay. Follow-up: read the flags only if a real export with them is added to the fixtures (custom StrictDoc fields), through a new plan.
 - **Supersedes / affects**: 07-01 summary; 07-05 plan line 67 (consistent)
+
+- **ID**: D-07-9
+- **Phase / stage**: 7 / execute (07-05 gate)
+- **Question**: The narrowed 07-05 grep gate still hits `crates/tcms/tests/requirements_locate_strictdoc_e2e.rs:442`; residue or correct?
+- **Options considered**: (a) remove or reword the fixture; (b) amend the gate's exclusion list to name the fixture.
+- **Decision**: (b). Line 442 is the intentional old lowercase `{"documents":[{"path"...` fixture that tests refusal of the old layout (D-07-3); the hit is correct behaviour, not residue. The criterion now excludes `requirements_locate_strictdoc_e2e.rs:442:` (line-scoped, so new hits in that file still fail). Test and fixture unchanged. Command: `grep -rn 'assumed layout\|"documents":\[{"path"' crates --include="*.rs" --include="*.json" | grep -v '.../strictdoc.rs' | grep -v '.../requirements_locate_cli.rs' | grep -v 'requirements_locate_strictdoc_e2e.rs:442:' | wc -l` = 0. **Why**: the gate should check residue only; weakening the test would lose D-07-3 coverage.
+- **Supersedes / affects**: 07-05 plan grep criterion (line 98); D-07-7 unchanged
