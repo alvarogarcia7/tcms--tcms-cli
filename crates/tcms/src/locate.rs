@@ -260,7 +260,10 @@ fn locate(ctx: &Context, args: &LocateArgs) -> Result<Vec<LocateResult>> {
     for (name, keys) in &groups {
         let refs: Vec<&str> = keys.iter().map(String::as_str).collect();
         let jql = jira::jql_for_keys(&refs)?;
-        let issues = clients[name].search_issues(&jql, jira::LOCATE_FIELDS)?;
+        let client = clients
+            .get(name)
+            .with_context(|| format!("no client was built for system '{name}'"))?;
+        let issues = client.search_issues(&jql, jira::LOCATE_FIELDS)?;
         found_jira.extend(jira_matches(&refs, &issues));
     }
 
@@ -480,10 +483,12 @@ mod tests {
     fn text_has_markers_and_summary() {
         let results = vec![jira_hit("PAY-2", Some("P"), None), jira_miss("PAY-9")];
         let text = render(&results, Format::Text, false);
-        assert!(text.starts_with("✓ PAY-2: found in jira"));
-        assert!(text.contains("\n✗ PAY-9: not found in jira (jira)\n"));
-        assert!(text.ends_with("1 of 2 requirement IDs found\n"));
-        assert!(!text.contains("\x1b["));
+        assert_eq!(
+            text,
+            "✓ PAY-2: found in jira (jira) \"P\" https://x/browse/PAY-2\n\
+             ✗ PAY-9: not found in jira (jira)\n\
+             1 of 2 requirement IDs found\n"
+        );
     }
 
     #[test]
