@@ -19,8 +19,22 @@ pub enum OutputError {
 }
 
 impl fmt::Display for OutputError {
-    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Ok(())
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            OutputError::Schema(messages) => {
+                write!(
+                    f,
+                    "report failed validation against tcms/report.schema.v1.json"
+                )?;
+                for message in messages {
+                    write!(f, "\n  - {message}")?;
+                }
+                Ok(())
+            }
+            OutputError::Serialize(message) => {
+                write!(f, "report could not be serialised: {message}")
+            }
+        }
     }
 }
 
@@ -28,18 +42,31 @@ impl std::error::Error for OutputError {}
 
 /// The report as pretty JSON, one trailing newline. Keys follow the struct declaration order.
 pub fn render_json(model: &ReportModel, schema: &Value) -> Result<String, OutputError> {
-    let _ = (model, schema);
-    Err(OutputError::Serialize(
-        "render_json is not implemented yet".to_string(),
-    ))
+    let document = build_document(model);
+    let value =
+        serde_json::to_value(&document).map_err(|e| OutputError::Serialize(e.to_string()))?;
+    check(&value, schema)?;
+    let mut text = serde_json::to_string_pretty(&document)
+        .map_err(|e| OutputError::Serialize(e.to_string()))?;
+    text.push('\n');
+    Ok(text)
 }
 
 /// The report as YAML. The checked value is parsed back from the returned text.
 pub fn render_yaml(model: &ReportModel, schema: &Value) -> Result<String, OutputError> {
-    let _ = (model, schema);
-    Err(OutputError::Serialize(
-        "render_yaml is not implemented yet".to_string(),
-    ))
+    let document = build_document(model);
+    let text =
+        serde_yaml::to_string(&document).map_err(|e| OutputError::Serialize(e.to_string()))?;
+    // Check what would be written: parse the returned text back and validate that value.
+    let parsed: Value = serde_yaml::from_str(&text)
+        .map_err(|e| OutputError::Serialize(format!("parse back: {e}")))?;
+    check(&parsed, schema)?;
+    Ok(text)
+}
+
+/// Validate one instance; a failed check becomes `OutputError::Schema` with every message.
+fn check(instance: &Value, schema: &Value) -> Result<(), OutputError> {
+    validate_document(instance, schema).map_err(OutputError::Schema)
 }
 
 #[cfg(test)]
@@ -138,7 +165,13 @@ mod tests {
         assert!(text.starts_with('{'), "{text}");
         assert!(text.ends_with("}\n"), "{text}");
         assert!(!text.ends_with("\n\n"), "{text}");
-        let keys = ["\"type\"", "\"schema\"", "\"kind\"", "\"header\"", "\"content\""];
+        let keys = [
+            "\"type\"",
+            "\"schema\"",
+            "\"kind\"",
+            "\"header\"",
+            "\"content\"",
+        ];
         let positions: Vec<usize> = keys
             .iter()
             .map(|k| text.find(k).unwrap_or_else(|| panic!("{k} missing")))
