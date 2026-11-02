@@ -4,7 +4,7 @@
 # One iteration, each step must pass before the next:
 #   1. regenerate the derived fixtures into a temp directory and compare with the committed ones
 #   2. build tcms
-#   3. cargo unit and integration tests of tcms (vvmetrics, vvcmd, vv_metrics_cli)
+#   3. cargo unit and integration tests of tcms (vvmetrics, vvcmd, vv_metrics_cli, vv_plan_cli, vv_test_cases)
 #   4. the end-to-end suite scripts/vv/test_vv_metrics.sh (no rebuild)
 #   5. hash every fixture's report (fixed clock): the hash must equal the one of the first iteration
 #
@@ -75,7 +75,7 @@ for i in $(seq 1 "$ITERATIONS"); do
     run_step "$i" "fixtures match generator" bash -c \
         "mkdir -p '$DERIVED_TMP' && python3 '$SCRIPT_DIR/generate_derived_fixtures.py' --dest '$DERIVED_TMP' >/dev/null && diff -r -x README.md '$FIXTURES/derived' '$DERIVED_TMP'" || exit 1
     run_step "$i" "build tcms" bash -c "cd '$REPO_ROOT' && cargo build -q -p tcms" || exit 1
-    run_step "$i" "cargo tests tcms" bash -c "cd '$REPO_ROOT' && cargo test -q -p tcms --bins --test vv_metrics_cli" || exit 1
+    run_step "$i" "cargo tests tcms" bash -c "cd '$REPO_ROOT' && cargo test -q -p tcms --bins --test vv_metrics_cli --test vv_plan_cli --test vv_test_cases" || exit 1
     run_step "$i" "end-to-end suite" env REPEATS=5 "$SCRIPT_DIR/test_vv_metrics.sh" --no-build || exit 1
 
     CURRENT="$STATE_DIR/hashes-$i.sha256"

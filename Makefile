@@ -938,7 +938,7 @@ test-rest:
 # V&V metrics of tcms (TCMS-47): unit and integration tests, the end-to-end suite on the binary,
 # and the reliability loop (repeated runs, identical report hashes).
 test-vv-metrics:
-	cargo test -p tcms --bins --test vv_metrics_cli
+	cargo test -p tcms --bins --test vv_metrics_cli --test vv_plan_cli --test vv_test_cases
 	./scripts/vv/test_vv_metrics.sh
 .PHONY: test-vv-metrics
 

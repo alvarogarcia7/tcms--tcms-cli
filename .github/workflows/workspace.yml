@@ -175,6 +175,13 @@ jobs:
           export PATH="$HOME/.cargo/bin:$PATH"
           make test-e2e-all
 
+      # V&V metrics (TCMS-47): tests and end-to-end checks of `tcms vv metrics`, then the repeat-run loop.
+      - name: V&V metrics checks
+        run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          make test-vv-metrics
+          make vv-metrics-loop ITERATIONS=2
+
       - name: Validate StrictDoc export
         run: |
           export PATH="$HOME/.cargo/bin:$PATH"
