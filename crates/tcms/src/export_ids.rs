@@ -71,7 +71,7 @@ fn file_ids(file: &RequirementsFile) -> Vec<String> {
 }
 
 /// The valid IDs in result order as the output JSON, with a trailing newline (D-13).
-fn render_output(product_id: &str, results: &[LocateResult]) -> String {
+fn render_output(product_id: &str, results: &[LocateResult]) -> Result<String> {
     let file = RequirementsFile {
         product_id: product_id.to_string(),
         requirements: results
@@ -80,9 +80,9 @@ fn render_output(product_id: &str, results: &[LocateResult]) -> String {
             .map(|r| RequirementEntry { id: r.id.clone() })
             .collect(),
     };
-    let mut s = serde_json::to_string_pretty(&file).unwrap_or_else(|_| "{}".to_string());
+    let mut s = serde_json::to_string_pretty(&file).context("serialise export-ids output")?;
     s.push('\n');
-    s
+    Ok(s)
 }
 
 /// One stderr line per invalid ID in result order, then the count line. Empty when all are valid.
@@ -116,7 +116,8 @@ fn export_ids(ctx: &Context, args: &ExportIdsArgs) -> Result<(String, Vec<Locate
         args.input.as_deref(),
         args.actor.clone(),
     )?;
-    Ok((render_output(&cfg.product_id, &results), results))
+    let json = render_output(&cfg.product_id, &results)?;
+    Ok((json, results))
 }
 
 /// Run `tcms requirements export-ids` and return the process exit code (0, 1 or 2). Valid IDs are
@@ -138,7 +139,17 @@ pub fn run(ctx: &Context, args: ExportIdsArgs) -> i32 {
                 return locate::EXIT_ERROR;
             }
         }
-        None => print!("{json}"),
+        None => {
+            use std::io::Write as _;
+            let mut out = std::io::stdout().lock();
+            // `json` already ends in one newline; writeln adds it back after trimming, so the bytes match.
+            let written =
+                writeln!(out, "{}", json.trim_end_matches('\n')).and_then(|()| out.flush());
+            if let Err(e) = written {
+                eprintln!("error: write stdout: {e}");
+                return locate::EXIT_ERROR;
+            }
+        }
     }
     for line in invalid_lines(&results) {
         eprintln!("{line}");
@@ -273,7 +284,8 @@ mod tests {
         let text = render_output(
             "PROD-001",
             &[found("PAY-2"), missing("PAY-99"), found("PAY-3")],
-        );
+        )
+        .unwrap();
         assert!(text.ends_with('\n'));
         let value: serde_json::Value = serde_json::from_str(&text).unwrap();
         assert_eq!(
@@ -285,7 +297,7 @@ mod tests {
 
     #[test]
     fn output_with_no_valid_ids_is_an_empty_list() {
-        let text = render_output("PROD-001", &[]);
+        let text = render_output("PROD-001", &[]).unwrap();
         let value: serde_json::Value = serde_json::from_str(&text).unwrap();
         assert_eq!(
             value,

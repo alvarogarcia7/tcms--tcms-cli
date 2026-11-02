@@ -580,14 +580,9 @@ fn export_ids_duplicate_id_is_reported_once() {
         "{stderr}"
     );
     // checked once: the one search names PAY-2 once
-    let searches = search_requests(&mock);
-    assert_eq!(searches.len(), 1);
-    assert_eq!(
-        searches[0].matches("\"PAY-2\"").count(),
-        1,
-        "{}",
-        searches[0]
-    );
+    assert_eq!(search_requests(&mock).len(), 1);
+    let first = search_requests(&mock).into_iter().next().unwrap();
+    assert_eq!(first.matches("\"PAY-2\"").count(), 1, "{first}");
 }
 
 // ---------------------------------------------------------------- --output
