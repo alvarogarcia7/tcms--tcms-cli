@@ -25,6 +25,9 @@ export CARGO_BUILD_JOBS ?= 4
 #   make test-all           - Full build + all unit tests + all E2E tests
 #   make test-e2e-all       - Run all E2E tests unconditionally (with build)
 #
+# SINGLE E2E TARGETS:
+#   make test-report-exit-codes - E2E of the test-executor report exit codes (0, 1, 2)
+#
 # CUSTOMIZING BASE REFERENCE:
 #   By default, incremental targets compare against 'main' branch.
 #   You can override this with BASE_REF parameter:
@@ -304,6 +307,13 @@ test-verifier-behaviour:
 	./crates/testcase-manager/tests/integration/test_verifier_behaviour_changes_e2e.sh
 .PHONY: test-verifier-behaviour
 
+# E2E test of the exit codes of `test-executor report` (plan 05-03): 0, 1 and 2, write before exit 2,
+# error precedence over the flag, usage errors of report (1) and of other commands (2)
+test-report-exit-codes:
+	@${MAKE} build-test-executor
+	./crates/testcase-manager/tests/integration/test_report_exit_codes_e2e.sh
+.PHONY: test-report-exit-codes
+
 test-e2e-failing:
 	@${MAKE} build BASE_REF=$(or $(BASE_REF),main)
 	./tests/integration/run_e2e_test.sh
@@ -342,6 +352,7 @@ test-e2e: build
 					echo "./crates/testcase-manager/tests/integration/test_variable_passing_e2e.sh" >> $$E2E_TESTS_FILE; \
 					echo "./crates/testcase-manager/tests/integration/test_conditional_verification_e2e.sh" >> $$E2E_TESTS_FILE; \
 					echo "./crates/testcase-manager/tests/integration/test_manual_steps_e2e.sh" >> $$E2E_TESTS_FILE; \
+					echo "./crates/testcase-manager/tests/integration/test_report_exit_codes_e2e.sh" >> $$E2E_TESTS_FILE; \
 					;; \
 				test-orchestrator) \
 					echo "./crates/testcase-manager/tests/integration/test_orchestrator_e2e.sh" >> $$E2E_TESTS_FILE; \
@@ -432,6 +443,7 @@ test-e2e-all-no-build:
 	./crates/testcase-manager/tests/integration/test_verifier_container_e2e.sh
 	./crates/testcase-manager/tests/integration/test_verifier_edge_cases_e2e.sh
 	./crates/testcase-manager/tests/integration/test_verifier_behaviour_changes_e2e.sh
+	./crates/testcase-manager/tests/integration/test_report_exit_codes_e2e.sh
 	${MAKE} test-verifier-edge-cases
 	./crates/testcase-manager/tests/integration/test_documentation_generation.sh
 # 	BUILD_VARIANT="" ./scripts/run_verifier_and_generate_reports.sh

@@ -474,6 +474,7 @@ OPTIONS:
     --skip-verification  Skip stages 4-5 (verification + validation)
     --skip-glossary      Skip stage 8 (glossary entities, see docs/GLOSSARY_ENTITIES.md)
     --skip-jira          Skip stage 9 (Jira integration, see docs/JIRA_INTEGRATION.md)
+    --skip-report-exit-codes  Skip stage 10 (test-executor report exit codes 0, 1, 2; see docs/TRACEABILITY.md)
     --skip-documentation Skip stage 6 (documentation generation)
     -h, --help          Show help message
 ```

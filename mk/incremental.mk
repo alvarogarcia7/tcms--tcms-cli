@@ -151,7 +151,8 @@ build-from:
 #
 # Binary to E2E Test Mapping:
 #   validate-yaml -> test_validate_yaml_*.sh, test_auto_schema_validation_e2e.sh
-#   test-executor -> test_executor_e2e.sh, test_variable_passing_e2e.sh, test_jq_json_escaping_e2e.sh, etc.
+#   test-executor -> test_executor_e2e.sh, test_variable_passing_e2e.sh, test_jq_json_escaping_e2e.sh,
+#                    test_report_exit_codes_e2e.sh, etc.
 #   test-orchestrator -> test_orchestrator_e2e.sh
 #   verifier -> test_verifier_*.sh, run_verifier_and_generate_reports.sh
 #   audit-verifier -> audit-verifier tests in crates/audit-verifier/tests/
@@ -211,7 +212,12 @@ test-from:
 				echo "crates/testcase-manager/tests/integration/test_manual_steps_e2e.sh" >> $$E2E_TESTS_FILE; \
 				echo "crates/testcase-manager/tests/integration/test_jq_json_escaping_e2e.sh" >> $$E2E_TESTS_FILE; \
 				echo "crates/testcase-manager/tests/integration/test_pipeline_e2e.sh" >> $$E2E_TESTS_FILE; \
-				echo "  test-executor binary -> 6 E2E tests"; \
+				echo "crates/testcase-manager/tests/integration/test_report_exit_codes_e2e.sh" >> $$E2E_TESTS_FILE; \
+				echo "  test-executor binary -> 7 E2E tests"; \
+				;; \
+			testcase-reporting) \
+				echo "crates/testcase-manager/tests/integration/test_report_exit_codes_e2e.sh" >> $$E2E_TESTS_FILE; \
+				echo "  testcase-reporting library -> 1 E2E test (via test-executor report)"; \
 				;; \
 			test-orchestrator) \
 				echo "crates/testcase-manager/tests/integration/test_orchestrator_e2e.sh" >> $$E2E_TESTS_FILE; \

@@ -64,6 +64,7 @@ SKIP_DOCUMENTATION=0
 SKIP_CONSOLIDATED_DOCS=0
 SKIP_GLOSSARY=0
 SKIP_JIRA=0
+SKIP_REPORT_EXIT_CODES=0
 
 # Paths - Using numbered directory structure
 TEST_CASES_DIR="$SCRIPT_DIR/00_test_cases"
@@ -142,6 +143,8 @@ OPTIONS:
                                regression selection, independence)
     --skip-jira                Skip Jira integration scenarios (tcms against a mock Jira and the
                                StrictDoc export; TCMS-42)
+    --skip-report-exit-codes   Skip report exit codes scenarios (test-executor report exits 0, 1
+                               and 2; the E2E of plan 05-03)
     -h, --help                 Show this help message
 
 STAGES:
@@ -154,6 +157,7 @@ STAGES:
     7. Consolidated Docs   Generate unified documentation for all tests (30_documentation_source/consolidated/)
     8. Glossary Entities   Run validate_glossary_entities.sh on glossary_entities/fixtures/ (no report output)
     9. Jira Integration    Run validate_jira_integration.sh: tcms against mock-jira and a StrictDoc export (no report output)
+    10. Report Exit Codes  Run validate_report_exit_codes.sh: test-executor report exit codes 0, 1 and 2 (no report output)
 
 EXIT CODES:
     0 - All stages completed successfully
@@ -198,6 +202,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --skip-jira)
             SKIP_JIRA=1
+            shift
+            ;;
+        --skip-report-exit-codes)
+            SKIP_REPORT_EXIT_CODES=1
             shift
             ;;
         -h|--help)
@@ -1092,6 +1100,7 @@ main() {
     log_info "  Skip Consolidated Docs: $SKIP_CONSOLIDATED_DOCS"
     log_info "  Skip Glossary Entities: $SKIP_GLOSSARY"
     log_info "  Skip Jira Integration: $SKIP_JIRA"
+    log_info "  Skip Report Exit Codes: $SKIP_REPORT_EXIT_CODES"
     echo ""
     
     # Verify binaries
@@ -1158,6 +1167,16 @@ main() {
         section "Stage 9: Jira Integration"
         if ! "$SCRIPT_DIR/validate_jira_integration.sh"; then
             log_error "Stage 9 (Jira Integration) failed"
+            overall_success=1
+        fi
+    fi
+
+    # Stage 10: report exit codes (plan 05-03). Its own script runs the real test-executor and
+    # reports its checks; it does not use the *_FAILED counters.
+    if [[ $SKIP_REPORT_EXIT_CODES -eq 0 ]]; then
+        section "Stage 10: Report Exit Codes"
+        if ! "$SCRIPT_DIR/validate_report_exit_codes.sh"; then
+            log_error "Stage 10 (Report Exit Codes) failed"
             overall_success=1
         fi
     fi

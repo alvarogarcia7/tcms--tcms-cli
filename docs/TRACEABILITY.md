@@ -89,6 +89,7 @@ test-executor report --matrix trace-matrix.yaml --runs test-runs/ --kind traceab
 | `--test-cases DIR` | Test cases, searched recursively. Supplies each case's test type (the report columns) and obsolete status. Without it every case is shown in the `other` column and the obsolete count is `not recorded` |
 | `--requirements-export FILE` | StrictDoc JSON export (same assumed layout as the matrix's `.json` requirements). Supplies the source document of each requirement. Without it every row sits under `## Document: not recorded` |
 | `--generated-at TIMESTAMP` | Generation time, RFC 3339 (for example `2026-10-31T09:00:00Z`), written into the report header. Without it the current UTC time is used |
+| `--fail-on-gaps` | Exit 2 when the run has gaps or failed results, after the report is written. Without it a written report always exits 0. See [Exit status and pipeline use](#exit-status-and-pipeline-use) |
 
 All four kinds are rendered as Markdown, from one model built from the same inputs, so their
 numbers agree. The kinds are printed in the fixed order traceability, summary, gaps, problems,
@@ -384,12 +385,43 @@ table counts only linked live cases. The two tables therefore need not have equa
   `Without problem report: N`. When the list is empty the section prints
   `No failed or errored results` instead of a table.
 
-### Exit status
+### Exit status and pipeline use
 
-0 on success. 1 when any input is invalid, a `run_id` repeats, `--generated-at` is not an
-RFC 3339 timestamp, `--test-cases` or `--requirements-export` cannot be read, or the output cannot
-be written. An error names the input at fault and nothing is written. The three-state exit code is
-a later phase.
+`test-executor report` exits with one of three codes:
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success. A report with gaps or failed results also exits 0, unless `--fail-on-gaps` is given |
+| 1 | An invalid input or validation error: an invalid matrix or run record, a repeated `run_id`, a YAML syntax error, `--generated-at` that is not RFC 3339, `--test-cases` or `--requirements-export` that cannot be read, a JSON or YAML document that fails validation, a kind that the chosen format cannot render, or an output file that cannot be written. Also every command-line usage error of `report`, such as a missing `--runs`, an unknown option, or an invalid `--kind` or `--format` value |
+| 2 | Only with `--fail-on-gaps`, and only when the run has at least one gap or failed result. Also a `--shape a` or `--shape b` used with a kind other than `traceability`, which is a conflict that writes nothing |
+
+An error names the input at fault and nothing is written. Exit 1 happens before any write, so no
+output file is created. The other subcommands keep clap's exit code 2 for usage errors, and
+`report --help` exits 0.
+
+**What counts as gaps or failed results.** The same rule applies for every `--kind` and every
+`--format`, so `--kind gaps` alone does not hide a failure:
+
+- Gap entries are the lists of the gaps report: requirements with no test cases, requirements
+  missing a normal-range test, requirements missing a robustness test, and linked test cases with
+  no recorded result. A requirement with no test cases appears in all three requirement lists, so
+  it counts three times, as the gaps report prints it.
+- Failed results are the rows of the problems report: every decided `fail` and `error` result.
+- Superseded results and obsolete test cases never count.
+
+**Write before exit 2.** With `--fail-on-gaps`, the report is written and flushed before the
+process exits 2. With `-o FILE` the file holds the same bytes as the exit-0 run, and on stdout the
+document is the same as the exit-0 document. The explanatory line, for example
+`report: 2 gap entries, 1 failed results (exit status 2 because of --fail-on-gaps)`, goes to stderr
+only.
+
+**Pipeline use.** Keep the report and fail the job only on status 2, for example
+`test-executor report --matrix matrix.yaml --runs runs/ --fail-on-gaps -o report.md; echo $?`. A
+status of 1 means no report was produced.
+
+**Regression guard.** `crates/testcase-manager/tests/integration/test_report_exit_codes_e2e.sh`
+checks these rules against the real binary. Run it with `make test-report-exit-codes`. Stage 10 of
+the acceptance suite runs it too; `--skip-report-exit-codes` skips it.
 
 With `--format json` or `--format yaml`, 1 also when a document fails validation against
 `schemas/tcms/report.schema.v1.json`. The message names the kind and each violated path, and no
