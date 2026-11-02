@@ -64,6 +64,14 @@ Requirements for this milestone. Each maps to a roadmap phase.
 - [ ] **LOOK-06**: `tcms requirements export-ids` reads the product requirements file (`requirements.json` by default, or `--requirements <FILE>`) with a `product_id` and a `requirements` array of `{ "id": ... }` objects, and checks each ID with the same lookup as `locate`
 - [ ] **LOOK-07**: `export-ids` writes the valid IDs (those the source finds) as JSON with `product_id` and `requirements: [{ "id": ... }]` to stdout or `--output <FILE>`; invalid IDs are listed on stderr; exit 0 when all are valid, 1 when any is invalid (the valid ones are still written), 2 on an error, including a file whose `product_id` differs from the configured product
 
+### Acceptance Scenarios (ACC)
+
+- [ ] **ACC-01**: The V&V data flow diagram shows the path test plan config -> `test-executor` run -> verifier -> test-run record -> trace matrix -> report (Markdown and AsciiDoc); every arrow has an example invocation with fake data, and every step lists the input and output paths it reads and writes (plans/, runs/, requirements/, tcms-config/, reports/)
+- [ ] **ACC-02**: One bash driver (bash 3.2 and BSD/GNU safe, using `scripts/lib/logger.sh`) runs five parameterised scenarios (full-two, full-one, all-but-one, half, none), each with its own folder of original inputs (plans/, runs/, requirements/, tcms-config/)
+- [ ] **ACC-03**: Each scenario asserts the verdict roll-up matches its coverage (VERIFIED, NO TESTS, and the other roll-up labels as the rule says) and that the traceability document lists every requirement of the scenario
+- [ ] **ACC-04**: A determinism meta test runs one scenario twice with a fixed `--generated-at` (and fixed matrix `--id`); `diff` of the two outputs returns zero lines
+- [ ] **ACC-05**: The scenario set runs in CI in `.gitlab-ci.yml` and in `.github/workflows/workspace.yml`, and fails the pipeline on any assertion failure
+
 ## v2 Requirements
 
 Deferred to a future release. Tracked but not in the current roadmap.
@@ -128,6 +136,11 @@ Deferred to a future release. Tracked but not in the current roadmap.
 | LOOK-05 | Phase 6 | Pending |
 | LOOK-06 | Phase 6 | Pending |
 | LOOK-07 | Phase 6 | Pending |
+| ACC-01 | Phase 8 | Pending |
+| ACC-02 | Phase 8 | Pending |
+| ACC-03 | Phase 8 | Pending |
+| ACC-04 | Phase 8 | Pending |
+| ACC-05 | Phase 8 | Pending |
 
 **Coverage:**
 - v1 requirements: 30 total

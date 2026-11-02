@@ -223,3 +223,10 @@ Entry format:
 - **Options considered**: (a) remove or reword the fixture; (b) amend the gate's exclusion list to name the fixture.
 - **Decision**: (b). Line 442 is the intentional old lowercase `{"documents":[{"path"...` fixture that tests refusal of the old layout (D-07-3); the hit is correct behaviour, not residue. The criterion now excludes `requirements_locate_strictdoc_e2e.rs:442:` (line-scoped, so new hits in that file still fail). Test and fixture unchanged. Command: `grep -rn 'assumed layout\|"documents":\[{"path"' crates --include="*.rs" --include="*.json" | grep -v '.../strictdoc.rs' | grep -v '.../requirements_locate_cli.rs' | grep -v 'requirements_locate_strictdoc_e2e.rs:442:' | wc -l` = 0. **Why**: the gate should check residue only; weakening the test would lose D-07-3 coverage.
 - **Supersedes / affects**: 07-05 plan grep criterion (line 98); D-07-7 unchanged
+
+- **ID**: D-08-1
+- **Phase / stage**: 8 / spec (requirement 2.1)
+- **Question**: What concrete exit code is `INVALID_INPUT_FILES`, and how is "0 (OK) / error code, except INVALID_INPUT_FILES" read?
+- **Options considered**: (a) a new dedicated code (for example 3); (b) reuse 1, the existing input and validation error code.
+- **Decision**: (b). `INVALID_INPUT_FILES` = 1, consistent with D-05-1 and ROADMAP Phase 5 SC1. Valid inputs exit 0, or another documented non-zero code other than 1 (for example 2); invalid inputs (fail JSON schema validation) always exit 1. Verified by an equivalence test over a valid set and an invalid set through the real binary.
+- **Supersedes / affects**: 08-SPEC.md section 2.1 (TBD resolved); D-05-1 unchanged

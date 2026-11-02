@@ -147,3 +147,20 @@ Plans:
 - [ ] 07-03-PLAN.md — e2e tests of `requirements locate` on the real export: found HLR/LLR/system, not found, exit 2 cases, batch rule (wave 3)
 - [ ] 07-04-PLAN.md — e2e tests of `requirements export-ids` on the real export: valid/invalid, --output, product mismatch, strict mode (wave 3)
 - [ ] 07-05-PLAN.md — docs updated from "assumed" to verified layout; quality gates run and recorded (wave 4)
+
+### Phase 8: V&V data flow diagram and parameterised acceptance scenarios
+
+**Goal**: The V&V data flow (test plan config -> test-executor run -> verifier -> test-run record -> trace matrix -> traceability report) is documented with a file map and example invocations, and five parameterised acceptance scenarios (full-two, full-one, all-but-one, half, none) run in CI with a determinism check.
+**Requirements**: ACC-01, ACC-02, ACC-03, ACC-04, ACC-05
+**Depends on:** Phase 7
+**Spec**: `.planning/phases/08-vv-data-flow-acceptance-scenarios/08-SPEC.md`
+**Plans:** 5 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — V&V diagram in the mermaid source and DATA_FLOW.md, per-arrow example invocations, per-step file map, mermaid syntax check (wave 1)
+- [ ] 08-02-PLAN.md — bash 3.2 scenario driver, five scenario folders with fake inputs, layout test written first (wave 2)
+- [ ] 08-03-PLAN.md — per-scenario assertions: verdict roll-up and document completeness, test-first (wave 3)
+- [ ] 08-04-PLAN.md — determinism meta test: two runs with fixed --generated-at and matrix --id, diff returns 0 lines (wave 4)
+- [ ] 08-05-PLAN.md — CI wiring in .gitlab-ci.yml and .github/workflows/workspace.yml, Make target, quality gates recorded (wave 5)
+**Notes**: The spec names `tcms report`; no such command exists. The report and trace-matrix commands are `test-executor report` and `test-executor trace-matrix` (crates/test-executor). Scenarios use `--no-coverage-check` on trace-matrix, since full-one and half would otherwise fail the normal-range and robustness check. mermaid-cli (mmdc) is not installed locally; the diagram check is recorded honestly.
+
