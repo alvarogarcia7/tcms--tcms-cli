@@ -9,9 +9,9 @@
 #
 # Python cross-check (spec 2.1): every fixture is also validated with Python
 # jsonschema against the schema its `schema:` field resolves to (same rules as
-# the Rust loader). Runs with `python3 -I`, or `uv run python -I` when PyYAML
-# and jsonschema are only importable there. Skipped with a logged reason when
-# neither runner can import them.
+# the Rust loader). Runs with `python3 -I`, or `uv run --no-sync python -I` when
+# PyYAML and jsonschema are only importable there. If neither runner can import
+# them, every skipped check is counted and the run fails unless SKIP_PYTHON_CHECK=1.
 #
 # Test cases are run through `test-executor generate`; run records through
 # `validate-yaml` (the same schema loader the report path uses).
@@ -50,13 +50,20 @@ done
 
 PASSED=0
 FAILED=0
+SKIPPED=0
 COUNT=0
 
-# Python cross-check runner: "system" (python3 -I), "uv" (uv run python -I), or "" (skipped).
+# SKIP_PYTHON_CHECK=1 explicitly allows skipping the Python cross-check when no runner is
+# available. By default a missing runner fails the test (skipped fixtures are counted as failures
+# of the run, not silently dropped).
+SKIP_PYTHON_CHECK="${SKIP_PYTHON_CHECK:-0}"
+
+# Python cross-check runner: "system" (python3 -I), "uv" (uv run --no-sync python -I), or "" (skipped).
+# --no-sync keeps uv from syncing the environment or touching the network.
 PY_MODE=""
 if command -v python3 >/dev/null 2>&1 && python3 -I -c "import yaml, jsonschema" >/dev/null 2>&1; then
     PY_MODE="system"
-elif command -v uv >/dev/null 2>&1 && (cd "$ROOT" && uv run python -I -c "import yaml, jsonschema" >/dev/null 2>&1); then
+elif command -v uv >/dev/null 2>&1 && (cd "$ROOT" && uv run --no-sync python -I -c "import yaml, jsonschema" >/dev/null 2>&1); then
     PY_MODE="uv"
 fi
 
@@ -132,18 +139,20 @@ sys.exit(1)
 
 py_run() {
     if [ "$PY_MODE" = "uv" ]; then
-        (cd "$ROOT" && uv run python -I "$@")
+        (cd "$ROOT" && uv run --no-sync python -I "$@")
     else
         python3 -I "$@"
     fi
 }
 
 # check_python LABEL FILE EXPECT: jsonschema (via Python) must agree with EXPECT.
+# With no runner, the fixture is recorded as skipped (counted, never silently dropped).
 check_python() {
     local label="$1"
     local file="$2"
     local expect="$3"
     if [ -z "$PY_MODE" ]; then
+        record skip "python jsonschema $expect: $label $file (no Python runner)"
         return 0
     fi
     local out
@@ -157,7 +166,11 @@ check_python() {
 }
 
 if [ -z "$PY_MODE" ]; then
-    log_warning "Python jsonschema cross-check skipped: PyYAML and jsonschema are not importable with python3 -I or uv run python -I"
+    if [ "$SKIP_PYTHON_CHECK" = "1" ]; then
+        log_warning "SKIP_PYTHON_CHECK=1: Python jsonschema cross-check will be SKIPPED. PyYAML and jsonschema are not importable with python3 -I or uv run --no-sync python -I. This run does not verify the Python cross-check."
+    else
+        log_warning "No Python runner: PyYAML and jsonschema are not importable with python3 -I or uv run --no-sync python -I. Skipped checks will fail this run (set SKIP_PYTHON_CHECK=1 to allow skipping)."
+    fi
 else
     log_info "Python jsonschema cross-check runner: $PY_MODE"
 fi
@@ -176,11 +189,14 @@ is_documented_valid_code() {
 }
 
 record() {
-    # record STATUS DESCRIPTION
+    # record STATUS DESCRIPTION  (STATUS: ok | fail | skip)
     COUNT=$((COUNT + 1))
     if [ "$1" = "ok" ]; then
         PASSED=$((PASSED + 1))
         pass "$2"
+    elif [ "$1" = "skip" ]; then
+        SKIPPED=$((SKIPPED + 1))
+        log_warning "SKIPPED: $2"
     else
         FAILED=$((FAILED + 1))
         fail "$2"
@@ -253,8 +269,16 @@ if [ "$COUNT" -eq 0 ]; then
     exit 1
 fi
 
-info "Equivalence checks: $COUNT, passed: $PASSED, failed: $FAILED"
+info "Equivalence checks: $COUNT, passed: $PASSED, failed: $FAILED, skipped: $SKIPPED"
 if [ "$FAILED" -ne 0 ]; then
+    exit 1
+fi
+if [ "$SKIPPED" -ne 0 ]; then
+    if [ "$SKIP_PYTHON_CHECK" = "1" ]; then
+        log_warning "SKIP_PYTHON_CHECK=1: $SKIPPED Python jsonschema check(s) skipped. Exiting 0 only because skipping was explicitly allowed."
+        exit 0
+    fi
+    log_error "$SKIPPED Python jsonschema check(s) skipped: no Python runner (PyYAML + jsonschema). Failing. Install them for python3 or uv, or set SKIP_PYTHON_CHECK=1 to allow skipping."
     exit 1
 fi
 exit 0
