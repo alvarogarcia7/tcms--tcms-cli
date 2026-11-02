@@ -14,7 +14,7 @@ sequenceDiagram
     participant Matrix as VV Trace matrix (test-executor trace-matrix)
     participant Report as VV Report (test-executor report)
 
-    Note over Tester,Report: All paths in the V&V section are relative to the scenario folder that the acceptance driver creates, not the repo root. plans/, runs/, requirements/ and tcms-config/ sit under that folder.
+    Note over Tester,Report: All paths in the V&V section are relative to the scenario folder that the acceptance driver creates, not the repo root. plans/, runs/ and requirements/ sit under that folder.
 
     Tester ->> Generator: generate
     Tester ->> Editor: generate
