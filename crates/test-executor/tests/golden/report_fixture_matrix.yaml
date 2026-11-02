@@ -1,0 +1,22 @@
+type: trace_matrix
+schema: tcms/trace-matrix.schema.json
+id: TM-1
+links:
+  - requirement_id: HLR-1
+    level: HLR
+    test_case_ids: [T1]
+    normal_range_covered: true
+    robustness_covered: false
+    run_ids: [RUN-1]
+  - requirement_id: LLR-1
+    level: LLR
+    test_case_ids: [T2, T3]
+    normal_range_covered: true
+    robustness_covered: true
+    run_ids: [RUN-1]
+  - requirement_id: HLR-2
+    level: HLR
+    test_case_ids: []
+    normal_range_covered: false
+    robustness_covered: false
+    run_ids: []
