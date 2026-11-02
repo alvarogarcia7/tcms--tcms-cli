@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use audit_traceability::{AuditTraceabilityLog, StageInfo, TestCaseAudit};
 use audit_verifier::audit_log::OperationStatus;
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand};
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
@@ -179,6 +179,11 @@ enum Commands {
     /// JSON and YAML documents are validated against schemas/tcms/report.schema.v1.json before
     /// anything is written. With several kinds, json prints one array of documents, yaml prints
     /// the documents separated by `---` lines and asciidoc prints one file with one level-0 title.
+    ///
+    /// Exit status: 0 on success; 1 on any input, validation, command-line parse or write error;
+    /// 2 for a --shape conflict with a kind other than traceability (nothing is written), and 2
+    /// only when --fail-on-gaps is given and the run has gaps or failed results (the report is
+    /// written first). Without --fail-on-gaps the gap and failure status is never 2.
     Report {
         /// Trace matrix YAML file
         #[arg(long, value_name = "FILE")]
@@ -225,6 +230,10 @@ enum Commands {
         /// Generation time, RFC 3339 (defaults to the current UTC time)
         #[arg(long = "generated-at", value_name = "TIMESTAMP")]
         generated_at: Option<String>,
+
+        /// Exit with status 2 after writing the report when it has gaps or failed results
+        #[arg(long = "fail-on-gaps")]
+        fail_on_gaps: bool,
     },
     /// Select the regression test cases from a baseline's change impact: the test cases the
     /// impact analysis lists plus those tracing to the impacted requirements
@@ -674,6 +683,7 @@ struct ReportOptions<'a> {
     test_cases: Option<&'a Path>,
     requirements_export: Option<&'a Path>,
     generated_at: Option<&'a str>,
+    fail_on_gaps: bool,
 }
 
 /// The report schema, loaded from `schemas/` through the URI the documents name (D-04).
@@ -767,6 +777,9 @@ fn render_formatted(
     }
 }
 
+/// Runs `report` and returns whether the `--fail-on-gaps` threshold was breached. The caller
+/// exits with status 2 only after this function has returned `Ok(true)`, which is after the
+/// report was written and flushed. Every error is returned as `Err` and exits with status 1.
 fn report(
     matrix: &Path,
     run_paths: &[PathBuf],
@@ -775,8 +788,9 @@ fn report(
     format: ReportFormat,
     output: Option<PathBuf>,
     options: ReportOptions<'_>,
-) -> Result<()> {
-    // Usage error (exit 2) before any input is read or output is written (D-02-6-2, D-02-6-4)
+) -> Result<bool> {
+    // Usage error (exit 2, D-02-6-2) before any input is read or output is written (D-02-6-4).
+    // D-05-1: this semantic conflict keeps exit 2; clap parse errors of `report` exit 1 (D-03).
     let only_traceability = {
         let mut requested = kinds.to_vec();
         requested.sort();
@@ -842,6 +856,9 @@ fn report(
         testcase_reporting::render_data::check_document(&document, &schema)
             .map_err(|error| anyhow::anyhow!("{error}"))?;
     }
+    // D-01, D-02: the decision comes from the model, so it does not depend on the kind or format
+    let findings = testcase_reporting::findings::collect_findings(&model, &selection);
+    let breached = options.fail_on_gaps && !findings.is_clean();
     if format != ReportFormat::Markdown {
         // The document(s) only on stdout or in the file; the input summary goes to stderr. Nothing
         // is written unless every document rendered and validated (D-04, T-01-14).
@@ -852,7 +869,7 @@ fn report(
                 .context(format!("Failed to write report: {}", path.display()))?,
             None => write_stdout(&text)?,
         }
-        return Ok(());
+        return Ok(finish_status(breached, &findings));
     }
     let body = |kind: ReportKind| -> String {
         match kind {
@@ -902,7 +919,49 @@ fn report(
             .context(format!("Failed to write report: {}", path.display()))?,
         None => write_stdout(&text)?,
     }
-    Ok(())
+    Ok(finish_status(breached, &findings))
+}
+
+/// Called after the report is written and flushed. Prints the findings to stderr only when the
+/// threshold is breached, so stdout stays a clean document in every format.
+fn finish_status(breached: bool, findings: &testcase_reporting::findings::Findings) -> bool {
+    if breached {
+        eprintln!(
+            "report: {} (exit status 2 because of --fail-on-gaps)",
+            findings.summary()
+        );
+    }
+    breached
+}
+
+/// Parses the command line. Usage errors exit with clap's code 2, except those of `report`, which
+/// exit 1 so that status 2 means only "gaps or failed results" for it (D-03). `--help` and
+/// `--version` exit 0.
+fn parse_cli() -> Cli {
+    match Cli::try_parse() {
+        Ok(cli) => cli,
+        Err(error) => {
+            if !error.use_stderr() {
+                error.exit();
+            }
+            if invoked_subcommand_is_report() {
+                let _ = error.print();
+                std::process::exit(1);
+            }
+            error.exit()
+        }
+    }
+}
+
+/// True when the first subcommand on the command line is `report`. Parsing is re-run with errors
+/// ignored so that a missing required argument still identifies the subcommand.
+fn invoked_subcommand_is_report() -> bool {
+    Cli::command()
+        .ignore_errors(true)
+        .try_get_matches_from(std::env::args_os())
+        .ok()
+        .and_then(|matches| matches.subcommand_name().map(|name| name == "report"))
+        .unwrap_or(false)
 }
 
 /// Writes `text` to a locked stdout and flushes it. A write error, such as a closed pipe
@@ -1321,7 +1380,7 @@ fn load_explicit_config(path: Option<&Path>) -> Result<Option<testcase_common::C
 }
 
 fn main() -> Result<()> {
-    let cli = Cli::parse();
+    let cli = parse_cli();
 
     let log_level = if cli.verbose { "info" } else { &cli.log_level };
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(log_level)).init();
@@ -1627,19 +1686,28 @@ fn main() -> Result<()> {
             test_cases,
             requirements_export,
             generated_at,
-        } => report(
-            &matrix,
-            &runs,
-            &kinds,
-            shape,
-            format,
-            output,
-            ReportOptions {
-                test_cases: test_cases.as_deref(),
-                requirements_export: requirements_export.as_deref(),
-                generated_at: generated_at.as_deref(),
-            },
-        ),
+            fail_on_gaps,
+        } => {
+            let breached = report(
+                &matrix,
+                &runs,
+                &kinds,
+                shape,
+                format,
+                output,
+                ReportOptions {
+                    test_cases: test_cases.as_deref(),
+                    requirements_export: requirements_export.as_deref(),
+                    generated_at: generated_at.as_deref(),
+                    fail_on_gaps,
+                },
+            )?;
+            // The report is complete and flushed; this is the only place that exits with 2
+            if breached {
+                std::process::exit(2);
+            }
+            Ok(())
+        }
         Commands::RegressionSelect {
             test_case_dir,
             baselines,
