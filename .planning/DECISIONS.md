@@ -163,3 +163,26 @@ Entry format:
 - **Decision**: (a). Current code in `report` (crates/test-executor/src/main.rs, `format != Markdown` branch) already does `eprint!(input_summary)` and prints only the rendered text to stdout. Markdown path is untouched (its summary stays inside stdout/file as today, byte-identical). The AsciiDoc Inputs section (grid and shapes, per D-04-3) is part of the document and does not contain the "Reconciliation" heading. **Why**: (b) would break JSON/YAML parseability on stdout and change Markdown behaviour; (a) needs no code change.
 - **Plan/test change required**: none. The existing `asciidoc_all_kinds` assertions (no "Reconciliation" on stdout, present on stderr) already match (a); do not add a stdout summary assertion.
 - **Supersedes / affects**: 04-04 report_formats_cli.rs asciidoc_all_kinds
+
+## D-04-6: Traceability shapes A and B are validated before write (fix now)
+- **Phase / stage**: 4 / verification gap (tcms-43.4 AC #5)
+- **Question**: Shapes A/B are Markdown only (main.rs:769-773), so no shape reaches validate_document. Fix now or defer?
+- **Decision**: Fix now (option 1); the user required it. **Why**: deferring leaves a stated requirement unmet.
+- **Change required**: (1) schemas/tcms/report.schema.v1.json: add shape A and shape B content variants for kind traceability (closed objects, if/then like the other kinds); (2) crates/testcase-reporting/src/render_data.rs: build a shape-aware document from the same model and run validate_document in render_json/render_yaml; (3) crates/test-executor/src/main.rs: drop the "--shape a|b requires --format markdown" guard for json/yaml and, for Markdown shapes, also build and validate the document before any fs::write. Add E2E tests for both shapes (valid, and failure writes no file). Needs a new plan (04-05) or gap-closure plan.
+- **Supersedes / affects**: tcms-43.4 AC #5; 04-VERIFICATION gap 2
+
+## D-04-7: Keep the envelope enum change ("report")
+- **Phase / stage**: 4 / verification gap (tcms-43.4.2 AC #1)
+- **Question**: Commit 57da2e7 added "report" to the type enum of the shared schemas/tcms-envelope.schema.json. Keep or revert?
+- **Decision**: Keep, and amend tcms-43.4.2 AC #1 to "shared schemas unchanged except the additive `report` type value". **Why**: report.schema.v1.json $refs the envelope, which requires type to be in its enum, so a local report type cannot validate otherwise. The change only widens the enum (one added value): every document valid before stays valid, and the other users (testcase-common tcms_schemas tests, yaml_loader, scripts/validate_envelope_schemas.sh) are unaffected. Reverting would need a duplicated local envelope. Record the value in schemas/CHANGELOG.md.
+- **Supersedes / affects**: tcms-43.4.2 AC #1; ROADMAP Phase 4 note
+
+## D-04-8: mk/incremental.mk mapping is not applicable
+- **Phase / stage**: 4 / verification gap (tcms-43.4.3 AC #2)
+- **Decision**: Accept as not applicable. report_formats_e2e.rs is a Rust integration test run by `cargo test -p test-executor`, which test-from already runs for the affected crate; mk/incremental.mk maps shell scripts only, and the bash 3.2/BSD/GNU part has no shell code to check. Record this in the tcms-43.4.3 AC #2 note and mark it done.
+- **Supersedes / affects**: tcms-43.4.3 AC #2
+
+## D-04-9: Record the E2E results in a phase SUMMARY
+- **Phase / stage**: 4 / verification gap (tcms-43.4.3 AC #3)
+- **Decision**: Write 04-E2E-SUMMARY.md (12 tests, commit ca70196, all passed). Left uncommitted for the user's commit.
+- **Supersedes / affects**: tcms-43.4.3 AC #3
