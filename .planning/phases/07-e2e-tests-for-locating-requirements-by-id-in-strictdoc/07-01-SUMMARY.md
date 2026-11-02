@@ -4,7 +4,7 @@
 
 ## Status
 
-Plan NOT complete: the workspace-green criterion is MET, and the `locate --input` help text is MET. The grep gate is NOT MET because its hits are outside `files_modified`, and two help strings outside `files_modified` still say "assumed layout" (see Blocker 2).
+Plan NOT complete: the workspace-green criterion is MET, and the `locate --input` help text is MET. The grep gate is DEFERRED to 07-05 because its hits are outside `files_modified`, and two help strings outside `files_modified` still say "assumed layout" (see Blocker 2).
 
 Follow-up pass: all four gates re-run and green (fmt, clippy with `--no-deps`, `cargo test -p tcms`, `cargo test -p test-executor`). No file inside `files_modified` still had old-layout text, so no code commit was made in that pass.
 
@@ -87,7 +87,7 @@ Applied after review of 07-01. Comments, wording and this summary only; no behav
 
 **1. RESOLVED in `d76c0ed`:** `documents_group_rows_and_mark_a_document_without_requirements` failed because `export_file()` in `crates/test-executor/tests/report_cli.rs` wrote the old lowercase layout. `export_file()` now writes `DOCUMENTS` / `NODES` / `REQUIREMENT` nodes with uppercase fields. The document TITLEs are `docs/srs.sdoc` and `docs/empty.sdoc`, so the path comes from the TITLE and every assertion is unchanged. The file was outside this plan's `files_modified`; it was edited per D-07-3.
 
-**2. Old-layout residue outside `files_modified` (still NOT MET):** the grep gate (`grep -rln '"documents"\|assumed layout' crates --include=*.rs --include=*.json`, minus the two excluded files) still lists these files, none of which is in `files_modified`:
+**2. Old-layout residue outside `files_modified` (DEFERRED to 07-05, D-07-7):** the grep gate (`grep -rln '"documents"\|assumed layout' crates --include=*.rs --include=*.json`, minus the two excluded files) still lists these files, none of which is in `files_modified`:
 - `crates/tcms/src/export_ids.rs:20` and `crates/tcms/src/reqcmd.rs:22`: help text still says "assumed layout". Task 3's action names `export_ids.rs`, but the file is not in `files_modified`, so it was left untouched.
 - `crates/testcase-reporting/src/report_document.rs`, `crates/testcase-reporting/src/render_data.rs`, `crates/testcase-reporting/tests/report_schema.rs`, `crates/test-executor/tests/report_formats_e2e.rs`, `crates/test-executor/tests/report_shapes_e2e.rs`: these use the report schema's own `documents` key, not the StrictDoc layout. The gate as written cannot pass without a narrower pattern.
 
