@@ -81,7 +81,7 @@ mod tests {
     use testcase_verification::{RequirementLevel, TraceLink, TraceMatrix, Verdict};
 
     /// The report schema, embedded at compile time so this module has no file reads.
-    fn schema() -> Value {
+    pub(super) fn schema() -> Value {
         serde_json::from_str(include_str!("../../../schemas/tcms/report.schema.v1.json"))
             .expect("report schema is JSON")
     }
@@ -99,7 +99,7 @@ mod tests {
 
     /// Two requirements in two documents, one run with a pass and a fail. Built through the
     /// real pipeline: loaded runs -> selection -> model.
-    fn small_model() -> ReportModel {
+    pub(super) fn small_model() -> ReportModel {
         let mut rec = record(
             "RUN-1",
             "BUILD-1",
@@ -257,4 +257,522 @@ mod tests {
         fn assert_error<E: std::error::Error>(_: &E) {}
         assert_error(&OutputError::Serialize(String::new()));
     }
+}
+
+#[cfg(test)]
+mod round_trip_tests {
+    use super::tests::{schema, small_model};
+    use super::*;
+    use crate::load::{LoadedInputs, Reconciliation};
+    use crate::model::{build_model, ReportInputs, RequirementDocuments};
+    use crate::report_document::build_document;
+    use crate::run::{test_support::record, LoadedRun};
+    use crate::select::select_results;
+    use serde_json::json;
+    use std::collections::{BTreeMap, BTreeSet};
+    use testcase_verification::{RequirementLevel, TraceLink, TraceMatrix, Verdict};
+
+    const GENERATED: &str = "2026-11-01T12:00:00Z";
+
+    /// Hostile strings, all distinct. Markup, YAML and JSON special values, line breaks, a bell
+    /// character, a single space, non-ASCII text, a 2000 character string and the AsciiDoc
+    /// strings of plan 04-01. Index 27 is one space: it is used only in fields that keep blank
+    /// text (requirement and test case IDs), because the header drops blank run, build,
+    /// environment and tester values by design.
+    fn hostile_values() -> Vec<String> {
+        let mut values: Vec<String> = [
+            "A|B",
+            "line one\nline two\rthree",
+            "say \"hi\"",
+            "back\\slash",
+            "\\\"",
+            ": colon first",
+            "- dash first",
+            "# not a comment",
+            "{brace}",
+            "[bracket]",
+            "*star",
+            "&anchor",
+            "!tag",
+            "> folded",
+            "| literal",
+            "%percent",
+            "@at",
+            "null",
+            "true",
+            "yes",
+            "no",
+            "~",
+            "0123",
+            "1e3",
+            "0x1F",
+            "2026-10-31",
+            " leading and trailing ",
+            " ",
+            "Ünïcode 日本語 🙂",
+            "bell\u{7}char",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+        values.push("abcdefghij".repeat(200));
+        for asciidoc in [
+            "*bold* and _it_",
+            "`code`",
+            "[[anchor]]",
+            "<<xref>>",
+            "{attr}",
+            "link:http://example.com[click]",
+            "+++<b>raw</b>+++",
+            "include::/etc/passwd[]",
+            "image::x.png[]",
+            "----",
+            "|===",
+            "== Fake heading",
+            ".Title",
+            "NOTE: x",
+            "ifdef::x[]",
+            ":attr: value",
+            "a\\|b",
+            "x\ny",
+        ] {
+            values.push(asciidoc.to_string());
+        }
+        values
+    }
+
+    fn link(
+        id: &str,
+        level: RequirementLevel,
+        cases: Vec<String>,
+        normal: bool,
+        robust: bool,
+    ) -> TraceLink {
+        TraceLink {
+            requirement_id: id.to_string(),
+            level,
+            test_case_ids: cases,
+            normal_range_covered: normal,
+            robustness_covered: robust,
+            run_ids: Vec::new(),
+        }
+    }
+
+    fn run(
+        run_id: &str,
+        build_id: &str,
+        started: &str,
+        env: &str,
+        tester: &str,
+        results: &[(String, Verdict)],
+    ) -> LoadedRun {
+        let refs: Vec<(&str, Verdict)> = results.iter().map(|(id, v)| (id.as_str(), *v)).collect();
+        let mut rec = record(run_id, build_id, started, &refs);
+        rec.environment = env.to_string();
+        rec.tester = tester.to_string();
+        LoadedRun::new(format!("{run_id}.yaml").into(), rec).expect("valid run")
+    }
+
+    /// Every hostile string in every field a document can carry, built through the real pipeline
+    /// (loaded runs -> selection -> model). With `reverse`, links, their test case IDs, runs and
+    /// document names are given in reverse order; the output must not change.
+    fn hostile_model(reverse: bool, generated_at: &str) -> ReportModel {
+        let hv = hostile_values();
+        let n = hv.len();
+        let mut links: Vec<TraceLink> = (0..n)
+            .map(|i| {
+                link(
+                    &hv[i],
+                    if i % 2 == 0 {
+                        RequirementLevel::Hlr
+                    } else {
+                        RequirementLevel::Llr
+                    },
+                    vec![hv[(i + 1) % n].clone(), hv[(i + 2) % n].clone()],
+                    i % 2 == 0,
+                    i % 3 == 0,
+                )
+            })
+            .collect();
+
+        let run_ids = [hv[12].clone(), hv[13].clone(), hv[20].clone()];
+        let build_ids = [hv[14].clone(), hv[15].clone(), hv[16].clone()];
+        let envs = [hv[17].clone(), hv[18].clone(), hv[19].clone()];
+        let testers = [hv[3].clone(), hv[4].clone(), hv[5].clone()];
+        let starts = [
+            "2026-10-28T10:00:00Z",
+            "2026-10-28T11:00:00Z",
+            "2026-10-28T12:00:00Z",
+        ];
+        // Test case k is decided by run k % 3, with a verdict by k % 4. Test case 20 has no
+        // result, so every case that is 20 shows NOT RUN.
+        let mut runs: Vec<LoadedRun> = (0..3)
+            .map(|r| {
+                let results: Vec<(String, Verdict)> = (0..n)
+                    .filter(|&k| k % 3 == r && k != 20)
+                    .map(|k| {
+                        let verdict = match k % 4 {
+                            1 => Verdict::Fail,
+                            2 => Verdict::Error,
+                            _ => Verdict::Pass,
+                        };
+                        (hv[k].clone(), verdict)
+                    })
+                    .collect();
+                run(
+                    &run_ids[r],
+                    &build_ids[r],
+                    starts[r],
+                    &envs[r],
+                    &testers[r],
+                    &results,
+                )
+            })
+            .collect();
+
+        let docs3 = [hv[14].clone(), hv[17].clone(), hv[0].clone()];
+        let mut document_names = vec![
+            hv[14].clone(),
+            hv[17].clone(),
+            hv[0].clone(),
+            hv[19].clone(),
+        ];
+        let mut requirement_document: BTreeMap<String, String> = (0..n)
+            .filter(|i| i % 4 != 3)
+            .map(|i| (hv[i].clone(), docs3[i % 3].clone()))
+            .collect();
+
+        if reverse {
+            links.reverse();
+            for l in links.iter_mut() {
+                l.test_case_ids.reverse();
+            }
+            runs.reverse();
+            document_names.reverse();
+            requirement_document = requirement_document.into_iter().rev().collect();
+        }
+
+        let inputs = LoadedInputs {
+            matrix_path: "matrix.yaml".into(),
+            matrix: TraceMatrix {
+                doc_type: "trace_matrix".into(),
+                schema: "tcms/trace-matrix.schema.json".into(),
+                id: hv[1].clone(),
+                baseline_id: Some(hv[2].clone()),
+                links,
+            },
+            runs,
+            reconciliation: Reconciliation::default(),
+        };
+        let selection = select_results(&inputs.runs);
+        let documents = RequirementDocuments {
+            documents: document_names,
+            requirement_document,
+        };
+        build_model(&ReportInputs {
+            inputs: &inputs,
+            selection: &selection,
+            test_cases: None,
+            documents: Some(&documents),
+            generated_at,
+        })
+    }
+
+    fn collect_strings(value: &Value, out: &mut BTreeSet<String>) {
+        match value {
+            Value::String(s) => {
+                out.insert(s.clone());
+            }
+            Value::Array(items) => items.iter().for_each(|v| collect_strings(v, out)),
+            Value::Object(map) => map.values().for_each(|v| collect_strings(v, out)),
+            _ => {}
+        }
+    }
+
+    /// (documents, requirements, cases) of a parsed document.
+    fn parsed_counts(value: &Value) -> (usize, usize, usize) {
+        let documents = value["content"]["documents"]
+            .as_array()
+            .expect("documents array");
+        let mut requirements = 0;
+        let mut cases = 0;
+        for document in documents {
+            for requirement in document["requirements"].as_array().expect("requirements") {
+                requirements += 1;
+                cases += requirement["cases"].as_array().expect("cases").len();
+            }
+        }
+        (documents.len(), requirements, cases)
+    }
+
+    /// (documents, requirements, cases) of the model, counted from the model itself.
+    fn model_counts(model: &ReportModel) -> (usize, usize, usize) {
+        let requirements: usize = model.documents.iter().map(|d| d.rows.len()).sum();
+        let cases: usize = model
+            .documents
+            .iter()
+            .flat_map(|d| &d.rows)
+            .map(|r| r.cases.len())
+            .sum();
+        (model.documents.len(), requirements, cases)
+    }
+
+    /// Checks shared by both formats: the parsed document validates, equals the built document,
+    /// has the model's structure, and holds every hostile string at its place.
+    fn assert_hostile_round_trip(text: &str, parsed: &Value, model: &ReportModel) {
+        assert_eq!(validate_document(parsed, &schema()), Ok(()), "{text}");
+        let built = serde_json::to_value(build_document(model)).expect("document serialises");
+        assert_eq!(parsed, &built);
+        assert_eq!(parsed_counts(parsed), model_counts(model));
+
+        let hv = hostile_values();
+        let mut strings = BTreeSet::new();
+        collect_strings(parsed, &mut strings);
+        for value in &hv {
+            assert!(
+                strings.contains(value),
+                "{value:?} did not come back as a string"
+            );
+        }
+        assert_eq!(parsed["header"]["matrix_id"], json!(hv[1]));
+        assert_eq!(parsed["header"]["baseline_id"], json!(hv[2]));
+        let environments = parsed["header"]["environments"]
+            .as_array()
+            .expect("environments");
+        for env in [&hv[17], &hv[18], &hv[19]] {
+            assert!(
+                environments.contains(&json!(env)),
+                "{env:?} missing from {environments:?}"
+            );
+        }
+    }
+
+    // ------------------------------------------------------------------ hostile round trip
+
+    #[test]
+    fn hostile_json_round_trip_keeps_every_string_and_structure() {
+        let model = hostile_model(false, GENERATED);
+        let text = render_json(&model, &schema()).expect("hostile document renders");
+        let parsed: Value = serde_json::from_str(&text).expect("JSON text parses");
+        assert_hostile_round_trip(&text, &parsed, &model);
+    }
+
+    #[test]
+    fn hostile_yaml_round_trip_keeps_every_string_and_structure() {
+        let model = hostile_model(false, GENERATED);
+        let text = render_yaml(&model, &schema()).expect("hostile document renders");
+        let parsed: Value = serde_yaml::from_str(&text).expect("YAML text parses");
+        assert_hostile_round_trip(&text, &parsed, &model);
+    }
+
+    #[test]
+    fn yaml_scalars_that_look_like_other_types_come_back_as_strings() {
+        let model = hostile_model(false, GENERATED);
+        let text = render_yaml(&model, &schema()).expect("hostile document renders");
+        let parsed: Value = serde_yaml::from_str(&text).expect("YAML text parses");
+        let mut requirement_ids: Vec<&Value> = Vec::new();
+        for document in parsed["content"]["documents"]
+            .as_array()
+            .expect("documents")
+        {
+            for requirement in document["requirements"].as_array().expect("requirements") {
+                requirement_ids.push(&requirement["requirement_id"]);
+            }
+        }
+        for look_alike in [
+            "0123",
+            "null",
+            "yes",
+            "no",
+            "~",
+            "true",
+            "1e3",
+            "0x1F",
+            "2026-10-31",
+        ] {
+            let expected = Value::String(look_alike.to_string());
+            assert!(
+                requirement_ids.contains(&&expected),
+                "{look_alike:?} is not a string in the YAML text:\n{text}"
+            );
+        }
+    }
+
+    // ------------------------------------------------------------------ determinism (D-05)
+
+    #[test]
+    fn byte_identical_json_for_separately_built_identical_inputs() {
+        let first = render_json(&hostile_model(false, GENERATED), &schema()).expect("renders");
+        let second = render_json(&hostile_model(false, GENERATED), &schema()).expect("renders");
+        assert_eq!(first, second);
+        assert_eq!(first.as_bytes(), second.as_bytes());
+    }
+
+    #[test]
+    fn byte_identical_yaml_for_separately_built_identical_inputs() {
+        let first = render_yaml(&hostile_model(false, GENERATED), &schema()).expect("renders");
+        let second = render_yaml(&hostile_model(false, GENERATED), &schema()).expect("renders");
+        assert_eq!(first, second);
+        assert_eq!(first.as_bytes(), second.as_bytes());
+    }
+
+    #[test]
+    fn shuffled_json_gives_the_same_bytes_as_sorted_input() {
+        let sorted = render_json(&hostile_model(false, GENERATED), &schema()).expect("renders");
+        let shuffled = render_json(&hostile_model(true, GENERATED), &schema()).expect("renders");
+        assert_eq!(sorted.as_bytes(), shuffled.as_bytes());
+    }
+
+    #[test]
+    fn shuffled_yaml_gives_the_same_bytes_as_sorted_input() {
+        let sorted = render_yaml(&hostile_model(false, GENERATED), &schema()).expect("renders");
+        let shuffled = render_yaml(&hostile_model(true, GENERATED), &schema()).expect("renders");
+        assert_eq!(sorted.as_bytes(), shuffled.as_bytes());
+    }
+
+    /// The lines that differ between two texts, as (index, left, right).
+    fn differing_lines<'a>(a: &'a str, b: &'a str) -> Vec<(usize, &'a str, &'a str)> {
+        let left: Vec<&str> = a.lines().collect();
+        let right: Vec<&str> = b.lines().collect();
+        assert_eq!(left.len(), right.len(), "line counts differ");
+        left.iter()
+            .zip(right.iter())
+            .enumerate()
+            .filter(|(_, (l, r))| l != r)
+            .map(|(i, (l, r))| (i, *l, *r))
+            .collect()
+    }
+
+    #[test]
+    fn a_different_generated_at_changes_exactly_one_json_line() {
+        let a =
+            render_json(&hostile_model(false, "2026-11-01T12:00:00Z"), &schema()).expect("renders");
+        let b =
+            render_json(&hostile_model(false, "2026-11-01T13:00:00Z"), &schema()).expect("renders");
+        let diff = differing_lines(&a, &b);
+        assert_eq!(diff.len(), 1, "{diff:?}");
+        assert!(diff[0].1.contains("\"generated_at\""), "{diff:?}");
+        assert!(diff[0].2.contains("2026-11-01T13:00:00Z"), "{diff:?}");
+    }
+
+    #[test]
+    fn a_different_generated_at_changes_exactly_one_yaml_line() {
+        let a =
+            render_yaml(&hostile_model(false, "2026-11-01T12:00:00Z"), &schema()).expect("renders");
+        let b =
+            render_yaml(&hostile_model(false, "2026-11-01T13:00:00Z"), &schema()).expect("renders");
+        let diff = differing_lines(&a, &b);
+        assert_eq!(diff.len(), 1, "{diff:?}");
+        assert!(
+            diff[0].1.trim_start().starts_with("generated_at:"),
+            "{diff:?}"
+        );
+        assert!(diff[0].2.contains("2026-11-01T13:00:00Z"), "{diff:?}");
+    }
+
+    // ------------------------------------------------------------------ golden outputs
+
+    #[test]
+    fn golden_json_of_the_small_fixture() {
+        let text = render_json(&small_model(), &schema()).expect("renders");
+        assert_eq!(text, GOLDEN_JSON);
+    }
+
+    #[test]
+    fn golden_yaml_of_the_small_fixture() {
+        let text = render_yaml(&small_model(), &schema()).expect("renders");
+        let head: Vec<&str> = text.lines().take(12).collect();
+        assert_eq!(head, GOLDEN_YAML_HEAD);
+        assert_eq!(text.lines().count(), GOLDEN_YAML_LINES);
+    }
+
+    const GOLDEN_JSON: &str = r#"{
+  "type": "report",
+  "schema": "tcms/report.schema.v1.json",
+  "kind": "traceability",
+  "header": {
+    "matrix_id": "TM-1",
+    "baseline_id": null,
+    "run_ids": [
+      "RUN-1"
+    ],
+    "build_ids": [
+      "BUILD-1"
+    ],
+    "environments": [
+      "ENV-1"
+    ],
+    "testers": [
+      "TESTER-1"
+    ],
+    "generated_at": "2026-11-01T12:00:00Z",
+    "obsolete_excluded": null
+  },
+  "content": {
+    "documents": [
+      {
+        "name": "docs/a.sdoc",
+        "requirements": [
+          {
+            "requirement_id": "REQ-1",
+            "level": "HLR",
+            "status": "FAILED",
+            "normal_range_covered": true,
+            "robustness_covered": false,
+            "cases": [
+              {
+                "test_case_id": "TC-1",
+                "column": "other",
+                "outcome": "pass",
+                "run_id": "RUN-1"
+              },
+              {
+                "test_case_id": "TC-2",
+                "column": "other",
+                "outcome": "fail",
+                "run_id": "RUN-1"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "docs/b.sdoc",
+        "requirements": [
+          {
+            "requirement_id": "REQ-2",
+            "level": "LLR",
+            "status": "FAILED",
+            "normal_range_covered": true,
+            "robustness_covered": false,
+            "cases": [
+              {
+                "test_case_id": "TC-2",
+                "column": "other",
+                "outcome": "fail",
+                "run_id": "RUN-1"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+"#;
+    const GOLDEN_YAML_HEAD: [&str; 12] = [
+        "type: report",
+        "schema: tcms/report.schema.v1.json",
+        "kind: traceability",
+        "header:",
+        "  matrix_id: TM-1",
+        "  baseline_id: null",
+        "  run_ids:",
+        "  - RUN-1",
+        "  build_ids:",
+        "  - BUILD-1",
+        "  environments:",
+        "  - ENV-1",
+    ];
+    const GOLDEN_YAML_LINES: usize = 46;
 }
