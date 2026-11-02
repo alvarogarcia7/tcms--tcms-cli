@@ -7,7 +7,7 @@ use crate::load::LoadedInputs;
 use crate::rollup::{case_outcome, roll_up, CaseOutcome, VerificationStatus};
 use crate::run::LoadedRun;
 use crate::select::{RunReport, RunSelection};
-use crate::{input_summary, non_blank};
+use crate::{input_document, input_summary, non_blank};
 use std::collections::{BTreeMap, BTreeSet};
 use testcase_models::{TestCase, TestCaseStatus, TestType};
 use testcase_verification::RequirementLevel;
@@ -105,7 +105,11 @@ pub struct DocumentSection {
 /// The Phase 1 input and run-selection text, stored verbatim (D-14).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InputsSection {
+    /// The input summary as printed on stderr and in the Markdown Inputs block, with the
+    /// `Reconciliation` heading
     pub details: String,
+    /// The same text without the `Reconciliation` heading: the AsciiDoc `== Inputs` block (D-04-5)
+    pub document_details: String,
 }
 
 /// The whole report, ready for any renderer.
@@ -177,6 +181,7 @@ pub fn build_model(input: &ReportInputs) -> ReportModel {
     ReportModel {
         inputs: InputsSection {
             details: input_summary(input.inputs, selection),
+            document_details: input_document(input.inputs, selection),
         },
         header: header(input, selection, obsolete.len()),
         documents: sections(input.documents, rows),
@@ -554,6 +559,10 @@ mod tests {
         let selection = select_results(&inputs.runs);
         let model = build(&inputs, None);
         assert_eq!(model.inputs.details, input_summary(&inputs, &selection));
+        assert_eq!(
+            model.inputs.document_details,
+            input_document(&inputs, &selection)
+        );
         assert_eq!(
             model.inputs.details.lines().next(),
             Some("Trace matrix: TM-1 (baseline: BL-7)")

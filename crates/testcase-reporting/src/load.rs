@@ -68,18 +68,36 @@ impl Reconciliation {
     }
 }
 
+impl Reconciliation {
+    /// The reconciliation lines without the `Reconciliation` heading (D-04-5). The AsciiDoc
+    /// Inputs block shows these lines; the stderr summary and the Markdown block keep the heading.
+    pub fn body(&self) -> ReconciliationBody<'_> {
+        ReconciliationBody(self)
+    }
+}
+
+/// The reconciliation lines of [`Reconciliation::body`], in the fixed layout
+pub struct ReconciliationBody<'a>(&'a Reconciliation);
+
 impl std::fmt::Display for Reconciliation {
     /// The reconciliation block printed in the report header (fixed layout)
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Reconciliation")?;
+        write!(f, "{}", self.body())
+    }
+}
+
+impl std::fmt::Display for ReconciliationBody<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let rec = self.0;
         writeln!(
             f,
             "  Inputs discovered: {} (loaded: {}, skipped: {})",
-            self.discovered(),
-            self.loaded(),
-            self.skipped()
+            rec.discovered(),
+            rec.loaded(),
+            rec.skipped()
         )?;
-        for entry in &self.inputs {
+        for entry in &rec.inputs {
             let (status, reason) = match &entry.status {
                 InputStatus::Loaded => ("loaded", None),
                 InputStatus::Skipped(reason) => ("skipped", Some(reason)),
@@ -96,11 +114,11 @@ impl std::fmt::Display for Reconciliation {
             }
             writeln!(f)?;
         }
-        if self.notes.is_empty() {
+        if rec.notes.is_empty() {
             writeln!(f, "  Notes: none")?;
         } else {
             writeln!(f, "  Notes:")?;
-            for note in &self.notes {
+            for note in &rec.notes {
                 writeln!(f, "    - {note}")?;
             }
         }

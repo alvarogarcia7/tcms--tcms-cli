@@ -29,12 +29,30 @@ pub fn non_blank(value: Option<&str>) -> Option<&str> {
 /// The text block `test-executor report` prints before the report kinds: which matrix was
 /// loaded, the reconciliation of every discovered input, and the run selection.
 pub fn input_summary(inputs: &load::LoadedInputs, selection: &select::RunSelection) -> String {
+    format!(
+        "{}\n\n{}\n{}",
+        matrix_line(inputs),
+        inputs.reconciliation,
+        selection
+    )
+}
+
+/// The same text as [`input_summary`] without the `Reconciliation` heading (D-04-5). This is
+/// the text of the AsciiDoc `== Inputs` block; the heading stays on stderr only.
+pub fn input_document(inputs: &load::LoadedInputs, selection: &select::RunSelection) -> String {
+    format!(
+        "{}\n\n{}\n{}",
+        matrix_line(inputs),
+        inputs.reconciliation.body(),
+        selection
+    )
+}
+
+/// The `Trace matrix:` line, with the placeholders for a blank id or baseline
+fn matrix_line(inputs: &load::LoadedInputs) -> String {
     let matrix_id = non_blank(Some(&inputs.matrix.id)).unwrap_or("not recorded");
     let baseline = non_blank(inputs.matrix.baseline_id.as_deref()).unwrap_or("not recorded");
-    format!(
-        "Trace matrix: {} (baseline: {})\n\n{}\n{}",
-        matrix_id, baseline, inputs.reconciliation, selection
-    )
+    format!("Trace matrix: {matrix_id} (baseline: {baseline})")
 }
 
 #[cfg(test)]

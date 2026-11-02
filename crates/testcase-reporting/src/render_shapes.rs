@@ -148,6 +148,7 @@ mod tests {
         ReportModel {
             inputs: InputsSection {
                 details: DETAILS.to_string(),
+                document_details: DETAILS.to_string(),
             },
             header: header(),
             documents,

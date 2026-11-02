@@ -4,6 +4,7 @@ use audit_verifier::audit_log::OperationStatus;
 use clap::{Parser, Subcommand};
 use std::collections::HashMap;
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use testcase_execution::{AuditLogger, TestExecutor, VarHydrator};
 use testcase_models::TestCase;
@@ -696,7 +697,9 @@ fn render_formatted(
     view: testcase_reporting::view::ViewInput<'_>,
 ) -> Result<String> {
     match format {
-        ReportFormat::Markdown => unreachable!("Markdown is rendered by fn report"),
+        ReportFormat::Markdown => {
+            anyhow::bail!("internal error: Markdown is rendered by report(), not render_formatted")
+        }
         ReportFormat::Asciidoc => {
             let parts: Vec<String> = selected
                 .iter()
@@ -820,7 +823,7 @@ fn report(
         match output {
             Some(path) => fs::write(&path, &text)
                 .context(format!("Failed to write report: {}", path.display()))?,
-            None => print!("{text}"),
+            None => write_stdout(&text)?,
         }
         return Ok(());
     }
@@ -870,9 +873,18 @@ fn report(
     match output {
         Some(path) => fs::write(&path, &text)
             .context(format!("Failed to write report: {}", path.display()))?,
-        None => print!("{text}"),
+        None => write_stdout(&text)?,
     }
     Ok(())
+}
+
+/// Writes `text` to a locked stdout and flushes it. A write error, such as a closed pipe
+/// (`| head`), is returned to `main` as an error instead of panicking.
+fn write_stdout(text: &str) -> Result<()> {
+    let mut out = std::io::stdout().lock();
+    out.write_all(text.as_bytes())
+        .and_then(|()| out.flush())
+        .context("Failed to write report to stdout")
 }
 
 fn trace_matrix(
@@ -914,7 +926,7 @@ fn trace_matrix(
                 runs.len()
             );
         }
-        None => print!("{yaml}"),
+        None => write_stdout(&yaml)?,
     }
 
     if !findings.untraced.is_empty() {
@@ -973,7 +985,7 @@ fn regression_select(
     match &output {
         Some(path) => fs::write(path, &text)
             .context(format!("Failed to write selection: {}", path.display()))?,
-        None => print!("{text}"),
+        None => write_stdout(&text)?,
     }
     eprintln!(
         "Regression scope of baseline {} (from {}): {} of {} test cases",

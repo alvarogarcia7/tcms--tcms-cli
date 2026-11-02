@@ -172,7 +172,7 @@ pub fn join_asciidoc_documents(parts: &[String]) -> String {
 pub fn render_asciidoc(model: &ReportModel) -> String {
     let mut blocks: Vec<String> = vec![
         "= Traceability Report".to_string(),
-        inputs_block(&model.inputs.details),
+        inputs_block(&model.inputs.document_details),
         header_block(&model.header),
     ];
     blocks.extend(model.documents.iter().map(document_block));
@@ -188,11 +188,6 @@ pub(crate) fn inputs_block(details: &str) -> String {
     let mut paragraphs: Vec<String> = Vec::new();
     let mut current: Vec<String> = Vec::new();
     for line in details.lines() {
-        // The reconciliation heading belongs to the input summary on stderr, not to the document
-        // (D-04-5). Its detail lines stay; the Markdown renderers are not affected.
-        if line.trim() == "Reconciliation" {
-            continue;
-        }
         if line.trim().is_empty() {
             if !current.is_empty() {
                 paragraphs.push(current.join(" +\n"));
@@ -577,6 +572,9 @@ mod tests {
             inputs: InputsSection {
                 details: "Trace matrix: TM-1 (baseline: not recorded)\nRuns selected: RUN-1, RUN-2"
                     .to_string(),
+                document_details:
+                    "Trace matrix: TM-1 (baseline: not recorded)\nRuns selected: RUN-1, RUN-2"
+                        .to_string(),
             },
             header: Header {
                 matrix_id: "TM-1".to_string(),

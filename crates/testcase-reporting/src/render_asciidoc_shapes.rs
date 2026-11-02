@@ -28,7 +28,7 @@ pub fn render_asciidoc_shape_b(model: &ReportModel) -> String {
 fn render(model: &ReportModel, body: fn(&[RequirementRow]) -> String) -> String {
     let mut blocks: Vec<String> = vec![
         "= Traceability Report".to_string(),
-        inputs_block(&model.inputs.details),
+        inputs_block(&model.inputs.document_details),
         header_block(&model.header),
     ];
     blocks.extend(
@@ -176,6 +176,7 @@ mod tests {
         ReportModel {
             inputs: InputsSection {
                 details: DETAILS.to_string(),
+                document_details: DETAILS.to_string(),
             },
             header: header(),
             documents,

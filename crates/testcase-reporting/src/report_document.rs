@@ -445,6 +445,9 @@ mod tests {
             inputs: InputsSection {
                 details: "Trace matrix: TM-1 (baseline: not recorded)\nRuns selected: RUN-1, RUN-2"
                     .to_string(),
+                document_details:
+                    "Trace matrix: TM-1 (baseline: not recorded)\nRuns selected: RUN-1, RUN-2"
+                        .to_string(),
             },
             header: Header {
                 matrix_id: "TM-1".to_string(),
