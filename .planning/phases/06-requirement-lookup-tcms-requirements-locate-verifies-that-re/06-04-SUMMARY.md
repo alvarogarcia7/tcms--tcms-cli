@@ -40,7 +40,7 @@ No backlog task was updated (Backlog.md MCP not used in this run).
 
 None in the gates that were run.
 
-## Self-Check: PASSED
+## Self-Check: PARTIAL — code and docs verified; make build, make lint, make test, make coverage-e2e, make acceptance-test and cargo test -p requirement-import NOT RUN (criteria NOT MET in this environment)
 
 - `docs/JIRA_INTEGRATION.md` contains exactly one `^## Requirement lookup` heading; `requirements locate` appears 5 times; `--format` 2 times; `plaintext` once.
 - `crates/tcms/Cargo.toml` contains "requirement import and lookup".
