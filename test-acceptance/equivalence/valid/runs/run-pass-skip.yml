@@ -1,0 +1,11 @@
+type: test_run
+schema: tcms/test-run.schema.json
+run_id: RUN-2
+build_id: build-2
+environment: lab
+tester: alice
+started_at: '2026-10-30T11:00:00Z'
+finished_at: '2026-10-30T11:05:00Z'
+results:
+  - {test_case_id: T1, verdict: pass}
+  - {test_case_id: T2, verdict: not_executed}

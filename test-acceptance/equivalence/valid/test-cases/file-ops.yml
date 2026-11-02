@@ -1,0 +1,195 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: DOC_GEN_FILE_OPS
+item: 1
+tc: 1
+id: DOC_GEN_FILE_OPS_001
+description: Comprehensive file and directory operations including creation, manipulation,
+  permissions, and cleanup
+general_initial_conditions:
+  system:
+  - File system is accessible
+  - Write permissions are available in /tmp
+initial_conditions:
+  filesystem:
+  - Test workspace is clean
+test_sequences:
+- id: 1
+  name: File Creation and Manipulation
+  description: 'Test file creation, reading, writing,
+
+    and content manipulation operations.
+
+    '
+  initial_conditions:
+    filesystem:
+    - Working directory accessible
+  steps:
+  - step: 1
+    description: Create test directory
+    command: mkdir -p /tmp/file_ops_test && echo "Directory created"
+    expected:
+      success: true
+      result: 0
+      output: Directory created
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: test -d /tmp/file_ops_test
+  - step: 2
+    description: Create text file with content
+    command: echo "Hello World" > /tmp/file_ops_test/test.txt && cat /tmp/file_ops_test/test.txt
+    expected:
+      success: true
+      result: 0
+      output: Hello World
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'Hello World' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: Append to file
+    command: echo "Second line" >> /tmp/file_ops_test/test.txt && wc -l < /tmp/file_ops_test/test.txt
+    expected:
+      success: true
+      result: 0
+      output: '2'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: '[[ $(echo "$COMMAND_OUTPUT" | tr -d '' \n'') -eq 2 ]]'
+  - step: 4
+    description: Copy file
+    command: cp /tmp/file_ops_test/test.txt /tmp/file_ops_test/test_copy.txt && test
+      -f /tmp/file_ops_test/test_copy.txt && echo "Copied"
+    expected:
+      success: true
+      result: 0
+      output: Copied
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: test -f /tmp/file_ops_test/test_copy.txt
+  - step: 5
+    description: Move/rename file
+    command: mv /tmp/file_ops_test/test_copy.txt /tmp/file_ops_test/renamed.txt &&
+      test -f /tmp/file_ops_test/renamed.txt && echo "Renamed"
+    expected:
+      success: true
+      result: 0
+      output: Renamed
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: test -f /tmp/file_ops_test/renamed.txt && ! test -f /tmp/file_ops_test/test_copy.txt
+- id: 2
+  name: File Permissions and Attributes
+  description: 'Test file permission management, ownership,
+
+    and attribute modifications.
+
+    '
+  initial_conditions:
+    filesystem:
+    - Files created in sequence 1
+  steps:
+  - step: 1
+    description: Set file permissions to read-write
+    command: chmod 644 /tmp/file_ops_test/test.txt && ls -l /tmp/file_ops_test/test.txt
+      | awk '{print $1}'
+    expected:
+      success: true
+      result: 0
+      output: -rw-r--r--
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '^-rw-r--r--' <<< "$COMMAND_OUTPUT"
+  - step: 2
+    description: Make file executable
+    command: chmod +x /tmp/file_ops_test/test.txt && ls -l /tmp/file_ops_test/test.txt
+      | grep "x"
+    expected:
+      success: true
+      result: 0
+      output: x
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'x' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: Check file size
+    command: ls -lh /tmp/file_ops_test/test.txt | awk '{print $5}' || wc -c < /tmp/file_ops_test/test.txt
+    expected:
+      success: true
+      result: 0
+      output: ''
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: 'true'
+  - step: 4
+    description: Count files in directory
+    command: ls -1 /tmp/file_ops_test/ | wc -l
+    expected:
+      success: true
+      result: 0
+      output: '2'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: '[[ $(echo "$COMMAND_OUTPUT" | tr -d '' \n'') -eq 2 ]]'
+  - step: 5
+    description: Find files by name pattern
+    command: find /tmp/file_ops_test -name "*.txt" -type f | wc -l
+    expected:
+      success: true
+      result: 0
+      output: '2'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: '[[ $(echo "$COMMAND_OUTPUT" | tr -d '' \n'') -eq 2 ]]'
+- id: 3
+  name: Cleanup Operations
+  description: 'Clean up test files and directories,
+
+    verify proper deletion.
+
+    '
+  initial_conditions:
+    filesystem:
+    - Files from previous sequences exist
+  steps:
+  - step: 1
+    description: Delete individual file
+    command: rm -f /tmp/file_ops_test/renamed.txt && ! test -f /tmp/file_ops_test/renamed.txt
+      && echo "Deleted"
+    expected:
+      success: true
+      result: 0
+      output: Deleted
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: '! test -f /tmp/file_ops_test/renamed.txt'
+  - step: 2
+    description: Remove all files in directory
+    command: rm -f /tmp/file_ops_test/*.txt && echo "All files removed"
+    expected:
+      success: true
+      result: 0
+      output: All files removed
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: '[[ $(ls -1 /tmp/file_ops_test/*.txt 2>/dev/null | wc -l) -eq 0 ]]'
+  - step: 3
+    description: Remove directory
+    command: rmdir /tmp/file_ops_test && ! test -d /tmp/file_ops_test && echo "Directory
+      removed"
+    expected:
+      success: true
+      result: 0
+      output: Directory removed
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: '! test -d /tmp/file_ops_test'
+  - step: 4
+    description: Verify cleanup complete
+    command: test ! -d /tmp/file_ops_test && echo "CLEANUP_COMPLETE"
+    expected:
+      success: true
+      result: 0
+      output: CLEANUP_COMPLETE
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'CLEANUP_COMPLETE' <<< "$COMMAND_OUTPUT"

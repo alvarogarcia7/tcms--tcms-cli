@@ -1,0 +1,264 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: DOC_GEN_API_REST
+item: 1
+tc: 1
+id: DOC_GEN_API_REST_001
+description: Comprehensive REST API testing with authentication, CRUD operations,
+  and error handling
+general_initial_conditions:
+  system:
+  - curl is installed and available
+  - jq is installed for JSON parsing
+  network:
+  - Test API server is accessible at http://localhost:8080
+  authentication:
+  - Valid API token is available in environment variable API_TOKEN
+initial_conditions:
+  api:
+  - API endpoint is responding to health checks
+  - Test database is initialized with sample data
+  authentication:
+  - API authentication is configured
+test_sequences:
+- id: 1
+  name: API Health and Authentication Verification
+  description: 'This sequence verifies the API is healthy and authentication
+
+    mechanisms are working correctly before proceeding with tests.
+
+    '
+  initial_conditions:
+    system:
+    - API server is running
+  steps:
+  - step: 1
+    description: Check API health endpoint
+    command: curl -s http://localhost:8080/api/health
+    expected:
+      success: true
+      result: 0
+      output: '{"status":"healthy"}'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '"status":"healthy"' <<< "$COMMAND_OUTPUT"
+  - step: 2
+    description: Verify authentication endpoint
+    command: 'curl -s -H "Authorization: Bearer ${API_TOKEN}" http://localhost:8080/api/auth/verify'
+    expected:
+      success: true
+      result: 0
+      output: '{"authenticated":true}'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '"authenticated":true' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: Test unauthorized access returns 401
+    command: curl -s -w '\n%{http_code}' http://localhost:8080/api/users | tail -1
+    expected:
+      success: true
+      result: 0
+      output: '401'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '401' <<< "$COMMAND_OUTPUT"
+- id: 2
+  name: CRUD Operations - Create and Read
+  description: 'Test CREATE and READ operations on the users endpoint,
+
+    including data validation and response verification.
+
+    '
+  initial_conditions:
+    api:
+    - Users endpoint is available
+  steps:
+  - step: 1
+    description: Create new user via POST request
+    command: "curl -s -X POST http://localhost:8080/api/users \\\n  -H \"Authorization:\
+      \ Bearer ${API_TOKEN}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d\
+      \ '{\"name\":\"John Doe\",\"email\":\"john@example.com\",\"role\":\"user\"}'\n"
+    expected:
+      success: true
+      result: 0
+      output: '{"id":'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '"id":' <<< "$COMMAND_OUTPUT"
+  - step: 2
+    description: Extract user ID from response
+    command: "curl -s -X POST http://localhost:8080/api/users \\\n  -H \"Authorization:\
+      \ Bearer ${API_TOKEN}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d\
+      \ '{\"name\":\"Jane Smith\",\"email\":\"jane@example.com\",\"role\":\"admin\"\
+      }' | \\\n  jq -r '.id'\n"
+    expected:
+      success: true
+      result: 0
+      output: '123'
+    capture:
+    - variable: USER_ID
+      pattern: ^[0-9]+$
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: '[[ "$COMMAND_OUTPUT" =~ ^[0-9]+$ ]]'
+  - step: 3
+    description: Read created user by ID
+    command: 'curl -s -H "Authorization: Bearer ${API_TOKEN}" http://localhost:8080/api/users/$USER_ID'
+    expected:
+      success: true
+      result: 0
+      output: '{"id":'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '"email":"jane@example.com"' <<< "$COMMAND_OUTPUT"
+  - step: 4
+    description: List all users
+    command: 'curl -s -H "Authorization: Bearer ${API_TOKEN}" http://localhost:8080/api/users
+      | jq -r ''length'''
+    expected:
+      success: true
+      result: 0
+      output: '2'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: '[[ $(echo "$COMMAND_OUTPUT" | tr -d ''\n'') -ge 2 ]]'
+- id: 3
+  name: CRUD Operations - Update and Delete
+  description: 'Test UPDATE and DELETE operations, verifying proper
+
+    data modification and resource cleanup.
+
+    '
+  initial_conditions:
+    api:
+    - Test user exists from previous sequence
+  steps:
+  - step: 1
+    description: Update user information via PUT
+    command: "curl -s -X PUT http://localhost:8080/api/users/$USER_ID \\\n  -H \"\
+      Authorization: Bearer ${API_TOKEN}\" \\\n  -H \"Content-Type: application/json\"\
+      \ \\\n  -d '{\"name\":\"Jane Doe\",\"email\":\"jane.doe@example.com\",\"role\"\
+      :\"superadmin\"}'\n"
+    expected:
+      success: true
+      result: 0
+      output: '{"success":true}'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '"success":true' <<< "$COMMAND_OUTPUT"
+  - step: 2
+    description: Verify update was applied
+    command: 'curl -s -H "Authorization: Bearer ${API_TOKEN}" http://localhost:8080/api/users/$USER_ID
+      | jq -r ''.name'''
+    expected:
+      success: true
+      result: 0
+      output: Jane Doe
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'Jane Doe' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: Partial update via PATCH
+    command: "curl -s -X PATCH http://localhost:8080/api/users/$USER_ID \\\n  -H \"\
+      Authorization: Bearer ${API_TOKEN}\" \\\n  -H \"Content-Type: application/json\"\
+      \ \\\n  -d '{\"role\":\"user\"}'\n"
+    expected:
+      success: true
+      result: 0
+      output: '{"success":true}'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '"success":true' <<< "$COMMAND_OUTPUT"
+  - step: 4
+    description: Delete user
+    command: 'curl -s -X DELETE -H "Authorization: Bearer ${API_TOKEN}" http://localhost:8080/api/users/$USER_ID'
+    expected:
+      success: true
+      result: 0
+      output: '{"success":true}'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '"success":true' <<< "$COMMAND_OUTPUT"
+  - step: 5
+    description: Verify user no longer exists (404)
+    command: 'curl -s -w ''\n%{http_code}'' -H "Authorization: Bearer ${API_TOKEN}"
+      http://localhost:8080/api/users/$USER_ID | tail -1'
+    expected:
+      success: true
+      result: 0
+      output: '404'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '404' <<< "$COMMAND_OUTPUT"
+- id: 4
+  name: Error Handling and Edge Cases
+  description: 'Test API error handling, validation, and edge cases
+
+    to ensure robust error responses.
+
+    '
+  initial_conditions:
+    api:
+    - API is ready for error case testing
+  steps:
+  - step: 1
+    description: Test invalid JSON payload (400 Bad Request)
+    command: "curl -s -w '\\n%{http_code}' -X POST http://localhost:8080/api/users\
+      \ \\\n  -H \"Authorization: Bearer ${API_TOKEN}\" \\\n  -H \"Content-Type: application/json\"\
+      \ \\\n  -d 'invalid json' | tail -1\n"
+    expected:
+      success: true
+      result: 0
+      output: '400'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '400' <<< "$COMMAND_OUTPUT"
+  - step: 2
+    description: Test missing required fields (422 Unprocessable Entity)
+    command: "curl -s -w '\\n%{http_code}' -X POST http://localhost:8080/api/users\
+      \ \\\n  -H \"Authorization: Bearer ${API_TOKEN}\" \\\n  -H \"Content-Type: application/json\"\
+      \ \\\n  -d '{\"name\":\"Test\"}' | tail -1\n"
+    expected:
+      success: true
+      result: 0
+      output: '422'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '422' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: Test invalid email format
+    command: "curl -s -X POST http://localhost:8080/api/users \\\n  -H \"Authorization:\
+      \ Bearer ${API_TOKEN}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d\
+      \ '{\"name\":\"Test\",\"email\":\"invalid-email\",\"role\":\"user\"}' | \\\n\
+      \  jq -r '.error'\n"
+    expected:
+      success: true
+      result: 0
+      output: invalid email format
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qi 'invalid.*email' <<< "$COMMAND_OUTPUT"
+  - step: 4
+    description: Test duplicate email (409 Conflict)
+    command: "curl -s -w '\\n%{http_code}' -X POST http://localhost:8080/api/users\
+      \ \\\n  -H \"Authorization: Bearer ${API_TOKEN}\" \\\n  -H \"Content-Type: application/json\"\
+      \ \\\n  -d '{\"name\":\"Duplicate\",\"email\":\"existing@example.com\",\"role\"\
+      :\"user\"}' | tail -1\n"
+    expected:
+      success: true
+      result: 0
+      output: '409'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '409' <<< "$COMMAND_OUTPUT"
+  - step: 5
+    description: Test non-existent endpoint (404)
+    command: 'curl -s -w ''\n%{http_code}'' -H "Authorization: Bearer ${API_TOKEN}"
+      http://localhost:8080/api/nonexistent | tail -1'
+    expected:
+      success: true
+      result: 0
+      output: '404'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '404' <<< "$COMMAND_OUTPUT"

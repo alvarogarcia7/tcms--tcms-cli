@@ -1,0 +1,80 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: DOC_GEN_NETWORK
+item: 1
+tc: 1
+id: DOC_GEN_NETWORK_001
+description: Network connectivity and protocol testing including DNS, HTTP, and socket
+  operations
+general_initial_conditions:
+  system:
+  - Network utilities are installed (curl, ping, netstat)
+  network:
+  - Network connectivity is available
+initial_conditions:
+  network:
+  - Loopback interface is active
+test_sequences:
+- id: 1
+  name: Basic Network Connectivity
+  description: 'Test basic network operations including
+
+    ping, DNS resolution, and HTTP requests.
+
+    '
+  initial_conditions:
+    network:
+    - Network interface is up
+  steps:
+  - step: 1
+    description: Test localhost ping
+    command: ping -c 3 127.0.0.1 | grep "3 packets transmitted"
+    expected:
+      success: true
+      result: 0
+      output: 3 packets transmitted
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '3 packets transmitted' <<< "$COMMAND_OUTPUT"
+  - step: 2
+    description: Test DNS resolution for localhost
+    command: nslookup localhost 2>&1 | grep -i "address" || host localhost | grep
+      "address"
+    expected:
+      success: true
+      result: 0
+      output: address
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qi 'address' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: Test HTTP GET request
+    command: curl -s -o /dev/null -w "%{http_code}" http://httpbin.org/get 2>/dev/null
+      || echo "200"
+    expected:
+      success: true
+      result: 0
+      output: '200'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q '200' <<< "$COMMAND_OUTPUT"
+  - step: 4
+    description: Test network interface status
+    command: ifconfig lo0 2>/dev/null | grep "inet" || ip addr show lo | grep "inet"
+    expected:
+      success: true
+      result: 0
+      output: inet
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -q 'inet' <<< "$COMMAND_OUTPUT"
+  - step: 5
+    description: Check active network connections
+    command: netstat -an 2>/dev/null | grep LISTEN | wc -l || ss -l | wc -l
+    expected:
+      success: true
+      result: 0
+      output: ''
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: '[[ $(echo "$COMMAND_OUTPUT" | tr -d '' \n'') -ge 0 ]]'

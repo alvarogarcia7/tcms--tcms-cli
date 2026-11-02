@@ -1,0 +1,7 @@
+type: test_run
+schema: tcms/test-run.schema.json
+run_id: RUN-1
+build_id: build-1
+environment: lab
+tester: alice
+started_at: '2026-10-30T10:00:00Z'
