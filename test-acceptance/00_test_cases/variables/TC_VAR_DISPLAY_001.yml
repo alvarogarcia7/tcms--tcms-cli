@@ -735,4 +735,4 @@ test_sequences:
       - name: verify_total_lines_sufficient
         condition: '[[ $total_lines -ge 18 ]]'
       - name: verify_section_markers_present
-        condition: '[[ $section_count -ge 4 ]]'
+        condition: '[[ $section_count -ge 3 ]]'

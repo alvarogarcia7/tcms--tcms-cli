@@ -3,7 +3,7 @@ schema: tcms/test-case.schema.v1.json
 requirement: FAILURE_NEGATIVE_TEST
 item: 1
 tc: 1
-id: TC_FAILURE_NEGATIVE_TEST_001
+id: TC_NEGATIVE_STEPS_001
 description: Test case with expected failure (negative test) - verifies that expected
   failures are properly handled
 general_initial_conditions:
