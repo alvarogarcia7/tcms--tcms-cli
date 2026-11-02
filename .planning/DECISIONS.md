@@ -127,3 +127,24 @@ Entry format:
 - **Script fixes also required**: the script passes `--output-dir "$TEMP_DIR"`, which also does not exist on generate (it has `-o FILE`). Replace with `generate "$TEST_YAML" -o "$TEMP_DIR/<TC_ID>_test.sh"` (lines ~244, 344, 415, 569) or add an equivalent flag; the script expects `$TEMP_DIR/TEST_RUST_BINARY_test.sh`. The docs list lowercase method names ("rust_binary") while the script and code use `RustBinary`; check serde rename in config.rs and align docs. Also make `make test` propagate the script exit status (second half of tcms-44).
 - **container_config.yml error**: unrelated to this flag (verifier `--config` for run_verifier_and_generate_reports.sh; default container_config.yml missing at repo root). Leave to a separate task; do not fold in.
 - **Supersedes / affects**: D-03-G2; tcms-44
+
+## D-04-1: Branch for Phase 4 (AsciiDoc and machine-readable output)
+- **Phase / stage**: 4 / pre-execution
+- **Question**: Which branch carries Phase 4 work?
+- **Options considered**: A. `dev` (tracks gitlab/dev, lacks Phase 3, diverged from the feature branch at a282978); B. `traceability-matrix-report` (tracks origin on GitHub, contains Phases 1-3 and their verification records); C. new branch off either (not needed)
+- **Decision**: B. Develop Phase 4 on `traceability-matrix-report`. **Why**: it holds the verified Phase 3 code and is the branch already pushed to GitHub, so Phase 4 commits fast-forward origin with no history rewrite. `dev` would need a merge or rebase to get Phase 3.
+- **Supersedes / affects**: .planning/phases/04-*
+
+## D-04-2: Phase 4 branch is dev (supersedes D-04-1)
+- **Phase / stage**: 4 / pre-execution
+- **Question**: Which branch carries Phase 4 work now?
+- **Decision**: Phase 4 is developed on `dev`, not `traceability-matrix-report`. `dev` now contains the same code plus later CI commits. **Why**: the work is already on `dev`; correcting the record avoids a wrong branch being used.
+- **Supersedes / affects**: D-04-1; .planning/phases/04-*
+
+## D-04-3: AsciiDoc Inputs section follows the Markdown renderers
+- **Phase / stage**: 4 / plan (04-01)
+- **Question**: The plan gives AsciiDoc an Inputs section on every document, but the Markdown summary, gaps and problems views print none. Which side moves?
+- **Options considered**: (a) AsciiDoc matches Markdown per renderer; (b) AsciiDoc always has Inputs, Markdown views stay as they are
+- **Decision**: (a). AsciiDoc grid and shapes A/B keep the Inputs section (Markdown grid and shapes print it via `inputs_block`). AsciiDoc summary, gaps and problems have no Inputs section, like their Markdown views. Markdown output is not touched, so it stays byte-identical. **Why**: OUT-01 and the plan's own rule are "same sections, columns and fixed words as Markdown"; (b) would make the two formats differ and the Markdown determinism tests stay valid either way.
+- **Plan changes required (04-01-PLAN.md, not edited)**: (1) must_haves line 18: drop "and with the Inputs section"; (2) line 21: change "every AsciiDoc document" to "the AsciiDoc grid and shapes A/B documents"; (3) line 60: replace the "Mandatory Inputs" paragraph with "AsciiDoc views have no Inputs section, matching Markdown"; (4) Task 2: remove the `inputs: &InputsSection` parameter from `render_asciidoc_summary`, `_gaps`, `_problems`, drop Inputs from their frames, goldens and tests, and from the SUMMARY note; (5) other plans (04-02..04) that call these three functions must stop passing inputs.
+- **Supersedes / affects**: 04-01 Task 2; D-14 reading
