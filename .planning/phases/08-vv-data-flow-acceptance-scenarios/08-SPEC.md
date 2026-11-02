@@ -55,3 +55,9 @@ Implementation status: fixtures in `test-acceptance/equivalence/` (valid/test-ca
 1. Verify the final conversion step (.yaml/.yml/.json -> .adoc/.md) is repeatable (same input, same bytes) and correct (content matches the model; markup escapes hold).
 2. Find up to 50 more valid and invalid test cases for the pipeline, not overlapping existing ones (check by content hash and by test_case_id), and add them as fixtures to the equivalence set from 2.1.
 3. Push to GitHub (origin) and GitLab (gitlab), then babysit both pipelines until green or until each failure is recorded with its cause.
+
+## 6. Failing-test detection (added by user)
+- For every scenario (full-two, full-one, all-but-one, half, none), inject one failing test case into the run data.
+- Run the scenario: execute, verify, validate, and produce the traceability matrix.
+- Expect the failing test to be detected (the run records a failure for it, and the verifier reports it).
+- Assert the traceability matrix's final verdict for the requirement the failing test covers is non-passing (FAILED, or the rule's equivalent such as PARTIAL), in every scenario.
