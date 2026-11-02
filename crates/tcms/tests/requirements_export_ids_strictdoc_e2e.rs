@@ -38,16 +38,24 @@ fn path_str(p: &Path) -> String {
     p.to_string_lossy().into_owned()
 }
 
+/// The checked-in export for `case`, asserted to exist so a missing fixture fails the test rather
+/// than being hidden by an earlier refusal (product or ID check) that never opens `--input`.
+fn existing_export(case: &str) -> String {
+    let p = export(case);
+    assert!(p.exists(), "fixture missing: {}", p.display());
+    path_str(&p)
+}
+
 fn fix_locate() -> String {
-    path_str(&export("locate"))
+    existing_export("locate")
 }
 
 fn fix_refused() -> String {
-    path_str(&export("refused-level"))
+    existing_export("refused-level")
 }
 
 fn fix_no_level() -> String {
-    path_str(&export("no-level"))
+    existing_export("no-level")
 }
 
 /// A temporary directory holding the StrictDoc configuration. Kept apart from the working directory.
@@ -554,6 +562,7 @@ fn export_ids_with_a_refused_export_exits_2() {
         ],
     );
     assert_eq!(o.status.code(), Some(2), "stderr: {}", stderr(&o));
+    assert_eq!(stdout(&o), "");
     let err = stderr(&o);
     assert!(err.contains("HLR-8"), "stderr: {err}");
     assert!(err.contains("is not a requirement type"), "stderr: {err}");
@@ -581,6 +590,7 @@ fn export_ids_with_an_item_without_level_exits_2() {
         ],
     );
     assert_eq!(o.status.code(), Some(2), "stderr: {}", stderr(&o));
+    assert_eq!(stdout(&o), "");
     let err = stderr(&o);
     assert!(err.contains("HLR-9"), "stderr: {err}");
     assert!(err.contains("has no LEVEL"), "stderr: {err}");
