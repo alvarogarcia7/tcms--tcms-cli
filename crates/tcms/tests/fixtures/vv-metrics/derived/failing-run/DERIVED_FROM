@@ -1,0 +1,5 @@
+Derived from SUT-1 run RUN-32921 (copied unchanged into runs/RUN-32921).
+Added run RUN-DERIVED-FAIL-01, copied from RUN-32921 with these edits:
+- runs/RUN-DERIVED-FAIL-01/test-run.yaml: run_id, started_at and finished_at set to 2026-10-30T12:00:00Z; verdict of SUT1_PASS_001 changed from pass to fail (SUT1_CALC_001 stays pass).
+- runs/RUN-DERIVED-FAIL-01/verification-results.yaml: SUT1_PASS_001 summary changed to overall_pass: false, passed_steps: 2, failed_steps: 1 (total_steps stays 3). Step_results are not edited.
+Requirements and case files are unchanged copies.

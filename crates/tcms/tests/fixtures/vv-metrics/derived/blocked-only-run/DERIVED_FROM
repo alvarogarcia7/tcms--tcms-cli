@@ -1,0 +1,5 @@
+Derived from SUT-1 run RUN-32921 (copied unchanged into runs/RUN-32921).
+Added run RUN-DERIVED-BLOCKED-01, copied from RUN-32921 with these edits:
+- runs/RUN-DERIVED-BLOCKED-01/test-run.yaml: run_id, started_at and finished_at set to 2026-10-30T12:00:00Z; verdict of both SUT1_PASS_001 and SUT1_CALC_001 changed from pass to error (blocked).
+- runs/RUN-DERIVED-BLOCKED-01/verification-results.yaml: both cases get overall_pass: false and passed_steps: 0 (total_steps stays 3). Step_results are not edited.
+Requirements and case files are unchanged copies.

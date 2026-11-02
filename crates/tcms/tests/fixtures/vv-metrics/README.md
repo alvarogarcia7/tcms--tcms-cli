@@ -21,7 +21,12 @@ Recorded V&V data of SUT 1 (`alvarogarcia7/tcms--sut-1`, branch `main`, commit r
 - Passing runs only: all 28 results across the 14 runs have verdict `pass`.
 - Every run has a pass rate of 100 percent, so run-over-run deltas are zero and no run sits at a gate boundary.
 
-### What SUT-1 does not cover (must be derived)
+### derived/
+
+The cases SUT-1 lacks (failing, no data, blocked only, skipped outside the denominator) are derived in
+`derived/`, one folder each with a `DERIVED_FROM` file. See `derived/README.md`. `sut-1/` is unchanged.
+
+## What SUT-1 does not cover (must be derived)
 
 SUT-1 has no failing result, no `NO_DATA` run, no skipped or untested result, no blocked
 result, and no requirement with `NOT_RUN` or `FAILING` coverage. These cases are needed by the

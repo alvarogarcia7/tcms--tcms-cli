@@ -6,6 +6,8 @@ mod prcmd;
 mod refcmd;
 mod reqcmd;
 mod synccmd;
+mod vvcmd;
+mod vvmetrics;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -47,6 +49,11 @@ enum Command {
         #[command(subcommand)]
         command: reqcmd::RequirementsCommand,
     },
+    /// V&V metrics: pass rate, quality-gate verdict, coverage and stability of recorded runs (TCMS-47)
+    Vv {
+        #[command(subcommand)]
+        command: vvcmd::VvCommand,
+    },
 }
 
 fn main() {
@@ -64,5 +71,6 @@ fn run(cli: Cli) -> Result<()> {
         Command::Jira { command } => jiracmd::run(&ctx, command),
         Command::Requirements { command } => reqcmd::run(&ctx, command),
         Command::Pr { command } => prcmd::run(&ctx, command),
+        Command::Vv { command } => vvcmd::run(&ctx, command),
     }
 }
