@@ -103,6 +103,20 @@ fn snapshot(dir: &Path) -> Vec<(String, String)> {
 
 // ---------------------------------------------------------------- fixture
 
+/// The first JSON object anywhere under `v` whose `UID` equals `uid`.
+fn find_node<'a>(v: &'a serde_json::Value, uid: &str) -> Option<&'a serde_json::Value> {
+    match v {
+        serde_json::Value::Object(map) => {
+            if map.get("UID").and_then(serde_json::Value::as_str) == Some(uid) {
+                return Some(v);
+            }
+            map.values().find_map(|child| find_node(child, uid))
+        }
+        serde_json::Value::Array(items) => items.iter().find_map(|child| find_node(child, uid)),
+        _ => None,
+    }
+}
+
 #[test]
 fn fixture_is_the_output_of_the_real_strictdoc_tool() {
     let text = std::fs::read_to_string(export("locate")).unwrap();
@@ -115,6 +129,11 @@ fn fixture_is_the_output_of_the_real_strictdoc_tool() {
     assert_eq!(docs.len(), 2);
     assert_eq!(docs[0]["TITLE"], "Locate Fixture Software");
     assert_eq!(docs[1]["TITLE"], "Locate Fixture System");
+    // Found items the tests rely on exist with the UID and LEVEL the expected output shows.
+    let hlr1 = find_node(&value, "HLR-1").expect("HLR-1 is in the export");
+    assert_eq!(hlr1["LEVEL"], "HLR");
+    let sys1 = find_node(&value, "SYS-1").expect("SYS-1 is in the export");
+    assert_eq!(sys1["LEVEL"], "system");
 }
 
 // ---------------------------------------------------------------- found, not found, batch (exit 0 / 1)
@@ -177,12 +196,14 @@ fn locate_reports_an_id_that_is_not_in_the_export() {
 
 #[test]
 fn locate_a_uid_of_another_level_prefix_is_not_confused() {
+    // SYS-1 is found; SYS-99 shares its prefix but is absent and must stay "not found".
     let dir = fresh();
     let input = fixture_locate();
     let o = locate(
         dir.path(),
         &[
             "LLR-99",
+            "SYS-1",
             "SYS-99",
             "--input",
             &input,
@@ -193,10 +214,12 @@ fn locate_a_uid_of_another_level_prefix_is_not_confused() {
     assert_eq!(code(&o), Some(1));
     assert_eq!(
         stdout(&o),
-        "LLR-99: not found in strictdoc (strictdoc)\nSYS-99: not found in strictdoc (strictdoc)\n"
+        format!(
+            "LLR-99: not found in strictdoc (strictdoc)\n{SYS1_LINE}\nSYS-99: not found in strictdoc (strictdoc)\n"
+        )
     );
     assert!(
-        stderr(&o).contains("not found: 2 of 2 requirement IDs"),
+        stderr(&o).contains("not found: 2 of 3 requirement IDs"),
         "{}",
         stderr(&o)
     );
