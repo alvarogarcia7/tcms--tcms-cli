@@ -67,7 +67,7 @@ test_sequences:
       ''${TEST_DATA_DIR}'
     capture_vars:
     - name: data_dir
-      capture: 'Created: (/tmp/[^\s]+)'
+      capture: 'Created: (/tmp/[^[:space:]]+)'
     expected:
       success: true
       result: 0
@@ -95,8 +95,11 @@ test_sequences:
       output: '[[ "$COMMAND_OUTPUT" =~ ^[0-9_]+$ ]]'
   - step: 3
     description: Initialize iteration counter and results file
-    command: echo 0 > ${data_dir}/results/iteration_counter.txt && cat > ${data_dir}/results/test_results_${test_run_id}.csv
-      << EOF iteration,data_size,processing_time_ms,success,error_count EOF cat ${data_dir}/results/test_results_${test_run_id}.csv
+    command: |
+      echo 0 > ${data_dir}/results/iteration_counter.txt && cat > ${data_dir}/results/test_results_${test_run_id}.csv << EOF
+      iteration,data_size,processing_time_ms,success,error_count
+      EOF
+      cat ${data_dir}/results/test_results_${test_run_id}.csv
     expected:
       success: true
       result: 0
@@ -106,10 +109,11 @@ test_sequences:
       output: grep -q 'iteration' <<< "$COMMAND_OUTPUT"
   - step: 4
     description: Create test data manifest
-    command: 'cat > ${data_dir}/test_manifest.txt << EOF Test Run Manifest =================
-      Run ID: ${test_run_id} Iterations: ${ITERATION_COUNT} Data Set Size: ${DATA_SET_SIZE}
-      Failure Threshold: ${FAILURE_THRESHOLD}% Data Directory: ${data_dir} Status:
-      INITIALIZED EOF cat ${data_dir}/test_manifest.txt'
+    command: |
+      cat > ${data_dir}/test_manifest.txt << EOF
+      Test Run Manifest ================= Run ID: ${test_run_id} Iterations: ${ITERATION_COUNT} Data Set Size: ${DATA_SET_SIZE} Failure Threshold: ${FAILURE_THRESHOLD}% Data Directory: ${data_dir} Status: INITIALIZED
+      EOF
+      cat ${data_dir}/test_manifest.txt
     expected:
       success: true
       result: 0
@@ -369,14 +373,7 @@ test_sequences:
       output: '3'
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ $total_iterations -ge 3 ]]'
-        if_true:
-        - echo 'Required iterations completed'
-        if_false:
-        - echo 'Fewer iterations than expected'
-        always:
-        - 'echo "Iterations: ${total_iterations}"'
+      output: 'if [[ $total_iterations -ge 3 ]]; then ( echo ''Required iterations completed'' ); else ( echo ''Fewer iterations than expected'' ); fi'
   - step: 2
     description: Calculate average processing time across iterations
     command: tail -n +2 ${data_dir}/results/test_results_${test_run_id}.csv | awk
@@ -450,47 +447,21 @@ test_sequences:
       output: percentage
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ $(echo "${success_rate} >= 90" | bc 2>/dev/null || echo 1)
-          -eq 1 ]]'
-        if_true:
-        - echo 'Success rate meets quality threshold (>=90%)'
-        if_false:
-        - 'echo ''WARNING: Success rate below quality threshold'''
-        always:
-        - 'echo "Success rate: ${success_rate}%"'
+      output: 'if [[ $(echo "${success_rate} >= 90" | bc 2>/dev/null || echo 1) -eq 1 ]]; then ( echo ''Success rate meets quality threshold (>=90%)'' ); else ( echo ''WARNING: Success rate below quality threshold'' ); fi'
   - step: 7
     description: Generate comprehensive analysis report
-    command: 'cat > ${data_dir}/results/analysis_report_${test_run_id}.txt << EOF
+    command: |
+      cat > ${data_dir}/results/analysis_report_${test_run_id}.txt << EOF
       Data-Driven Test Analysis Report =================================
-
-      Test Configuration: - Run ID: ${test_run_id} - Iterations Configured: ${ITERATION_COUNT}
-      - Iterations Completed: ${total_iterations} - Data Set Size: ${DATA_SET_SIZE}
-      items per iteration - Failure Threshold: ${FAILURE_THRESHOLD}%
-
-      Performance Metrics: ------------------- - Average Processing Time: ${avg_processing_time_ms}ms
-      - Minimum Processing Time: ${min_processing_time_ms}ms - Maximum Processing
-      Time: ${max_processing_time_ms}ms - Processing Time Range: $((${max_processing_time_ms}
-      - ${min_processing_time_ms}))ms
-
-      Quality Metrics: --------------- - Successful Iterations: ${success_count} /
-      ${total_iterations} - Success Rate: ${success_rate}% - Quality Threshold: 90%
-      - Status: $([ $(echo "${success_rate} >= 90" | bc 2>/dev/null || echo 1) -eq
-      1 ] && echo ''PASS'' || echo ''FAIL'')
-
-      Individual Iteration Results: ---------------------------- Iteration 1: ${iter1_duration_ms}ms
-      (${iter1_output_count} items) Iteration 2: ${iter2_duration_ms}ms (${iter2_output_count}
-      items) Iteration 3: ${iter3_duration_ms}ms (${iter3_output_count} items)
-
-      Data Verification: ----------------- - Input Files: $(ls ${data_dir}/input/
-      | wc -l) - Output Files: $(ls ${data_dir}/output/ | wc -l) - Results Files:
-      $(ls ${data_dir}/results/ | wc -l)
-
-      Conclusion: ---------- $([ $(echo "${success_rate} >= 90" | bc 2>/dev/null ||
-      echo 1) -eq 1 ] && echo ''All iterations completed successfully with acceptable
-      performance.'' || echo ''Some iterations did not meet quality thresholds.'')
-
-      Test data and results are available in: ${data_dir} EOF cat ${data_dir}/results/analysis_report_${test_run_id}.txt'
+      Test Configuration: - Run ID: ${test_run_id} - Iterations Configured: ${ITERATION_COUNT} - Iterations Completed: ${total_iterations} - Data Set Size: ${DATA_SET_SIZE} items per iteration - Failure Threshold: ${FAILURE_THRESHOLD}%
+      Performance Metrics: ------------------- - Average Processing Time: ${avg_processing_time_ms}ms - Minimum Processing Time: ${min_processing_time_ms}ms - Maximum Processing Time: ${max_processing_time_ms}ms - Processing Time Range: $((${max_processing_time_ms} - ${min_processing_time_ms}))ms
+      Quality Metrics: --------------- - Successful Iterations: ${success_count} / ${total_iterations} - Success Rate: ${success_rate}% - Quality Threshold: 90% - Status: $([ $(echo "${success_rate} >= 90" | bc 2>/dev/null || echo 1) -eq 1 ] && echo 'PASS' || echo 'FAIL')
+      Individual Iteration Results: ---------------------------- Iteration 1: ${iter1_duration_ms}ms (${iter1_output_count} items) Iteration 2: ${iter2_duration_ms}ms (${iter2_output_count} items) Iteration 3: ${iter3_duration_ms}ms (${iter3_output_count} items)
+      Data Verification: ----------------- - Input Files: $(ls ${data_dir}/input/ | wc -l) - Output Files: $(ls ${data_dir}/output/ | wc -l) - Results Files: $(ls ${data_dir}/results/ | wc -l)
+      Conclusion: ---------- $([ $(echo "${success_rate} >= 90" | bc 2>/dev/null || echo 1) -eq 1 ] && echo 'All iterations completed successfully with acceptable performance.' || echo 'Some iterations did not meet quality thresholds.')
+      Test data and results are available in: ${data_dir}
+      EOF
+      cat ${data_dir}/results/analysis_report_${test_run_id}.txt
     expected:
       success: true
       result: 0
@@ -512,14 +483,7 @@ test_sequences:
       output: '4'
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ $report_sections -ge 4 ]]'
-        if_true:
-        - echo 'Report contains all required sections'
-        if_false:
-        - echo 'Report may be incomplete'
-        always:
-        - 'echo "Report sections: ${report_sections}"'
+      output: 'if [[ $report_sections -ge 4 ]]; then ( echo ''Report contains all required sections'' ); else ( echo ''Report may be incomplete'' ); fi'
   - step: 9
     description: Archive test results and cleanup
     command: cd ${data_dir} && tar -czf /tmp/data_driven_results_${test_run_id}.tar.gz

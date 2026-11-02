@@ -1431,7 +1431,13 @@ impl TestExecutor {
                                 // Capture from COMMAND_OUTPUT using regex pattern
                                 // Alternation (`a|b`) needs extended regex; basic sed would read `|`
                                 // as a literal character. `sed -E` is supported on BSD and GNU.
-                                let (sed_flags, sed_pattern) = if pattern.contains('|') {
+                                // A `]` inside a bracket expression (`[^]]`) cannot be expressed in basic
+                                // sed, so those patterns use extended regex too.
+                                let needs_ere = pattern.contains('|')
+                                    || pattern.contains("[^]")
+                                    || pattern.contains("[]")
+                                    || pattern.contains("[:");
+                                let (sed_flags, sed_pattern) = if needs_ere {
                                     ("-n -E", convert_pattern_to_sed_ere(&pattern))
                                 } else {
                                     ("-n", convert_pcre_to_sed_pattern(&pattern))
@@ -5293,5 +5299,17 @@ mod tests {
     fn alternation_capture_uses_extended_regex() {
         let sed = convert_pattern_to_sed_ere("\"enabled\":(true|false)");
         assert_eq!(sed, "s/.*\"enabled\":(true|false).*/\\1/p");
+    }
+
+    #[test]
+    fn bracket_with_closing_bracket_uses_extended_regex() {
+        let sed = convert_pattern_to_sed_ere(r"resources: (\[[^]]+\])");
+        assert_eq!(sed, r"s/.*resources: (\[[^]]+\]).*/\1/p");
+    }
+
+    #[test]
+    fn posix_class_capture_uses_extended_regex() {
+        let sed = convert_pattern_to_sed_ere("Created: (/tmp/[^[:space:]]+)");
+        assert_eq!(sed, "s/.*Created: (\\/tmp\\/[^[:space:]]+).*/\\1/p");
     }
 }

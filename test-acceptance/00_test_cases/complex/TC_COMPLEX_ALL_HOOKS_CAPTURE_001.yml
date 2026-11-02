@@ -112,11 +112,12 @@ test_sequences:
         condition: '[[ -d "$hook_log_dir" ]]'
   - step: 3
     description: Initialize hook tracking file
-    command: 'cat > ${hook_log_dir}/hooks_executed.log << EOF # Hook Execution Log
-      for ${TEST_ID} # Started at: ${script_start_time} # Log Level: ${LOG_LEVEL}
-      # Metrics: ${METRICS_ENABLED}
-
-      HOOK_EXECUTION_START=${script_start_time} EOF cat ${hook_log_dir}/hooks_executed.log'
+    command: |
+      cat > ${hook_log_dir}/hooks_executed.log << EOF
+      # Hook Execution Log for ${TEST_ID} # Started at: ${script_start_time} # Log Level: ${LOG_LEVEL} # Metrics: ${METRICS_ENABLED}
+      HOOK_EXECUTION_START=${script_start_time}
+      EOF
+      cat ${hook_log_dir}/hooks_executed.log
     expected:
       success: true
       result: 0
@@ -199,14 +200,7 @@ test_sequences:
       output: number
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ $elapsed_time -ge 0 ]]'
-        if_true:
-        - echo 'Elapsed time is valid'
-        if_false:
-        - echo 'Elapsed time calculation error'
-        always:
-        - 'echo "Time since start: ${elapsed_time}s"'
+      output: 'if [[ $elapsed_time -ge 0 ]]; then ( echo ''Elapsed time is valid'' ); else ( echo ''Elapsed time calculation error'' ); fi'
 - id: 3
   name: Hook Lifecycle - Step-Level Hooks
   description: Intensive step execution demonstrating before_step and after_step hooks
@@ -246,9 +240,13 @@ test_sequences:
       output: grep -q 'complete' <<< "$COMMAND_OUTPUT"
   - step: 3
     description: Record operation in metrics log
-    command: 'if [[ "${METRICS_ENABLED}" == "true" ]]; then echo ''METRIC: ${operation_id}
-      - Status: ${operation_status}'' >> ${hook_log_dir}/metrics.log echo ''Metrics
-      recorded'' else echo ''Metrics disabled'' fi'
+    command: |
+      if [[ "${METRICS_ENABLED}" == "true" ]]; then
+        echo 'METRIC: ${operation_id} - Status: ${operation_status}' >> ${hook_log_dir}/metrics.log
+        echo 'Metrics recorded'
+      else
+        echo 'Metrics disabled'
+      fi
     expected:
       success: true
       result: 0
@@ -323,41 +321,19 @@ test_sequences:
       output: duration
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ $total_execution_time -ge 0 ]]'
-        if_true:
-        - echo 'Total execution time is valid'
-        if_false:
-        - echo 'Execution time error'
-        always:
-        - 'echo "Total time: ${total_execution_time}s"'
+      output: 'if [[ $total_execution_time -ge 0 ]]; then ( echo ''Total execution time is valid'' ); else ( echo ''Execution time error'' ); fi'
   - step: 3
     description: Generate comprehensive hook execution report
-    command: 'cat > ${hook_log_dir}/hook_summary.txt << EOF Complete Hook Execution
-      Report ==============================
-
+    command: |
+      cat > ${hook_log_dir}/hook_summary.txt << EOF
+      Complete Hook Execution Report ==============================
       Test ID: ${TEST_ID} Log Level: ${LOG_LEVEL} Metrics Enabled: ${METRICS_ENABLED}
-
-      Execution Timeline: ------------------- Script Start: ${script_start_time} Sequence
-      2 Start: ${seq2_start_time} Teardown Start: ${teardown_start_time} Total Duration:
-      ${total_execution_time}s
-
-      Hook Execution Summary: ---------------------- 1. script_start: Executed once
-      at beginning 2. setup_test: Executed once after script_start 3. before_sequence:
-      Executed 4 times (once per sequence) 4. after_sequence: Will execute 4 times
-      (once per sequence) 5. before_step: Executed ${total_steps_so_far}+ times (once
-      per step) 6. after_step: Executed ${total_steps_so_far}+ times (once per step)
-      7. teardown_test: Will execute once after this sequence 8. script_end: Will
-      execute once at very end
-
-      Variables Captured: ------------------ - script_start_time: ${script_start_time}
-      - hook_log_dir: ${hook_log_dir} - seq2_start_time: ${seq2_start_time} - seq1_step_count:
-      ${seq1_step_count} - elapsed_time: ${elapsed_time}s - operation_id: ${operation_id}
-      - operation_status: ${operation_status} - total_steps_so_far: ${total_steps_so_far}
-      - hook_execution_count: ${hook_execution_count} - teardown_start_time: ${teardown_start_time}
-      - total_execution_time: ${total_execution_time}s
-
-      Test Status: COMPLETE All 8 hook types demonstrated successfully EOF cat ${hook_log_dir}/hook_summary.txt'
+      Execution Timeline: ------------------- Script Start: ${script_start_time} Sequence 2 Start: ${seq2_start_time} Teardown Start: ${teardown_start_time} Total Duration: ${total_execution_time}s
+      Hook Execution Summary: ---------------------- 1. script_start: Executed once at beginning 2. setup_test: Executed once after script_start 3. before_sequence: Executed 4 times (once per sequence) 4. after_sequence: Will execute 4 times (once per sequence) 5. before_step: Executed ${total_steps_so_far}+ times (once per step) 6. after_step: Executed ${total_steps_so_far}+ times (once per step) 7. teardown_test: Will execute once after this sequence 8. script_end: Will execute once at very end
+      Variables Captured: ------------------ - script_start_time: ${script_start_time} - hook_log_dir: ${hook_log_dir} - seq2_start_time: ${seq2_start_time} - seq1_step_count: ${seq1_step_count} - elapsed_time: ${elapsed_time}s - operation_id: ${operation_id} - operation_status: ${operation_status} - total_steps_so_far: ${total_steps_so_far} - hook_execution_count: ${hook_execution_count} - teardown_start_time: ${teardown_start_time} - total_execution_time: ${total_execution_time}s
+      Test Status: COMPLETE All 8 hook types demonstrated successfully
+      EOF
+      cat ${hook_log_dir}/hook_summary.txt
     expected:
       success: true
       result: 0
@@ -368,10 +344,11 @@ test_sequences:
         grep -q ''Test Status: COMPLETE'' <<< "$COMMAND_OUTPUT"'
   - step: 4
     description: Record hook execution counts for verification
-    command: cat >> ${hook_log_dir}/hooks_executed.log << EOF HOOK_EXECUTION_END=${teardown_start_time}
-      TOTAL_SEQUENCES=4 TOTAL_STEPS=${total_steps_so_far} BEFORE_SEQUENCE_COUNT=4
-      AFTER_SEQUENCE_COUNT=4 BEFORE_STEP_COUNT=${total_steps_so_far} AFTER_STEP_COUNT=${total_steps_so_far}
-      EOF tail -8 ${hook_log_dir}/hooks_executed.log
+    command: |
+      cat >> ${hook_log_dir}/hooks_executed.log << EOF
+      HOOK_EXECUTION_END=${teardown_start_time} TOTAL_SEQUENCES=4 TOTAL_STEPS=${total_steps_so_far} BEFORE_SEQUENCE_COUNT=4 AFTER_SEQUENCE_COUNT=4 BEFORE_STEP_COUNT=${total_steps_so_far} AFTER_STEP_COUNT=${total_steps_so_far}
+      EOF
+      tail -8 ${hook_log_dir}/hooks_executed.log
     expected:
       success: true
       result: 0
@@ -381,9 +358,12 @@ test_sequences:
       output: grep -q 'TOTAL_SEQUENCES=4' <<< "$COMMAND_OUTPUT"
   - step: 5
     description: Verify metrics log exists if enabled
-    command: if [[ "${METRICS_ENABLED}" == "true" ]]; then test -f ${hook_log_dir}/metrics.log
-      && echo 'Metrics log verified' || echo 'Metrics log missing' else echo 'Metrics
-      disabled, no log expected' fi
+    command: |
+      if [[ "${METRICS_ENABLED}" == "true" ]]; then
+        test -f ${hook_log_dir}/metrics.log && echo 'Metrics log verified' || echo 'Metrics log missing'
+      else
+        echo 'Metrics disabled, no log expected'
+      fi
     expected:
       success: true
       result: 0
@@ -403,14 +383,7 @@ test_sequences:
       output: number
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ $total_files_generated -ge 2 ]]'
-        if_true:
-        - echo 'Expected files generated'
-        if_false:
-        - echo 'Fewer files than expected'
-        always:
-        - 'echo "Files generated: ${total_files_generated}"'
+      output: 'if [[ $total_files_generated -ge 2 ]]; then ( echo ''Expected files generated'' ); else ( echo ''Fewer files than expected'' ); fi'
   - step: 7
     description: Final step - prepare for teardown_test and script_end hooks
     command: echo 'All sequences complete' && echo 'teardown_test hook will execute

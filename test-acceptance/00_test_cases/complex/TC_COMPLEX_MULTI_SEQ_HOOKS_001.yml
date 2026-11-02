@@ -92,7 +92,7 @@ test_sequences:
     command: mkdir -p ${TEST_WORKSPACE}/run_${test_start_time} && echo ${TEST_WORKSPACE}/run_${test_start_time}
     capture_vars:
     - name: run_directory
-      capture: (/tmp/[^\s]+)
+      capture: (/tmp/[^[:space:]]+)
     expected:
       success: true
       result: 0
@@ -107,9 +107,14 @@ test_sequences:
         condition: '[[ -d "$run_directory" ]]'
   - step: 3
     description: Generate test configuration file
-    command: cat > ${run_directory}/config.txt << EOF environment=${TEST_ENVIRONMENT}
-      workspace=${TEST_WORKSPACE} start_time=${test_start_time} max_retries=${MAX_RETRIES}
-      EOF cat ${run_directory}/config.txt
+    command: |
+      cat > ${run_directory}/config.txt << EOF
+      environment=${TEST_ENVIRONMENT}
+      workspace=${TEST_WORKSPACE}
+      start_time=${test_start_time}
+      max_retries=${MAX_RETRIES}
+      EOF
+      cat ${run_directory}/config.txt
     expected:
       success: true
       result: 0
@@ -227,14 +232,7 @@ test_sequences:
       output: duration
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ $test_duration -lt 300 ]]'
-        if_true:
-        - echo 'Test completed within acceptable time (<5 minutes)'
-        if_false:
-        - 'echo ''Warning: Test took longer than expected'''
-        always:
-        - 'echo "Total duration: ${test_duration} seconds"'
+      output: 'if [[ $test_duration -lt 300 ]]; then ( echo ''Test completed within acceptable time (<5 minutes)'' ); else ( echo ''Warning: Test took longer than expected'' ); fi'
       general:
       - name: verify_duration_numeric
         condition: '[[ $test_duration =~ ^[0-9]+$ ]]'
@@ -242,10 +240,11 @@ test_sequences:
         condition: '[[ $test_duration -ge 0 ]]'
   - step: 3
     description: Create test summary report
-    command: 'cat > ${run_directory}/summary.txt << EOF Test Execution Summary ======================
-      Start Time: ${test_start_time} End Time: ${test_end_time} Duration: ${test_duration}
-      seconds Total Lines: ${total_lines} Environment: ${TEST_ENVIRONMENT} Retries
-      Configured: ${configured_retries} Status: COMPLETE EOF cat ${run_directory}/summary.txt'
+    command: |
+      cat > ${run_directory}/summary.txt << EOF
+      Test Execution Summary ====================== Start Time: ${test_start_time} End Time: ${test_end_time} Duration: ${test_duration} seconds Total Lines: ${total_lines} Environment: ${TEST_ENVIRONMENT} Retries Configured: ${configured_retries} Status: COMPLETE
+      EOF
+      cat ${run_directory}/summary.txt
     expected:
       success: true
       result: 0

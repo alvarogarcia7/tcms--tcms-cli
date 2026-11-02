@@ -86,7 +86,7 @@ test_sequences:
       | md5 2>/dev/null | cut -d'' '' -f1 || echo ''token_''$RANDOM$RANDOM'
     capture_vars:
     - name: auth_token
-      capture: ([a-f0-9]+|token_[0-9]+)
+      capture: (token_[0-9]+|[a-f0-9]{32})
     expected:
       success: true
       result: 0
@@ -121,11 +121,11 @@ test_sequences:
         condition: '[[ $token_expiry -gt $auth_timestamp ]]'
   - step: 4
     description: Store authentication session securely
-    command: 'mkdir -p /tmp/secure_session && cat > /tmp/secure_session/auth_${auth_token:0:8}.sec
-      << EOF # Secure Session Data - DO NOT COMMIT session_token=${auth_token} username=${TEST_USERNAME}
-      role=${TEST_USER_ROLE} authenticated_at=${auth_timestamp} expires_at=${token_expiry}
-      api_base=${API_BASE_URL} status=ACTIVE EOF chmod 600 /tmp/secure_session/auth_${auth_token:0:8}.sec
-      && cat /tmp/secure_session/auth_${auth_token:0:8}.sec'
+    command: |
+      mkdir -p /tmp/secure_session && cat > /tmp/secure_session/auth_${auth_token:0:8}.sec << EOF
+      # Secure Session Data - DO NOT COMMIT session_token=${auth_token} username=${TEST_USERNAME} role=${TEST_USER_ROLE} authenticated_at=${auth_timestamp} expires_at=${token_expiry} api_base=${API_BASE_URL} status=ACTIVE
+      EOF
+      chmod 600 /tmp/secure_session/auth_${auth_token:0:8}.sec && cat /tmp/secure_session/auth_${auth_token:0:8}.sec
     expected:
       success: true
       result: 0
@@ -162,10 +162,10 @@ test_sequences:
   steps:
   - step: 1
     description: Simulate GET request to user profile endpoint
-    command: 'echo ''GET ${API_BASE_URL}/users/${TEST_USERNAME}'' && echo ''Headers:
-      ''${auth_header} && cat << EOF { "user_id": "$(echo ${TEST_USERNAME} | md5sum
-      2>/dev/null | cut -c1-8 || echo $RANDOM)", "username": "${TEST_USERNAME}", "role":
-      "${TEST_USER_ROLE}", "authenticated": true, "token_valid": true } EOF'
+    command: |
+      echo "GET ${API_BASE_URL}/users/${TEST_USERNAME}" && echo "Headers: ${auth_header}" && cat << EOF
+      { "user_id": "$(echo ${TEST_USERNAME} | md5sum 2>/dev/null | cut -c1-8 || echo $RANDOM)", "username": "${TEST_USERNAME}", "role": "${TEST_USER_ROLE}", "authenticated": true, "token_valid": true }
+      EOF
     capture_vars:
     - name: user_id
       capture: '"user_id": "([a-f0-9]+)"'
@@ -177,8 +177,7 @@ test_sequences:
       output: user_id
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output: 'grep -q ''"username": "${TEST_USERNAME}"'' <<< "$COMMAND_OUTPUT" &&
-        grep -q ''"authenticated": true'' <<< "$COMMAND_OUTPUT"'
+      output: 'grep -q "\"username\": \"${TEST_USERNAME}\"" <<< "$COMMAND_OUTPUT" && grep -q "\"authenticated\": true" <<< "$COMMAND_OUTPUT"'
       general:
       - name: verify_user_id_captured
         condition: '[[ -n "$user_id" ]]'
@@ -203,14 +202,7 @@ test_sequences:
       output: resources
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ "${TEST_USER_ROLE}" == "admin" ]]'
-        if_true:
-        - 'grep -q ''"access_level": "full"'' <<< "$COMMAND_OUTPUT"'
-        if_false:
-        - grep -q '"resources":' <<< "$COMMAND_OUTPUT"
-        always:
-        - 'echo "Access level: ${access_level}"'
+      output: 'if [[ "${TEST_USER_ROLE}" == "admin" ]]; then ( grep -q ''"access_level": "full"'' <<< "$COMMAND_OUTPUT" ); else ( grep -q ''"resources":'' <<< "$COMMAND_OUTPUT" ); fi'
       general:
       - name: verify_access_level_captured
         condition: '[[ -n "$access_level" ]]'
@@ -249,9 +241,11 @@ test_sequences:
         condition: '[[ -n "$resource_id" ]]'
   - step: 5
     description: Log API request audit trail
-    command: 'cat >> /tmp/secure_session/api_audit.log << EOF [${request_timestamp}]
-      POST /resources - User: ${TEST_USERNAME} (${user_id}) - Token: ${auth_token:0:8}...
-      - Resource: ${resource_id} - Status: SUCCESS EOF tail -1 /tmp/secure_session/api_audit.log'
+    command: |
+      cat >> /tmp/secure_session/api_audit.log << EOF
+      [${request_timestamp}] POST /resources - User: ${TEST_USERNAME} (${user_id}) - Token: ${auth_token:0:8}... - Resource: ${resource_id} - Status: SUCCESS
+      EOF
+      tail -1 /tmp/secure_session/api_audit.log
     expected:
       success: true
       result: 0
@@ -269,9 +263,15 @@ test_sequences:
   steps:
   - step: 1
     description: Check token expiry status
-    command: current_time=$(date +%s) && if [[ $current_time -lt ${token_expiry} ]];
-      then echo 'TOKEN_STATUS=VALID' echo 'TIME_REMAINING='$((${token_expiry} - $current_time))'s'
-      else echo 'TOKEN_STATUS=EXPIRED' echo 'TIME_REMAINING=0s' fi
+    command: |
+      current_time=$(date +%s)
+      if [[ $current_time -lt ${token_expiry} ]]; then
+        echo 'TOKEN_STATUS=VALID'
+        echo "TIME_REMAINING=$((${token_expiry} - $current_time))s"
+      else
+        echo 'TOKEN_STATUS=EXPIRED'
+        echo 'TIME_REMAINING=0s'
+      fi
     capture_vars:
     - name: token_status
       capture: TOKEN_STATUS=([A-Z]+)
@@ -283,19 +283,17 @@ test_sequences:
       output: TOKEN_STATUS=
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ "$token_status" == "VALID" ]]'
-        if_true:
-        - echo 'Token is still valid'
-        if_false:
-        - echo 'Token has expired'
-        always:
-        - 'echo "Token status: ${token_status}, Remaining: ${time_remaining}s"'
+      output: 'if [[ "$token_status" == "VALID" ]]; then ( echo ''Token is still valid'' ); else ( echo ''Token has expired'' ); fi'
   - step: 2
     description: Validate token format and length
-    command: 'echo ''Token: ''${auth_token} && echo ''Length: ''${#auth_token} &&
-      if [[ ${#auth_token} -ge 8 ]]; then echo ''FORMAT_CHECK=PASS'' else echo ''FORMAT_CHECK=FAIL''
-      fi'
+    command: |
+      echo "Token: ${auth_token}"
+      echo "Length: ${#auth_token}"
+      if [[ ${#auth_token} -ge 8 ]]; then
+        echo 'FORMAT_CHECK=PASS'
+      else
+        echo 'FORMAT_CHECK=FAIL'
+      fi
     capture_vars:
     - name: format_check
       capture: FORMAT_CHECK=([A-Z]+)
@@ -311,7 +309,7 @@ test_sequences:
         condition: '[[ "$format_check" == "PASS" ]]'
   - step: 3
     description: Count total API requests made with this token
-    command: grep -c '${auth_token:0:8}' /tmp/secure_session/api_audit.log 2>/dev/null
+    command: grep -c "${auth_token:0:8}" /tmp/secure_session/api_audit.log 2>/dev/null
       || echo 0
     capture_vars:
     - name: request_count
@@ -340,14 +338,7 @@ test_sequences:
       output: permissions
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ "$file_permissions" =~ ^-rw------- ]]'
-        if_true:
-        - echo 'Session file has correct restrictive permissions (600)'
-        if_false:
-        - 'echo ''WARNING: Session file permissions may be too permissive'''
-        always:
-        - 'echo "Permissions: ${file_permissions}"'
+      output: 'if [[ "$file_permissions" =~ ^-rw------- ]]; then ( echo ''Session file has correct restrictive permissions (600)'' ); else ( echo ''WARNING: Session file permissions may be too permissive'' ); fi'
 - id: 4
   name: Session Termination and Cleanup
   description: Properly terminate authenticated session and cleanup sensitive data
@@ -382,33 +373,19 @@ test_sequences:
       output: duration
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ $session_duration -ge 0 ]]'
-        if_true:
-        - echo 'Session duration calculated successfully'
-        if_false:
-        - echo 'Session duration calculation error'
-        always:
-        - 'echo "Session duration: ${session_duration}s"'
+      output: 'if [[ $session_duration -ge 0 ]]; then ( echo ''Session duration calculated successfully'' ); else ( echo ''Session duration calculation error'' ); fi'
   - step: 3
     description: Generate security audit report
-    command: 'cat > /tmp/secure_session/security_report.txt << EOF Security Test Audit
-      Report ==========================
-
-      Authentication Details: - User: ${TEST_USERNAME} - User ID: ${user_id} - Role:
-      ${TEST_USER_ROLE} - Access Level: ${access_level}
-
-      Session Information: - Token: ${auth_token:0:8}...[REDACTED] - Authenticated:
-      ${auth_timestamp} - Logout: ${logout_timestamp} - Duration: ${session_duration}s
-      - Expiry: ${token_expiry} - Status at logout: ${token_status}
-
+    command: |
+      cat > /tmp/secure_session/security_report.txt << EOF
+      Security Test Audit Report ==========================
+      Authentication Details: - User: ${TEST_USERNAME} - User ID: ${user_id} - Role: ${TEST_USER_ROLE} - Access Level: ${access_level}
+      Session Information: - Token: ${auth_token:0:8}...[REDACTED] - Authenticated: ${auth_timestamp} - Logout: ${logout_timestamp} - Duration: ${session_duration}s - Expiry: ${token_expiry} - Status at logout: ${token_status}
       API Activity: - Total Requests: ${request_count} - Resources Created: ${resource_id}
-
-      Security Checks: - Token Format: ${format_check} - File Permissions: ${file_permissions}
-      - Token Status: ${token_status}
-
-      Conclusion: - Authentication: SUCCESS - API Access: SUCCESS - Security Validation:
-      SUCCESS - Session Cleanup: PENDING EOF cat /tmp/secure_session/security_report.txt'
+      Security Checks: - Token Format: ${format_check} - File Permissions: ${file_permissions} - Token Status: ${token_status}
+      Conclusion: - Authentication: SUCCESS - API Access: SUCCESS - Security Validation: SUCCESS - Session Cleanup: PENDING
+      EOF
+      cat /tmp/secure_session/security_report.txt
     expected:
       success: true
       result: 0
@@ -419,9 +396,14 @@ test_sequences:
         -q ''Session Cleanup: PENDING'' <<< "$COMMAND_OUTPUT"'
   - step: 4
     description: Securely wipe sensitive session data
-    command: if [ -f /tmp/secure_session/auth_${auth_token:0:8}.sec ]; then cat /dev/null
-      > /tmp/secure_session/auth_${auth_token:0:8}.sec rm -f /tmp/secure_session/auth_${auth_token:0:8}.sec
-      echo 'Session file wiped and removed' else echo 'Session file not found' fi
+    command: |
+      if [ -f "/tmp/secure_session/auth_${auth_token:0:8}.sec" ]; then
+        cat /dev/null > "/tmp/secure_session/auth_${auth_token:0:8}.sec"
+        rm -f "/tmp/secure_session/auth_${auth_token:0:8}.sec"
+        echo 'Session file wiped and removed'
+      else
+        echo 'Session file not found'
+      fi
     expected:
       success: true
       result: 0
@@ -431,10 +413,14 @@ test_sequences:
       output: grep -q 'wiped' <<< "$COMMAND_OUTPUT"
   - step: 5
     description: Archive audit logs and remove sensitive data directory
-    command: if [ -d /tmp/secure_session ]; then tar -czf /tmp/security_audit_${auth_timestamp}.tar.gz
-      -C /tmp secure_session/api_audit.log secure_session/security_report.txt 2>&1
-      | head -1 || echo 'Audit archived' rm -rf /tmp/secure_session echo 'Security
-      cleanup complete' else echo 'Session directory not found' fi
+    command: |
+      if [ -d /tmp/secure_session ]; then
+        tar -czf "/tmp/security_audit_${auth_timestamp}.tar.gz" -C /tmp secure_session/api_audit.log secure_session/security_report.txt 2>&1 | head -1 || echo 'Audit archived'
+        rm -rf /tmp/secure_session
+        echo 'Security cleanup complete'
+      else
+        echo 'Session directory not found'
+      fi
     expected:
       success: true
       result: 0
@@ -447,10 +433,15 @@ test_sequences:
         condition: '[[ ! -d /tmp/secure_session ]]'
   - step: 6
     description: Verify all sensitive data has been removed
-    command: 'if [ ! -d /tmp/secure_session ]; then echo ''CLEANUP_STATUS=SUCCESS''
-      echo ''Sensitive session data removed'' else echo ''CLEANUP_STATUS=INCOMPLETE''
-      echo ''WARNING: Session directory still exists'' fi && echo ''Audit archive:
-      /tmp/security_audit_''${auth_timestamp}''.tar.gz'''
+    command: |
+      if [ ! -d /tmp/secure_session ]; then
+        echo 'CLEANUP_STATUS=SUCCESS'
+        echo 'Sensitive session data removed'
+      else
+        echo 'CLEANUP_STATUS=INCOMPLETE'
+        echo 'WARNING: Session directory still exists'
+      fi
+      echo "Audit archive: /tmp/security_audit_${auth_timestamp}.tar.gz"
     expected:
       success: true
       result: 0

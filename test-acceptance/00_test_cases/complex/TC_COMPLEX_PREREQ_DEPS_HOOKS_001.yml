@@ -114,9 +114,11 @@ test_sequences:
           ]]'
   - step: 3
     description: Create session configuration file (dependency for sequence 2)
-    command: cat > ${BASE_DIR}/config/session.conf << EOF session_id=${session_id}
-      service_name=${SERVICE_NAME} timeout=${TIMEOUT_SECONDS} base_dir=${BASE_DIR}
-      created_at=$(date +%Y-%m-%d_%H:%M:%S) EOF cat ${BASE_DIR}/config/session.conf
+    command: |
+      cat > ${BASE_DIR}/config/session.conf << EOF
+      session_id=${session_id} service_name=${SERVICE_NAME} timeout=${TIMEOUT_SECONDS} base_dir=${BASE_DIR} created_at=$(date +%Y-%m-%d_%H:%M:%S)
+      EOF
+      cat ${BASE_DIR}/config/session.conf
     capture_vars:
     - name: config_file
       capture: session_id=
@@ -244,14 +246,7 @@ test_sequences:
       output: number
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ $file_count -ge 4 ]]'
-        if_true:
-        - echo 'Expected number of files created (>= 4)'
-        if_false:
-        - echo 'Fewer files than expected'
-        always:
-        - 'echo "Total files: ${file_count}"'
+      output: 'if [[ $file_count -ge 4 ]]; then ( echo ''Expected number of files created (>= 4)'' ); else ( echo ''Fewer files than expected'' ); fi'
       general:
       - name: verify_file_count_numeric
         condition: '[[ $file_count =~ ^[0-9]+$ ]]'
@@ -290,9 +285,11 @@ test_sequences:
       output: 'grep -q ''Status: COMPLETED'' <<< "$COMMAND_OUTPUT"'
   - step: 2
     description: Generate final test report
-    command: 'cat > ${BASE_DIR}/test_report.txt << EOF Test Execution Report ====================
-      Session ID: ${session_id} Service: ${SERVICE_NAME} Initialization: ${init_timestamp}
-      Files Created: ${file_count} Status: SUCCESS EOF cat ${BASE_DIR}/test_report.txt'
+    command: |
+      cat > ${BASE_DIR}/test_report.txt << EOF
+      Test Execution Report ==================== Session ID: ${session_id} Service: ${SERVICE_NAME} Initialization: ${init_timestamp} Files Created: ${file_count} Status: SUCCESS
+      EOF
+      cat ${BASE_DIR}/test_report.txt
     expected:
       success: true
       result: 0
@@ -325,14 +322,7 @@ test_sequences:
       output: number
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ $archived_files -ge 5 ]]'
-        if_true:
-        - echo 'Archive contains expected files'
-        if_false:
-        - echo 'Archive may be incomplete'
-        always:
-        - 'echo "Archived files: ${archived_files}"'
+      output: 'if [[ $archived_files -ge 5 ]]; then ( echo ''Archive contains expected files'' ); else ( echo ''Archive may be incomplete'' ); fi'
   - step: 5
     description: Cleanup temporary files (preserve archive)
     command: rm -rf ${BASE_DIR}/temp ${BASE_DIR}/config ${BASE_DIR}/data ${BASE_DIR}/logs

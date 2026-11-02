@@ -101,16 +101,18 @@ test_sequences:
         condition: '[[ $session_token =~ ^user_[a-z0-9]+ ]]'
   - step: 2
     description: 'GIVEN: User profile is created with role'
-    command: cat > /tmp/user_profile_${session_token}.txt << EOF username=${USER_NAME}
-      role=${USER_ROLE} session=${session_token} authenticated=true feature_access=${FEATURE_FLAG_ENABLED}
-      EOF cat /tmp/user_profile_${session_token}.txt
+    command: |
+      cat > /tmp/user_profile_${session_token}.txt << EOF
+      username=${USER_NAME} role=${USER_ROLE} session=${session_token} authenticated=true feature_access=${FEATURE_FLAG_ENABLED}
+      EOF
+      cat /tmp/user_profile_${session_token}.txt
     expected:
       success: true
       result: 0
       output: username=
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output: grep -q 'username=${USER_NAME}' <<< "$COMMAND_OUTPUT" && grep -q 'authenticated=true'
+      output: grep -q "username=${USER_NAME}" <<< "$COMMAND_OUTPUT" && grep -q 'authenticated=true'
         <<< "$COMMAND_OUTPUT"
   - step: 3
     description: 'GIVEN: System records user login timestamp'
@@ -157,22 +159,14 @@ test_sequences:
       echo ''resources: [public, help]'' ;; *) echo ''resources: [public]'' ;; esac'
     capture_vars:
     - name: resource_list
-      capture: 'resources: (\\[[^]]+\\])'
+      capture: 'resources: (\[[^]]+\])'
     expected:
       success: true
       result: 0
       output: 'resources:'
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ "${USER_ROLE}" == "admin" ]]'
-        if_true:
-        - grep -q 'all' <<< "$COMMAND_OUTPUT"
-        - grep -q 'users' <<< "$COMMAND_OUTPUT"
-        if_false:
-        - grep -q 'resources:' <<< "$COMMAND_OUTPUT"
-        always:
-        - 'echo ''Resources granted based on role: ${USER_ROLE}'''
+      output: '[[ "${USER_ROLE}" != "admin" ]] || { grep -q ''all'' <<< "$COMMAND_OUTPUT" && grep -q ''users'' <<< "$COMMAND_OUTPUT"; }'
       general:
       - name: verify_resource_list_captured
         condition: '[[ -n "$resource_list" ]]'
@@ -191,10 +185,16 @@ test_sequences:
       output: 'grep -q ''Access request: documents'' <<< "$COMMAND_OUTPUT"'
   - step: 3
     description: 'WHEN: System validates access based on role and feature flag'
-    command: 'if [[ "${USER_ROLE}" == "admin" ]] || [[ "${USER_ROLE}" == "user" ]];
-      then if [[ "${FEATURE_FLAG_ENABLED}" == "true" ]]; then echo ''ACCESS_GRANTED:
-      Enhanced features enabled'' else echo ''ACCESS_GRANTED: Standard features only''
-      fi else echo ''ACCESS_DENIED: Insufficient permissions'' fi'
+    command: |
+      if [[ "${USER_ROLE}" == "admin" ]] || [[ "${USER_ROLE}" == "user" ]]; then
+        if [[ "${FEATURE_FLAG_ENABLED}" == "true" ]]; then
+          echo 'ACCESS_GRANTED: Enhanced features enabled'
+        else
+          echo 'ACCESS_GRANTED: Standard features only'
+        fi
+      else
+        echo 'ACCESS_DENIED: Insufficient permissions'
+      fi
     capture_vars:
     - name: access_decision
       capture: (ACCESS_[A-Z]+)
@@ -204,14 +204,7 @@ test_sequences:
       output: ACCESS_
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ "$access_decision" == "ACCESS_GRANTED" ]]'
-        if_true:
-        - echo 'User granted access to resource'
-        if_false:
-        - echo 'User denied access to resource'
-        always:
-        - 'echo "Access decision: ${access_decision}"'
+      output: 'if [[ "$access_decision" == "ACCESS_GRANTED" ]]; then ( echo ''User granted access to resource'' ); else ( echo ''User denied access to resource'' ); fi'
       general:
       - name: verify_access_decision_captured
         condition: '[[ -n "$access_decision" ]]'
@@ -296,14 +289,7 @@ test_sequences:
       output: duration
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ $session_duration -ge 0 ]]'
-        if_true:
-        - echo 'Session duration is valid'
-        if_false:
-        - echo 'Session duration calculation error'
-        always:
-        - 'echo "Session duration: ${session_duration} seconds"'
+      output: 'if [[ $session_duration -ge 0 ]]; then ( echo ''Session duration is valid'' ); else ( echo ''Session duration calculation error'' ); fi'
       general:
       - name: verify_duration_numeric
         condition: '[[ $session_duration =~ ^[0-9]+$ ]]'
@@ -311,20 +297,15 @@ test_sequences:
         condition: '[[ $session_duration -ge 0 ]]'
   - step: 5
     description: 'THEN: Generate BDD test report with all captured data'
-    command: 'cat > /tmp/bdd_test_report_${session_token}.txt << EOF BDD Test Execution
-      Report =========================
-
-      GIVEN (Initial Context): - User: ${USER_NAME} - Role: ${USER_ROLE} - Session:
-      ${session_token} - Login Time: ${login_timestamp}
-
-      WHEN (Actions): - Resource Requested: ${resource_requested} - Access Decision:
-      ${access_decision} - Access Time: ${access_timestamp}
-
-      THEN (Verification): - Session Duration: ${session_duration} seconds - Feature
-      Flag: ${FEATURE_FLAG_ENABLED} - Test Status: PASSED
-
-      Summary: - All BDD criteria verified successfully - User behavior matches expected
-      patterns - System state is consistent with actions EOF cat /tmp/bdd_test_report_${session_token}.txt'
+    command: |
+      cat > /tmp/bdd_test_report_${session_token}.txt << EOF
+      BDD Test Execution Report =========================
+      GIVEN (Initial Context): - User: ${USER_NAME} - Role: ${USER_ROLE} - Session: ${session_token} - Login Time: ${login_timestamp}
+      WHEN (Actions): - Resource Requested: ${resource_requested} - Access Decision: ${access_decision} - Access Time: ${access_timestamp}
+      THEN (Verification): - Session Duration: ${session_duration} seconds - Feature Flag: ${FEATURE_FLAG_ENABLED} - Test Status: PASSED
+      Summary: - All BDD criteria verified successfully - User behavior matches expected patterns - System state is consistent with actions
+      EOF
+      cat /tmp/bdd_test_report_${session_token}.txt
     expected:
       success: true
       result: 0
@@ -348,14 +329,7 @@ test_sequences:
       output: '4'
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ $artifact_count -eq 4 ]]'
-        if_true:
-        - echo 'All test artifacts present'
-        if_false:
-        - echo 'Some test artifacts missing'
-        always:
-        - 'echo "Artifact count: ${artifact_count}"'
+      output: 'if [[ $artifact_count -eq 4 ]]; then ( echo ''All test artifacts present'' ); else ( echo ''Some test artifacts missing'' ); fi'
   - step: 7
     description: 'THEN: Cleanup test artifacts'
     command: rm -f /tmp/user_profile_${session_token}.txt /tmp/bdd_test_report_${session_token}.txt

@@ -120,10 +120,11 @@ test_sequences:
       output: '[[ "$COMMAND_OUTPUT" =~ ^[0-9]+$ ]]'
   - step: 5
     description: Create cleanup manifest
-    command: 'cat > ${CLEANUP_DIR}/cleanup_manifest.txt << EOF # Cleanup Manifest
-      - Created at ${resource_timestamp} # Resources that must be cleaned up: DIRECTORIES:
-      tmp data logs locks FILES: ${allocated_files} files in data/ LOCKS: test.lock
-      (PID: ${lock_pid}) STATUS: Resources allocated, cleanup required EOF cat ${CLEANUP_DIR}/cleanup_manifest.txt'
+    command: |
+      cat > ${CLEANUP_DIR}/cleanup_manifest.txt << EOF
+      # Cleanup Manifest - Created at ${resource_timestamp} # Resources that must be cleaned up: DIRECTORIES: tmp data logs locks FILES: ${allocated_files} files in data/ LOCKS: test.lock (PID: ${lock_pid}) STATUS: Resources allocated, cleanup required
+      EOF
+      cat ${CLEANUP_DIR}/cleanup_manifest.txt
     expected:
       success: true
       result: 0

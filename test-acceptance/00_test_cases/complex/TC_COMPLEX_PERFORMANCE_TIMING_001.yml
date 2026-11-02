@@ -112,14 +112,7 @@ test_sequences:
       output: duration
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ $baseline_duration_ms -ge 0 ]]'
-        if_true:
-        - echo 'Baseline duration calculated successfully'
-        if_false:
-        - echo 'Baseline duration calculation error'
-        always:
-        - 'echo "Baseline: ${baseline_duration_ms}ms"'
+      output: 'if [[ $baseline_duration_ms -ge 0 ]]; then ( echo ''Baseline duration calculated successfully'' ); else ( echo ''Baseline duration calculation error'' ); fi'
       general:
       - name: verify_baseline_duration_numeric
         condition: '[[ $baseline_duration_ms =~ ^[0-9]+$ ]]'
@@ -127,11 +120,11 @@ test_sequences:
         condition: '[[ $baseline_duration_ms -ge 0 ]]'
   - step: 5
     description: Record baseline metrics
-    command: 'mkdir -p /tmp/perf_test_metrics && cat > /tmp/perf_test_metrics/baseline.txt
-      << EOF Baseline Performance Metrics ============================ Start: ${baseline_start_ns}
-      End: ${baseline_end_ns} Duration: ${baseline_duration_ms}ms Iterations: ${baseline_iteration_count}
-      Avg per iteration: $(echo "scale=2; ${baseline_duration_ms} / ${baseline_iteration_count}"
-      | bc 2>/dev/null || echo ''N/A'')ms EOF cat /tmp/perf_test_metrics/baseline.txt'
+    command: |
+      mkdir -p /tmp/perf_test_metrics && cat > /tmp/perf_test_metrics/baseline.txt << EOF
+      Baseline Performance Metrics ============================ Start: ${baseline_start_ns} End: ${baseline_end_ns} Duration: ${baseline_duration_ms}ms Iterations: ${baseline_iteration_count} Avg per iteration: $(echo "scale=2; ${baseline_duration_ms} / ${baseline_iteration_count}" | bc 2>/dev/null || echo 'N/A')ms
+      EOF
+      cat /tmp/perf_test_metrics/baseline.txt
     expected:
       success: true
       result: 0
@@ -201,26 +194,17 @@ test_sequences:
       output: duration
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ $fileio_duration_ms -lt ${PERF_THRESHOLD_MS} ]]'
-        if_true:
-        - echo 'File I/O performance within threshold'
-        if_false:
-        - 'echo ''WARNING: File I/O performance exceeded threshold'''
-        always:
-        - 'echo "File I/O: ${fileio_duration_ms}ms (threshold: ${PERF_THRESHOLD_MS}ms)"'
+      output: 'if [[ $fileio_duration_ms -lt ${PERF_THRESHOLD_MS} ]]; then ( echo ''File I/O performance within threshold'' ); else ( echo ''WARNING: File I/O performance exceeded threshold'' ); fi'
       general:
       - name: verify_fileio_duration_numeric
         condition: '[[ $fileio_duration_ms =~ ^[0-9]+$ ]]'
   - step: 5
     description: Record file I/O metrics
-    command: 'cat > /tmp/perf_test_metrics/fileio.txt << EOF File I/O Performance
-      Metrics ============================ Start: ${fileio_start_ns} End: ${fileio_end_ns}
-      Duration: ${fileio_duration_ms}ms Lines Written: ${lines_written} Workload Size:
-      ${PERF_WORKLOAD_SIZE} Throughput: $(echo "scale=2; ${lines_written} * 1000 /
-      ${fileio_duration_ms}" | bc 2>/dev/null || echo ''N/A'') lines/sec Threshold:
-      ${PERF_THRESHOLD_MS}ms Status: $([ ${fileio_duration_ms} -lt ${PERF_THRESHOLD_MS}
-      ] && echo ''PASS'' || echo ''WARN'') EOF cat /tmp/perf_test_metrics/fileio.txt'
+    command: |
+      cat > /tmp/perf_test_metrics/fileio.txt << EOF
+      File I/O Performance Metrics ============================ Start: ${fileio_start_ns} End: ${fileio_end_ns} Duration: ${fileio_duration_ms}ms Lines Written: ${lines_written} Workload Size: ${PERF_WORKLOAD_SIZE} Throughput: $(echo "scale=2; ${lines_written} * 1000 / ${fileio_duration_ms}" | bc 2>/dev/null || echo 'N/A') lines/sec Threshold: ${PERF_THRESHOLD_MS}ms Status: $([ ${fileio_duration_ms} -lt ${PERF_THRESHOLD_MS} ] && echo 'PASS' || echo 'WARN')
+      EOF
+      cat /tmp/perf_test_metrics/fileio.txt
     expected:
       success: true
       result: 0
@@ -288,21 +272,14 @@ test_sequences:
       output: duration
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ $processing_duration_ms -lt ${PERF_THRESHOLD_MS} ]]'
-        if_true:
-        - echo 'Processing performance within threshold'
-        if_false:
-        - 'echo ''WARNING: Processing performance exceeded threshold'''
-        always:
-        - 'echo "Processing: ${processing_duration_ms}ms"'
+      output: 'if [[ $processing_duration_ms -lt ${PERF_THRESHOLD_MS} ]]; then ( echo ''Processing performance within threshold'' ); else ( echo ''WARNING: Processing performance exceeded threshold'' ); fi'
   - step: 5
     description: Record processing metrics
-    command: 'cat > /tmp/perf_test_metrics/processing.txt << EOF Processing Performance
-      Metrics ============================== Start: ${processing_start_ns} End: ${processing_end_ns}
-      Duration: ${processing_duration_ms}ms Unique Lines: ${unique_lines} Operations:
-      grep, sort, uniq, wc Threshold: ${PERF_THRESHOLD_MS}ms Status: $([ ${processing_duration_ms}
-      -lt ${PERF_THRESHOLD_MS} ] && echo ''PASS'' || echo ''WARN'') EOF cat /tmp/perf_test_metrics/processing.txt'
+    command: |
+      cat > /tmp/perf_test_metrics/processing.txt << EOF
+      Processing Performance Metrics ============================== Start: ${processing_start_ns} End: ${processing_end_ns} Duration: ${processing_duration_ms}ms Unique Lines: ${unique_lines} Operations: grep, sort, uniq, wc Threshold: ${PERF_THRESHOLD_MS}ms Status: $([ ${processing_duration_ms} -lt ${PERF_THRESHOLD_MS} ] && echo 'PASS' || echo 'WARN')
+      EOF
+      cat /tmp/perf_test_metrics/processing.txt
     expected:
       success: true
       result: 0
@@ -330,18 +307,14 @@ test_sequences:
       output: duration
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output:
-        condition: '[[ $total_duration_ms -gt 0 ]]'
-        if_true:
-        - echo 'Total duration is valid'
-        if_false:
-        - echo 'Total duration calculation error'
-        always:
-        - 'echo "Total: ${total_duration_ms}ms"'
+      output: 'if [[ $total_duration_ms -gt 0 ]]; then ( echo ''Total duration is valid'' ); else ( echo ''Total duration calculation error'' ); fi'
   - step: 2
     description: Determine performance test status
-    command: if [[ $fileio_duration_ms -lt ${PERF_THRESHOLD_MS} && $processing_duration_ms
-      -lt ${PERF_THRESHOLD_MS} ]]; then echo 'OVERALL_STATUS=PASS' else echo 'OVERALL_STATUS=WARN'
+    command: |
+      if [[ $fileio_duration_ms -lt ${PERF_THRESHOLD_MS} && $processing_duration_ms -lt ${PERF_THRESHOLD_MS} ]]; then
+        echo 'OVERALL_STATUS=PASS'
+      else
+        echo 'OVERALL_STATUS=WARN'
       fi
     capture_vars:
     - name: overall_status
@@ -355,36 +328,18 @@ test_sequences:
       output: grep -q 'OVERALL_STATUS=' <<< "$COMMAND_OUTPUT"
   - step: 3
     description: Generate comprehensive performance report
-    command: 'cat > /tmp/perf_test_metrics/performance_report.txt << EOF Performance
-      Test Summary Report ================================
-
-      Test Configuration: - Iterations: ${PERF_TEST_ITERATIONS} - Workload Size: ${PERF_WORKLOAD_SIZE}
-      - Threshold: ${PERF_THRESHOLD_MS}ms
-
-      Performance Results: ------------------- 1. Baseline Test: Duration: ${baseline_duration_ms}ms
-      Iterations: ${baseline_iteration_count}
-
-      2. File I/O Test: Duration: ${fileio_duration_ms}ms Lines Written: ${lines_written}
-      Status: $([ ${fileio_duration_ms} -lt ${PERF_THRESHOLD_MS} ] && echo ''PASS''
-      || echo ''WARN'')
-
-      3. Processing Test: Duration: ${processing_duration_ms}ms Unique Lines: ${unique_lines}
-      Status: $([ ${processing_duration_ms} -lt ${PERF_THRESHOLD_MS} ] && echo ''PASS''
-      || echo ''WARN'')
-
-      Overall Summary: --------------- Total Execution Time: ${total_duration_ms}ms
-      Overall Status: ${overall_status}
-
-      Performance Breakdown: - Baseline: ${baseline_duration_ms}ms ($(echo "scale=1;
-      ${baseline_duration_ms} * 100 / ${total_duration_ms}" | bc 2>/dev/null || echo
-      ''N/A'')%) - File I/O: ${fileio_duration_ms}ms ($(echo "scale=1; ${fileio_duration_ms}
-      * 100 / ${total_duration_ms}" | bc 2>/dev/null || echo ''N/A'')%) - Processing:
-      ${processing_duration_ms}ms ($(echo "scale=1; ${processing_duration_ms} * 100
-      / ${total_duration_ms}" | bc 2>/dev/null || echo ''N/A'')%)
-
-      Conclusion: $([ "${overall_status}" == "PASS" ] && echo ''All performance tests
-      passed within threshold limits.'' || echo ''Some performance tests exceeded
-      threshold limits.'') EOF cat /tmp/perf_test_metrics/performance_report.txt'
+    command: |
+      cat > /tmp/perf_test_metrics/performance_report.txt << EOF
+      Performance Test Summary Report ================================
+      Test Configuration: - Iterations: ${PERF_TEST_ITERATIONS} - Workload Size: ${PERF_WORKLOAD_SIZE} - Threshold: ${PERF_THRESHOLD_MS}ms
+      Performance Results: ------------------- 1. Baseline Test: Duration: ${baseline_duration_ms}ms Iterations: ${baseline_iteration_count}
+      2. File I/O Test: Duration: ${fileio_duration_ms}ms Lines Written: ${lines_written} Status: $([ ${fileio_duration_ms} -lt ${PERF_THRESHOLD_MS} ] && echo 'PASS' || echo 'WARN')
+      3. Processing Test: Duration: ${processing_duration_ms}ms Unique Lines: ${unique_lines} Status: $([ ${processing_duration_ms} -lt ${PERF_THRESHOLD_MS} ] && echo 'PASS' || echo 'WARN')
+      Overall Summary: --------------- Total Execution Time: ${total_duration_ms}ms Overall Status: ${overall_status}
+      Performance Breakdown: - Baseline: ${baseline_duration_ms}ms ($(echo "scale=1; ${baseline_duration_ms} * 100 / ${total_duration_ms}" | bc 2>/dev/null || echo 'N/A')%) - File I/O: ${fileio_duration_ms}ms ($(echo "scale=1; ${fileio_duration_ms} * 100 / ${total_duration_ms}" | bc 2>/dev/null || echo 'N/A')%) - Processing: ${processing_duration_ms}ms ($(echo "scale=1; ${processing_duration_ms} * 100 / ${total_duration_ms}" | bc 2>/dev/null || echo 'N/A')%)
+      Conclusion: $([ "${overall_status}" == "PASS" ] && echo 'All performance tests passed within threshold limits.' || echo 'Some performance tests exceeded threshold limits.')
+      EOF
+      cat /tmp/perf_test_metrics/performance_report.txt
     expected:
       success: true
       result: 0
@@ -395,8 +350,10 @@ test_sequences:
         grep -q ''Overall Status: ${overall_status}'' <<< "$COMMAND_OUTPUT"'
   - step: 4
     description: Validate performance metrics quality
-    command: 'cat << EOF Baseline: ${baseline_duration_ms}ms File I/O: ${fileio_duration_ms}ms
-      Processing: ${processing_duration_ms}ms Total: ${total_duration_ms}ms EOF'
+    command: |
+      cat << EOF
+      Baseline: ${baseline_duration_ms}ms File I/O: ${fileio_duration_ms}ms Processing: ${processing_duration_ms}ms Total: ${total_duration_ms}ms
+      EOF
     expected:
       success: true
       result: 0
