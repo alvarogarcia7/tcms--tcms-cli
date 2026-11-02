@@ -1,0 +1,275 @@
+{
+    "_COMMENT": "Fields with _ are metadata. Fields without _ are the actual document/section/requirement/other content.",
+    "DOCUMENTS": [
+        {
+            "_NODE_TYPE": "DOCUMENT",
+            "TITLE": "Locate Fixture Software",
+            "GRAMMAR": {
+                "ELEMENTS": [
+                    {
+                        "NODE_TYPE": "SECTION",
+                        "FIELDS": [
+                            {
+                                "TITLE": "UID",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "LEVEL",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "PREFIX",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "TITLE",
+                                "REQUIRED": "True",
+                                "TYPE": "String"
+                            }
+                        ],
+                        "RELATIONS": []
+                    },
+                    {
+                        "NODE_TYPE": "TEXT",
+                        "FIELDS": [
+                            {
+                                "TITLE": "UID",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "STATEMENT",
+                                "REQUIRED": "True",
+                                "TYPE": "String"
+                            }
+                        ],
+                        "RELATIONS": []
+                    },
+                    {
+                        "NODE_TYPE": "REQUIREMENT",
+                        "FIELDS": [
+                            {
+                                "TITLE": "UID",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "LEVEL",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "STATUS",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "TAGS",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "TITLE",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "STATEMENT",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "RATIONALE",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "COMMENT",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            }
+                        ],
+                        "RELATIONS": [
+                            {
+                                "TYPE": "Parent"
+                            },
+                            {
+                                "TYPE": "File"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "NODES": [
+                {
+                    "_TOC": "1",
+                    "_NODE_TYPE": "SECTION",
+                    "TITLE": "High-level requirements",
+                    "NODES": [
+                        {
+                            "_TOC": "HLR",
+                            "_NODE_TYPE": "REQUIREMENT",
+                            "UID": "HLR-1",
+                            "LEVEL": "HLR",
+                            "STATUS": "approved",
+                            "TITLE": "Update profile metadata",
+                            "STATEMENT": "The eUICC shall apply a metadata update within 5 seconds.",
+                            "RELATIONS": [
+                                {
+                                    "TYPE": "Parent",
+                                    "VALUE": "SYS-1"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "_TOC": "2",
+                    "_NODE_TYPE": "SECTION",
+                    "TITLE": "Low-level requirements",
+                    "NODES": [
+                        {
+                            "_TOC": "2.1",
+                            "_NODE_TYPE": "SECTION",
+                            "TITLE": "Parsing",
+                            "NODES": [
+                                {
+                                    "_TOC": "LLR",
+                                    "_NODE_TYPE": "REQUIREMENT",
+                                    "UID": "LLR-1",
+                                    "LEVEL": "LLR",
+                                    "STATUS": "in_review",
+                                    "TITLE": "Parse the update frame",
+                                    "STATEMENT": "The parser shall decode the update frame.",
+                                    "RELATIONS": [
+                                        {
+                                            "TYPE": "Parent",
+                                            "VALUE": "HLR-1"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "_NODE_TYPE": "DOCUMENT",
+            "TITLE": "Locate Fixture System",
+            "GRAMMAR": {
+                "ELEMENTS": [
+                    {
+                        "NODE_TYPE": "SECTION",
+                        "FIELDS": [
+                            {
+                                "TITLE": "UID",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "LEVEL",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "PREFIX",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "TITLE",
+                                "REQUIRED": "True",
+                                "TYPE": "String"
+                            }
+                        ],
+                        "RELATIONS": []
+                    },
+                    {
+                        "NODE_TYPE": "TEXT",
+                        "FIELDS": [
+                            {
+                                "TITLE": "UID",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "STATEMENT",
+                                "REQUIRED": "True",
+                                "TYPE": "String"
+                            }
+                        ],
+                        "RELATIONS": []
+                    },
+                    {
+                        "NODE_TYPE": "REQUIREMENT",
+                        "FIELDS": [
+                            {
+                                "TITLE": "UID",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "LEVEL",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "STATUS",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "TAGS",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "TITLE",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "STATEMENT",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "RATIONALE",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "COMMENT",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            }
+                        ],
+                        "RELATIONS": [
+                            {
+                                "TYPE": "Parent"
+                            },
+                            {
+                                "TYPE": "File"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "NODES": [
+                {
+                    "_TOC": "system",
+                    "_NODE_TYPE": "REQUIREMENT",
+                    "UID": "SYS-1",
+                    "LEVEL": "system",
+                    "STATUS": "approved",
+                    "TITLE": "Remote profile management",
+                    "STATEMENT": "The system shall support remote profile management."
+                }
+            ]
+        }
+    ]
+}

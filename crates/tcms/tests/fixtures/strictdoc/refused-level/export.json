@@ -1,0 +1,118 @@
+{
+    "_COMMENT": "Fields with _ are metadata. Fields without _ are the actual document/section/requirement/other content.",
+    "DOCUMENTS": [
+        {
+            "_NODE_TYPE": "DOCUMENT",
+            "TITLE": "Refused Level",
+            "GRAMMAR": {
+                "ELEMENTS": [
+                    {
+                        "NODE_TYPE": "SECTION",
+                        "FIELDS": [
+                            {
+                                "TITLE": "UID",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "LEVEL",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "PREFIX",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "TITLE",
+                                "REQUIRED": "True",
+                                "TYPE": "String"
+                            }
+                        ],
+                        "RELATIONS": []
+                    },
+                    {
+                        "NODE_TYPE": "TEXT",
+                        "FIELDS": [
+                            {
+                                "TITLE": "UID",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "STATEMENT",
+                                "REQUIRED": "True",
+                                "TYPE": "String"
+                            }
+                        ],
+                        "RELATIONS": []
+                    },
+                    {
+                        "NODE_TYPE": "REQUIREMENT",
+                        "FIELDS": [
+                            {
+                                "TITLE": "UID",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "LEVEL",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "STATUS",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "TAGS",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "TITLE",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "STATEMENT",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "RATIONALE",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            },
+                            {
+                                "TITLE": "COMMENT",
+                                "REQUIRED": "False",
+                                "TYPE": "String"
+                            }
+                        ],
+                        "RELATIONS": [
+                            {
+                                "TYPE": "Parent"
+                            },
+                            {
+                                "TYPE": "File"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "NODES": [
+                {
+                    "_TOC": "chapter",
+                    "_NODE_TYPE": "REQUIREMENT",
+                    "UID": "HLR-8",
+                    "LEVEL": "chapter",
+                    "TITLE": "A chapter, not a requirement type",
+                    "STATEMENT": "The importer refuses the level chapter."
+                }
+            ]
+        }
+    ]
+}

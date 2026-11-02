@@ -1,0 +1,8 @@
+[DOCUMENT]
+TITLE: Refused Level
+
+[REQUIREMENT]
+UID: HLR-8
+LEVEL: chapter
+TITLE: A chapter, not a requirement type
+STATEMENT: The importer refuses the level chapter.

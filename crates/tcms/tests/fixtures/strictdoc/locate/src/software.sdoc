@@ -1,0 +1,37 @@
+[DOCUMENT]
+TITLE: Locate Fixture Software
+
+[[SECTION]]
+TITLE: High-level requirements
+
+[REQUIREMENT]
+UID: HLR-1
+LEVEL: HLR
+STATUS: approved
+TITLE: Update profile metadata
+STATEMENT: The eUICC shall apply a metadata update within 5 seconds.
+RELATIONS:
+- TYPE: Parent
+  VALUE: SYS-1
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Low-level requirements
+
+[[SECTION]]
+TITLE: Parsing
+
+[REQUIREMENT]
+UID: LLR-1
+LEVEL: LLR
+STATUS: in_review
+TITLE: Parse the update frame
+STATEMENT: The parser shall decode the update frame.
+RELATIONS:
+- TYPE: Parent
+  VALUE: HLR-1
+
+[[/SECTION]]
+
+[[/SECTION]]

@@ -9,6 +9,8 @@
 #   strictdoc-validate           - Validate that export succeeds
 #   strictdoc-server             - Start web server for editing
 #   strictdoc-clean              - Remove generated output
+#   strictdoc-regen-test-fixtures - Regenerate the checked-in test exports (on demand, not in make test)
+#   strictdoc-check-test-fixtures - Fail if a checked-in test export differs from a fresh one
 
 STRICTDOC_SOURCE_DIR := docs/strictdoc
 STRICTDOC_OUTPUT_DIR := output/strictdoc
@@ -67,3 +69,16 @@ strictdoc-clean:
 		echo "Cleaning StrictDoc output..."; \
 		rm -rf "$(STRICTDOC_OUTPUT_DIR)"; \
 	fi
+
+# Test fixtures: real StrictDoc JSON exports under crates/tcms/tests/fixtures/strictdoc.
+# On demand only. Needs uv and network on a cold cache. Not part of make test or cargo test.
+.PHONY: strictdoc-regen-test-fixtures
+strictdoc-regen-test-fixtures:
+	@echo "Regenerating StrictDoc test fixtures..."
+	@bash crates/tcms/tests/fixtures/strictdoc/regenerate.sh
+	@echo "✓ StrictDoc test fixtures regenerated"
+
+.PHONY: strictdoc-check-test-fixtures
+strictdoc-check-test-fixtures:
+	@echo "Checking StrictDoc test fixtures against a fresh export..."
+	@bash crates/tcms/tests/fixtures/strictdoc/regenerate.sh --check

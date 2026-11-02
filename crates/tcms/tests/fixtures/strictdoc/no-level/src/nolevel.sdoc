@@ -1,0 +1,7 @@
+[DOCUMENT]
+TITLE: No Level
+
+[REQUIREMENT]
+UID: HLR-9
+TITLE: A requirement without LEVEL
+STATEMENT: The reader refuses an item with no LEVEL field.

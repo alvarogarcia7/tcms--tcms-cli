@@ -1,0 +1,9 @@
+[DOCUMENT]
+TITLE: Locate Fixture System
+
+[REQUIREMENT]
+UID: SYS-1
+LEVEL: system
+STATUS: approved
+TITLE: Remote profile management
+STATEMENT: The system shall support remote profile management.
