@@ -552,16 +552,17 @@ fn blank_matrix_id_renders_not_recorded() {
     assert!(out.contains("Trace matrix: not recorded"), "{out}");
 }
 
-/// A StrictDoc export: srs.sdoc holds HLR-1, LLR-2 and HLR-3; empty.sdoc holds one system item.
+/// A StrictDoc export (`strictdoc export --formats json` layout): the document titled
+/// docs/srs.sdoc holds HLR-1, LLR-2 and HLR-3; the document titled docs/empty.sdoc holds one system item.
 fn export_file(dir: &Path) -> std::path::PathBuf {
     let path = dir.join("export.json");
-    let json = r#"{"documents":[
-      {"path":"docs/srs.sdoc","requirements":[
-        {"uid":"HLR-1","level":"HLR","title":"t","statement":"s","status":"approved"},
-        {"uid":"LLR-2","level":"LLR","title":"t","statement":"s","status":"draft"},
-        {"uid":"HLR-3","level":"HLR","title":"t","statement":"s","status":"approved"}]},
-      {"path":"docs/empty.sdoc","requirements":[
-        {"uid":"SYS-9","level":"system","title":"t","statement":"s"}]}]}"#;
+    let json = r#"{"DOCUMENTS":[
+      {"TITLE":"docs/srs.sdoc","_NODE_TYPE":"DOCUMENT","NODES":[
+        {"_NODE_TYPE":"REQUIREMENT","UID":"HLR-1","LEVEL":"HLR","TITLE":"t","STATEMENT":"s","STATUS":"approved"},
+        {"_NODE_TYPE":"REQUIREMENT","UID":"LLR-2","LEVEL":"LLR","TITLE":"t","STATEMENT":"s","STATUS":"draft"},
+        {"_NODE_TYPE":"REQUIREMENT","UID":"HLR-3","LEVEL":"HLR","TITLE":"t","STATEMENT":"s","STATUS":"approved"}]},
+      {"TITLE":"docs/empty.sdoc","_NODE_TYPE":"DOCUMENT","NODES":[
+        {"_NODE_TYPE":"REQUIREMENT","UID":"SYS-9","LEVEL":"system","TITLE":"t","STATEMENT":"s"}]}]}"#;
     std::fs::write(&path, json).unwrap();
     path
 }
