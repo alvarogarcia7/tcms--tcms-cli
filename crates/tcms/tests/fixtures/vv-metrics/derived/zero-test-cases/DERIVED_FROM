@@ -1,0 +1,6 @@
+Derived from SUT-1 run RUN-32921 (copied unchanged into runs/RUN-32921).
+Added run RUN-DERIVED-EMPTY-01, copied from RUN-32921 with these edits:
+- runs/RUN-DERIVED-EMPTY-01/test-run.yaml: new file with run_id RUN-DERIVED-EMPTY-01, started_at and finished_at set to 2026-10-30T12:00:00Z, and results: [] (no test case results).
+- runs/RUN-DERIVED-EMPTY-01/verification-results.yaml: new file with test_results: [].
+- Requirements and case files are unchanged copies.
+Requirements and case files are unchanged copies.

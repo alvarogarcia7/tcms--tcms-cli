@@ -161,6 +161,57 @@ def generate(dest):
     ])
 
 
+    # 5. A requirement with no test case citing it (not covered). Results are unchanged.
+    f = base(dest, "uncovered-requirement")
+    make_run(f, "RUN-DERIVED-UNCOVERED-01", {}, {})
+    write(os.path.join(f, "requirements.json"), (
+        '{\n'
+        '  "product_id": "sut-1",\n'
+        '  "requirements": [\n'
+        '    { "id": "SUT1-1" },\n'
+        '    { "id": "SUT1-2" },\n'
+        '    { "id": "SUT1-3" }\n'
+        '  ]\n'
+        '}\n'
+    ))
+    derived_from(f, "RUN-DERIVED-UNCOVERED-01", [
+        f"runs/RUN-DERIVED-UNCOVERED-01/test-run.yaml: run_id, started_at and finished_at set to {DERIVED_STARTED};"
+        " verdicts unchanged (both cases pass).",
+        "runs/RUN-DERIVED-UNCOVERED-01/verification-results.yaml: copied unchanged except run_id.",
+        "requirements.json: requirement SUT1-3 added; no case file cites it.",
+    ])
+
+    # 6. A test case with no result in the run (untested); the other case passes.
+    f = base(dest, "missing-case-result")
+    make_run(f, "RUN-DERIVED-MISSING-01",
+             {"SUT1_PASS_001": "not_executed", "SUT1_CALC_001": "pass"},
+             {"SUT1_PASS_001": NOT_PASS_SUBS})
+    derived_from(f, "RUN-DERIVED-MISSING-01", [
+        f"runs/RUN-DERIVED-MISSING-01/test-run.yaml: run_id, started_at and finished_at set to {DERIVED_STARTED};"
+        " verdict of SUT1_PASS_001 changed from pass to not_executed (untested), SUT1_CALC_001 stays pass.",
+        "runs/RUN-DERIVED-MISSING-01/verification-results.yaml: SUT1_PASS_001 summary changed to overall_pass: false,"
+        " passed_steps: 0, not_executed_steps: 3 (total_steps stays 3). Step_results are not edited.",
+    ])
+
+
+    # 7. A run with no test case results at all (zero test cases): an error for `tcms vv metrics`.
+    f = base(dest, "zero-test-cases")
+    run_dir = os.path.join(f, "runs", "RUN-DERIVED-EMPTY-01")
+    write(os.path.join(run_dir, "test-run.yaml"), (
+        "run_id: RUN-DERIVED-EMPTY-01\n"
+        f'started_at: "{DERIVED_STARTED}"\n'
+        f'finished_at: "{DERIVED_STARTED}"\n'
+        "results: []\n"
+    ))
+    write(os.path.join(run_dir, "verification-results.yaml"), "test_results: []\n")
+    derived_from(f, "RUN-DERIVED-EMPTY-01", [
+        f"runs/RUN-DERIVED-EMPTY-01/test-run.yaml: new file with run_id RUN-DERIVED-EMPTY-01, started_at and"
+        f" finished_at set to {DERIVED_STARTED}, and results: [] (no test case results).",
+        "runs/RUN-DERIVED-EMPTY-01/verification-results.yaml: new file with test_results: [].",
+        "Requirements and case files are unchanged copies.",
+    ])
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--dest", default=os.path.join(FIXTURES, "derived"),

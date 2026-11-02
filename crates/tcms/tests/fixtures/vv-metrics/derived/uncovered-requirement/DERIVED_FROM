@@ -1,0 +1,6 @@
+Derived from SUT-1 run RUN-32921 (copied unchanged into runs/RUN-32921).
+Added run RUN-DERIVED-UNCOVERED-01, copied from RUN-32921 with these edits:
+- runs/RUN-DERIVED-UNCOVERED-01/test-run.yaml: run_id, started_at and finished_at set to 2026-10-30T12:00:00Z; verdicts unchanged (both cases pass).
+- runs/RUN-DERIVED-UNCOVERED-01/verification-results.yaml: copied unchanged except run_id.
+- requirements.json: requirement SUT1-3 added; no case file cites it.
+Requirements and case files are unchanged copies.

@@ -12,6 +12,9 @@ self-contained: the unchanged SUT-1 run `runs/RUN-32921` plus one derived run, w
 | `no-data-run` | RUN-DERIVED-NODATA-01 | Untested and skipped only, zero steps | NO_DATA | passRate, delta and stepCoverage null; both requirements NOT_RUN |
 | `blocked-only-run` | RUN-DERIVED-BLOCKED-01 | Every result blocked (`error`) | 0 of 2 = 0, FAILED | display 0; delta -100; both requirements NOT_RUN |
 | `skipped-outside-denominator` | RUN-DERIVED-SKIP-01 | A skipped case outside the gate denominator | 1 of 1 = 100, PASSED | V&V figure 1 of 2 = 50; SUT1-1 NOT_RUN, SUT1-2 COVERED; delta 0 |
+| `uncovered-requirement` | RUN-DERIVED-UNCOVERED-01 | Requirement SUT1-3 listed in requirements.json, no case cites it; results unchanged | 2 of 2 = 100, PASSED | SUT1-3 NO_CASES; requirements summary noCases 1; delta 0 |
+| `zero-test-cases` | RUN-DERIVED-EMPTY-01 | A run with `results: []` (no test cases at all) | refused: error, exit 1, nothing on stdout | error names the run; no figures are produced |
+| `missing-case-result` | RUN-DERIVED-MISSING-01 | SUT1_PASS_001 has an untested result; SUT1_CALC_001 passes | 1 of 1 = 100, PASSED | V&V figure 1 of 2 = 50; steps 3 of 6 = 50; SUT1-2 NOT_RUN, SUT1-1 COVERED; delta 0 |
 
 ## Hand derivation and the JDK check
 

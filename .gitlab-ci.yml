@@ -359,6 +359,12 @@ rust:build-test-lint:
     - echo "===== Final sccache Statistics ====="
     - sccache --show-stats
 
+    # V&V metrics (TCMS-47): tests and end-to-end checks of `tcms vv metrics`, then the
+    # repeat-run loop (identical report hashes over repeated runs). Runs on every pipeline.
+    - echo "===== V&V Metrics Checks ====="
+    - uv run make test-vv-metrics
+    - uv run make vv-metrics-loop ITERATIONS=2
+
     # Validate StrictDoc export
     - echo "===== Validating StrictDoc Export ====="
     - export PATH="$HOME/.cargo/bin:$PATH"

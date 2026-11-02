@@ -5271,11 +5271,11 @@ fn test_command_escaping_for_json_with_backslashes() {
 
     // In the JSON output, backslashes must be escaped according to JSON spec
     // Original: grep "\d+" file.txt
-    // After escaping (lines 733-736 of executor.rs):
-    // 1. Backslashes: \ -> \ (so \d becomes \d)
+    // After escaping (the JSON command escape in testcase-execution executor.rs):
+    // 1. Backslashes: \ -> \\ (so \d becomes \\d, a valid JSON escape)
     // 2. Single quotes: ' -> " (no single quotes in this command)
     // 3. Double quotes: " -> \" (so " becomes \")
-    // Result: grep \"\d+\" file.txt
+    // Result: grep \"\\d+\" file.txt   (decodes back to grep "\d+" file.txt)
 
     // The JSON line should contain the grep command with properly escaped backslashes
     // Check for the command field containing grep, the pattern, and file path
@@ -5290,10 +5290,10 @@ fn test_command_escaping_for_json_with_backslashes() {
         "Script should contain JSON command field write statement"
     );
 
-    // Verify that backslashes are doubled in the JSON output (JSON escaping requirement)
-    // The pattern \d should appear as \d in the JSON string literal
+    // Verify that backslashes are doubled in the JSON output (JSON escaping requirement).
+    // The pattern \d must appear as \\d inside the JSON string literal, otherwise the line is invalid JSON.
     assert!(
-        script.contains(r#"\"\d+\""#),
+        script.contains(r#"\"\\d+\""#),
         "Backslashes should be properly escaped in JSON (doubled)"
     );
 }

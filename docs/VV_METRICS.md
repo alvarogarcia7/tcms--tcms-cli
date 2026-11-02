@@ -12,6 +12,7 @@ tcms vv metrics --root <DATA_ROOT> [--run <RUN_ID>] [--gate <PERCENT>] [--flaky-
 |--------|---------|---------|
 | `--root` | (required) | Directory with `runs/<RUN_ID>/test-run.yaml`, the test case files and `requirements.json` |
 | `--run` | last recorded run | Run to report. Runs are ordered by `started_at`, then run id |
+| `--plan` | all runs | Plan to report on: only runs whose `plan_id` equals it take part (selection, previous run, stability and `runsRecorded`). No such run is an error; `--run` must be a run of that plan |
 | `--gate` | `90` | Quality-gate threshold in percent, `50` to `100` (D-89). Other values are refused |
 | `--flaky-threshold` | `4` | Flips at or above which a case is `FLAKY` (D-97). Must be at least 1 |
 | `--schemas-root` (global) | `$TCMS_SCHEMAS_ROOT` or `schemas/` | Used to validate the test case files |
@@ -23,7 +24,7 @@ what this command implements.
 
 ## Data root
 
-- `runs/<RUN_ID>/test-run.yaml`: `run_id`, `started_at`, `finished_at` and `results` (one per test case with a
+- `runs/<RUN_ID>/test-run.yaml`: `run_id`, `plan_id` (optional, used by `--plan`), `started_at`, `finished_at` and `results` (one per test case with a
   `verdict` and an optional `problem_report_id`). A run with no `finished_at` is `provisional`.
 - `runs/<RUN_ID>/verification-results.yaml` (optional): `test_results` with `total_steps` and `passed_steps` per
   test case. A case without an entry has 0 steps.
@@ -53,7 +54,7 @@ exits non-zero and names the run); it is not reported as `NO_DATA`.
 - `denominator` = Passed + Failed + Blocked. Skipped and Untested are outside it.
 - `passRate.exact` = Passed / denominator × 100, not rounded.
 - `passRate.display` = the exact value rounded **down** (integer). A badge never reads "90% FAILED".
-- `verdict` = `PASSED` when `passed × 100 ≥ thresholdPercent × denominator` (exact integer arithmetic, no
+- `verdict` = `PASSED` when `passed × 100 ≥ gateThresholdPercent × denominator` (exact integer arithmetic, no
   rounding), otherwise `FAILED`. A denominator of 0 gives `NO_DATA`.
 - `provisional` is `true` while the run has no `finished_at`.
 
@@ -116,7 +117,7 @@ All field names are camelCase. Nullable fields are `null` as described.
 ```json
 {
   "run":          { "runId", "startedAt", "finishedAt" (null while in progress), "provisional" },
-  "gate":         { "thresholdPercent", "denominator", "counts": {passed, failed, blocked, skipped, untested},
+  "gate":         { "gateThresholdPercent", "denominator", "counts": {passed, failed, blocked, skipped, untested},
                     "passRate": {"display", "exact"} | null, "verdict": PASSED|FAILED|NO_DATA,
                     "provisional", "deltaFromPrevious": int | null, "previousRunId": string | null },
   "vvRun":        { "totalTestCases", "passedTestCases", "vvPassRate": {"display","exact"} | null,
