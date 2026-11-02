@@ -10,7 +10,10 @@ testcase-common = { path = "../testcase-common" }
 testcase-verification = { path = "../testcase-verification" }
 anyhow = { workspace = true }
 chrono = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 serde_yaml = { workspace = true }
+jsonschema = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

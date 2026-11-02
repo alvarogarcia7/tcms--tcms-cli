@@ -2885,6 +2885,9 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "jsonschema",
+ "serde",
+ "serde_json",
  "serde_yaml",
  "tempfile",
  "testcase-common",
