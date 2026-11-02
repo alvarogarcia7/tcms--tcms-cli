@@ -922,3 +922,14 @@ test-rest:
 	while IFS= read -r line; do cargo test -p "$$line" || echo "$$line" >> .test-failing-tmp; done < ".test-failing"
 	-mv .test-failing-tmp .test-failing
 .PHONY: test-rest
+
+# V&V metrics of tcms (TCMS-47): unit and integration tests, the end-to-end suite on the binary,
+# and the reliability loop (repeated runs, identical report hashes).
+test-vv-metrics:
+	cargo test -p tcms --bins --test vv_metrics_cli
+	./scripts/vv/test_vv_metrics.sh
+.PHONY: test-vv-metrics
+
+vv-metrics-loop:
+	./scripts/vv/vv-metrics-loop.sh $(or $(ITERATIONS),3)
+.PHONY: vv-metrics-loop

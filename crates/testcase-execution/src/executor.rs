@@ -440,22 +440,10 @@ impl TestExecutor {
         bash_eval::generate_verification_script(&bash_expr, var_name)
     }
 
-    /// Generate bash code to execute a hook
-    fn generate_hook_execution(
-        hook_name: &str,
-        hook_config: &testcase_models::HookConfig,
-        yaml_dir: Option<&Path>,
-    ) -> String {
-        let mut code = String::new();
-
-        code.push_str(&format!("# Execute {} hook\n", hook_name));
-
-        // Check if command is a .sh file (source it) or another executable (execute it)
-        let command = &hook_config.command;
-        let is_sh_file = command.ends_with(".sh");
-
-        // Resolve absolute path for relative hook commands
-        let resolved_command = if command.starts_with('/') {
+    /// Resolve a hook command to an absolute path when it is a relative file path.
+    /// Relative paths are resolved against `yaml_dir`; inline shell code is returned unchanged.
+    fn resolve_hook_command(command: &str, yaml_dir: Option<&Path>) -> String {
+        if command.starts_with('/') {
             // Absolute path - use as is
             command.to_string()
         } else if let Some(dir) = yaml_dir {
@@ -475,7 +463,24 @@ impl TestExecutor {
         } else {
             // No yaml_dir - use command as is
             command.to_string()
-        };
+        }
+    }
+
+    /// Generate bash code to execute a hook
+    fn generate_hook_execution(
+        hook_name: &str,
+        hook_config: &testcase_models::HookConfig,
+        yaml_dir: Option<&Path>,
+    ) -> String {
+        let mut code = String::new();
+
+        code.push_str(&format!("# Execute {} hook\n", hook_name));
+
+        // Check if command is a .sh file (source it) or another executable (execute it)
+        let command = &hook_config.command;
+        let is_sh_file = command.ends_with(".sh");
+
+        let resolved_command = Self::resolve_hook_command(command, yaml_dir);
 
         // Determine on_error behavior (default is Fail)
         let on_error = hook_config
@@ -594,6 +599,78 @@ impl TestExecutor {
         code
     }
 
+    /// Generate bash code to run a `teardown_test` or `script_end` hook from the EXIT trap.
+    ///
+    /// The trap runs after the test has finished, whether it passed or failed, so these hooks
+    /// always execute. The script's exit code is kept in `SCRIPT_EXIT_CODE`:
+    ///
+    /// - `on_error: continue`: a hook failure is logged as a warning and the exit code is unchanged.
+    /// - `on_error: fail` (default): a hook failure is logged; it becomes the exit code only when
+    ///   the test itself passed, so a real test failure is never masked.
+    ///
+    /// Hook failures are not recorded in the JSON log, which is already closed when the trap runs.
+    fn generate_hook_execution_in_trap(
+        hook_name: &str,
+        hook_config: &testcase_models::HookConfig,
+        yaml_dir: Option<&Path>,
+    ) -> String {
+        let mut code = String::new();
+
+        code.push_str(&format!(
+            "# Execute {} hook (from cleanup trap)\n",
+            hook_name
+        ));
+
+        let command = &hook_config.command;
+        let is_sh_file = command.ends_with(".sh");
+        let resolved_command = Self::resolve_hook_command(command, yaml_dir);
+        let on_error = hook_config
+            .on_error
+            .as_ref()
+            .map(|e| matches!(e, testcase_models::OnError::Continue))
+            .unwrap_or(false);
+
+        // Keep errexit off: a failing hook must not stop the trap before the JSON log is closed
+        code.push_str("set +e\n");
+
+        if is_sh_file {
+            code.push_str(&format!("if [ -f \"{}\" ]; then\n", resolved_command));
+            code.push_str(&format!("    (source \"{}\")\n", resolved_command));
+            code.push_str("    HOOK_EXIT_CODE=$?\n");
+            code.push_str("else\n");
+            code.push_str(&format!(
+                "    echo \"Warning: Hook script '{}' not found\" >&2\n",
+                resolved_command
+            ));
+            code.push_str("    HOOK_EXIT_CODE=127\n");
+            code.push_str("fi\n");
+        } else if !command.contains(char::is_whitespace) {
+            code.push_str(&format!("{}\n", resolved_command));
+            code.push_str("HOOK_EXIT_CODE=$?\n");
+        } else {
+            code.push_str("(\n");
+            code.push_str(command.trim_end());
+            code.push_str("\n)\n");
+            code.push_str("HOOK_EXIT_CODE=$?\n");
+        }
+
+        code.push_str("if [ $HOOK_EXIT_CODE -ne 0 ]; then\n");
+        if on_error {
+            code.push_str(&format!(
+                "    echo \"Warning: {} hook failed with exit code $HOOK_EXIT_CODE (continuing)\" >&2\n",
+                hook_name
+            ));
+        } else {
+            code.push_str(&format!(
+                "    echo \"Error: {} hook failed with exit code $HOOK_EXIT_CODE\" >&2\n",
+                hook_name
+            ));
+            code.push_str("    if [ \"$SCRIPT_EXIT_CODE\" -eq 0 ]; then SCRIPT_EXIT_CODE=$HOOK_EXIT_CODE; fi\n");
+        }
+        code.push_str("fi\n\n");
+        code
+    }
+
     pub fn generate_test_script_with_json_output(
         &self,
         test_case: &TestCase,
@@ -652,6 +729,30 @@ impl TestExecutor {
             "# Trap to ensure JSON file is closed properly on exit and temp files are cleaned\n",
         );
         script.push_str("cleanup() {\n");
+        script.push_str("    SCRIPT_EXIT_CODE=$?\n");
+        // teardown_test and script_end run here, so they execute even when a step failed
+        for (hook_name, hook) in [
+            (
+                "teardown_test",
+                test_case
+                    .hooks
+                    .as_ref()
+                    .and_then(|h| h.teardown_test.as_ref()),
+            ),
+            (
+                "script_end",
+                test_case.hooks.as_ref().and_then(|h| h.script_end.as_ref()),
+            ),
+        ] {
+            if let Some(hook) = hook {
+                let hook_code = Self::generate_hook_execution_in_trap(hook_name, hook, yaml_dir);
+                for line in hook_code.lines() {
+                    script.push_str("    ");
+                    script.push_str(line);
+                    script.push('\n');
+                }
+            }
+        }
         script.push_str("    # Clean up temp capture file if it exists\n");
         script.push_str(
             "    if [ -n \"${_CAPTURE_TMPFILE:-}\" ] && [ -f \"$_CAPTURE_TMPFILE\" ]; then\n",
@@ -673,6 +774,7 @@ impl TestExecutor {
         script.push_str("            fi\n");
         script.push_str("        fi\n");
         script.push_str("    fi\n");
+        script.push_str("    exit $SCRIPT_EXIT_CODE\n");
         script.push_str("}\n");
         script.push_str("trap cleanup EXIT\n\n");
 
@@ -1680,26 +1782,8 @@ impl TestExecutor {
         script.push_str("    fi\n");
         script.push_str("fi\n\n");
 
-        // Execute teardown_test hook after all sequences
-        if let Some(ref hooks) = test_case.hooks {
-            if let Some(ref hook) = hooks.teardown_test {
-                script.push_str(&Self::generate_hook_execution(
-                    "teardown_test",
-                    hook,
-                    yaml_dir,
-                ));
-            }
-        }
-
+        // teardown_test and script_end run from the EXIT trap (see cleanup above)
         script.push_str("echo \"All test sequences completed successfully\"\n");
-
-        // Execute script_end hook before final exit
-        if let Some(ref hooks) = test_case.hooks {
-            if let Some(ref hook) = hooks.script_end {
-                script.push_str(&Self::generate_hook_execution("script_end", hook, yaml_dir));
-            }
-        }
-
         script.push_str("exit 0\n");
 
         script.replace('\r', "")
@@ -2504,8 +2588,7 @@ pub fn convert_pcre_to_sed_pattern(pattern: &str) -> String {
     // The repeated element is the single atom before the quantifier: a bracket expression
     // (`[0-9]{4}`), an escaped character (`\(`, `\.`), or one plain character. Matching a run of
     // characters here would drop the quantifier after a bracket expression, because `]` is excluded.
-    let brace_quant_re =
-        Regex::new(r"(\[[^\]]*\]|\\.|[^\[\]\\])\{(\d+)(?:,(\d+))?\}").unwrap();
+    let brace_quant_re = Regex::new(r"(\[[^\]]*\]|\\.|[^\[\]\\])\{(\d+)(?:,(\d+))?\}").unwrap();
     let mut prev_pos = 0;
     let mut result_str = String::new();
     for caps in brace_quant_re.captures_iter(&converted) {
@@ -5280,7 +5363,10 @@ mod tests {
     }
     #[test]
     fn escape_for_double_quotes_protects_dollar_and_quotes() {
-        assert_eq!(escape_for_double_quotes("awk '{print $3}'"), "awk '{print \\$3}'");
+        assert_eq!(
+            escape_for_double_quotes("awk '{print $3}'"),
+            "awk '{print \\$3}'"
+        );
         assert_eq!(escape_for_double_quotes("say \"hi\""), "say \\\"hi\\\"");
     }
 
@@ -5291,8 +5377,45 @@ mod tests {
             on_error: None,
         };
         let code = TestExecutor::generate_hook_execution("before_step", &hook, None);
-        assert!(code.contains("(\necho \"inline hook\"\nexit 0\n)"), "code: {code}");
-        assert!(!code.contains("Hook script"), "inline command must not be treated as a file");
+        assert!(
+            code.contains("(\necho \"inline hook\"\nexit 0\n)"),
+            "code: {code}"
+        );
+        assert!(
+            !code.contains("Hook script"),
+            "inline command must not be treated as a file"
+        );
+    }
+
+    #[test]
+    fn trap_hook_failure_keeps_test_failure_exit_code() {
+        let hook = testcase_models::HookConfig {
+            command: "exit 4".to_string(),
+            on_error: None,
+        };
+        let code = TestExecutor::generate_hook_execution_in_trap("teardown_test", &hook, None);
+        assert!(code.contains("set +e"), "code: {code}");
+        assert!(
+            !code.contains("exit $HOOK_EXIT_CODE"),
+            "trap must not exit early: {code}"
+        );
+        assert!(
+            code.contains(
+                r#"if [ "$SCRIPT_EXIT_CODE" -eq 0 ]; then SCRIPT_EXIT_CODE=$HOOK_EXIT_CODE; fi"#
+            ),
+            "code: {code}"
+        );
+    }
+
+    #[test]
+    fn trap_hook_with_continue_never_changes_exit_code() {
+        let hook = testcase_models::HookConfig {
+            command: "exit 4".to_string(),
+            on_error: Some(testcase_models::OnError::Continue),
+        };
+        let code = TestExecutor::generate_hook_execution_in_trap("script_end", &hook, None);
+        assert!(!code.contains("SCRIPT_EXIT_CODE="), "code: {code}");
+        assert!(code.contains("(continuing)"), "code: {code}");
     }
 
     #[test]

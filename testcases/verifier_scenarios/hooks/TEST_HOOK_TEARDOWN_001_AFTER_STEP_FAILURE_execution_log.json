@@ -1,0 +1,15 @@
+[
+  {
+    "test_case_id": "TEST_HOOK_TEARDOWN_001_AFTER_STEP_FAILURE",
+    "test_sequence": 1,
+    "step": 1,
+    "command": "echo \"Sequence 1 - Step 1 executed\"",
+    "exit_code": 0,
+    "output": "Sequence 1 - Step 1 executed",
+    "timestamp": "2026-11-02T17:29:49",
+    "source_yaml_sha256": "f9c55d05ca2c9061a1a845e3db9b7c00e3569131b03bd0826ac872bb3e5e9449",
+    "result_verification_pass": false,
+    "output_verification_pass": true
+  }
+
+]
