@@ -110,8 +110,9 @@ description as plain text; `version` = `updated` timestamp; `status` = Jira stat
 given (true when the issue carries that label).
 
 **StrictDoc** (`strictdoc` module): `id` = UID; `type` = level; `text` = statement; `version` =
-the commit given with `--commit` (required); `source` = `<document path>#<UID>`;
-`external_refs` names the UID in system `strictdoc`. The export layout is an ASSUMPTION, see below.
+the commit given with `--commit` (required); `source` = `<document TITLE>#<UID>` (an export holds no
+file path, so the document title stands in for it);
+`external_refs` names the UID in system `strictdoc`. The export layout is the one of `strictdoc export --formats json`, see below.
 
 **Output.** One `<id>.yaml` per requirement, each with `schema: tcms/requirement.schema.json` and
 no envelope `type` (the schema's `type` is the requirement type, `HLR` and the like). Every record
@@ -120,20 +121,55 @@ order; a file whose YAML is unchanged is not touched, so a re-import with nothin
 diff. Files of this source that the import no longer contains are reported (`not in source, kept`)
 and kept. A directory holding records of the other source is refused before any write.
 
-### ASSUMPTION: StrictDoc export layout
+### StrictDoc export layout
 
-StrictDoc is not installed here and no export sample exists, so the JSON read by `strictdoc` is an
-assumed shape, not StrictDoc's documented output:
+The `strictdoc` reader takes the `index.json` written by `strictdoc export --formats json --output-dir <dir> <sdoc dir>`,
+that is `<dir>/json/index.json`. The layout was verified against StrictDoc 0.20.0, the version locked in `uv.lock`,
+on the checked-in exports in `crates/tcms/tests/fixtures/strictdoc`. The e2e tests
+`crates/tcms/tests/requirements_locate_strictdoc_e2e.rs` and `crates/tcms/tests/requirements_export_ids_strictdoc_e2e.rs`
+read those files. A planner check against StrictDoc 0.30.4 reported the same bytes for the same sources; that check was
+not repeated in this repository.
+
+Rules the reader applies:
+
+* The top level holds `DOCUMENTS`. Each document has a `TITLE` and a `NODES` tree. `SECTION` nodes nest to any depth;
+  only `REQUIREMENT` nodes are items. `TEXT` and other nodes are ignored.
+* An item has the fields `UID`, `LEVEL`, `TITLE`, `STATEMENT`, `STATUS` and `RELATIONS`. Each `RELATIONS` entry with
+  `TYPE` `Parent` gives a parent ID (its `VALUE`).
+* `LEVEL` is required on every requirement that has a `UID`. A requirement without `LEVEL`, with a level that is not a
+  requirement type (`system`, `HLR`, `LLR`, ...), or with a status outside `draft`, `in_review`, `approved`, `obsolete`
+  refuses the whole export. The refusal is exit 2 for `locate` and `export-ids`, and the existing error exit for `import`
+  and `trace-matrix`. No level is derived from the UID prefix.
+* A requirement with no `UID` is skipped, since it cannot be addressed by an ID.
+* A StrictDoc export holds no file path, so the path of an item is its document's `TITLE`, and the record source is
+  `<document TITLE>#<UID>`.
+* `safety_related` and `security_related` are false for every StrictDoc import: the export has no such field.
+* The old lowercase layout (`documents`, `path`, `requirements`, `uid`, `level`) is not accepted. A file in that layout is
+  refused with a message that names `DOCUMENTS`.
+* The project's own sources in `docs/strictdoc` have no LEVEL field (checked: no `LEVEL` in any `.sdoc` file there). So
+  `locate`, `import` and `trace-matrix` refuse an export of them until `LEVEL` is added to those files. That is a
+  documentation change, outside the requirement-lookup work.
+
+A shortened export in the real layout (StrictDoc writes more metadata, such as `GRAMMAR`, around these fields):
 
 ```json
-{ "documents": [ { "path": "docs/srs.sdoc", "requirements": [
-    { "uid": "HLR-12", "level": "HLR", "title": "...", "statement": "...", "status": "approved",
-      "parent_uids": ["SYS-4"], "safety_related": false, "security_related": true } ] } ] }
+{ "DOCUMENTS": [ { "_NODE_TYPE": "DOCUMENT", "TITLE": "Software Requirements", "NODES": [
+    { "_NODE_TYPE": "SECTION", "TITLE": "Remote", "NODES": [
+      { "_NODE_TYPE": "REQUIREMENT", "UID": "HLR-12", "LEVEL": "HLR", "TITLE": "SMS update",
+        "STATEMENT": "...", "STATUS": "approved",
+        "RELATIONS": [ { "TYPE": "Parent", "VALUE": "SYS-4" } ] } ] } ] } ] }
 ```
 
-The fixture `crates/requirement-import/tests/fixtures/strictdoc_export.json` follows it. If a real
-export differs, only `crates/requirement-import/src/strictdoc.rs` changes. Nothing in this
-repository has run StrictDoc.
+The unit tests of `requirement-import` read `crates/requirement-import/tests/fixtures/strictdoc_export.json`, which has the
+same layout. Regenerating the checked-in exports is on demand only:
+
+```bash
+make strictdoc-regen-test-fixtures     # rewrites the three export.json files (needs uv, Python and, on a cold uv cache, network)
+make strictdoc-check-test-fixtures     # regenerates into a temporary directory and fails on any difference
+```
+
+`cargo test` never runs these targets and never calls StrictDoc: the tests read the checked-in files and need neither
+network nor Python. See `crates/tcms/tests/fixtures/strictdoc/README.md` for the cases.
 
 ## Requirement lookup: `tcms requirements locate`
 
@@ -161,7 +197,7 @@ then `$USER`).
   only from the environment variable named by `auth.secret_ref`; a missing or empty variable stops
   the command before the first search (D-08).
 * **StrictDoc.** An ID of a StrictDoc system needs `--input <export.json>`, a local export in the
-  assumed layout of the section above; there is no URL. The export is read once per run. Every
+  layout of the StrictDoc export section above; there is no URL. The export is read once per run. Every
   item is found whatever its level (D-05), and the output line shows the level. An export that the
   importer refuses is an error (D-09): an unknown level or status, the wrong layout, or a UID that
   appears twice.
@@ -202,16 +238,17 @@ Formats (`--format`, D-07):
 
 ### Verified and not verified
 
-* Verified against `jira_client::mock` (Cloud and Data Center layouts) and against the assumed-layout
-  StrictDoc fixture only, through the `tcms` binary (`crates/tcms/tests/requirements_locate_cli.rs`).
-  No real Jira site was used, and StrictDoc has not produced the export read here.
+* Verified against `jira_client::mock` (Cloud and Data Center layouts) and against the StrictDoc
+  fixtures of `strictdoc export --formats json` (StrictDoc 0.20.0), through the `tcms` binary
+  (`crates/tcms/tests/requirements_locate_cli.rs`, `crates/tcms/tests/requirements_locate_strictdoc_e2e.rs`).
+  No real Jira site was used.
 * ASSUMPTION: a real Jira may answer a JQL that names a non-existent key with HTTP 400 instead of an
   empty result. In that case the command exits 2 instead of reporting the key as not found.
 * ASSUMPTION: an issue moved to another key comes back under its new key, so the old ID is reported
   not found.
-* The StrictDoc export layout is the one of "ASSUMPTION: StrictDoc export layout" above. An export in
-  another layout is refused with exit 2 (for example, when the `documents` array is missing); the
-  reader in `crates/requirement-import/src/strictdoc.rs` is then the only place to change.
+* The StrictDoc export layout is the one of "StrictDoc export layout" above. An export in another
+  layout is refused with exit 2 (for example, the old lowercase layout, which has no `DOCUMENTS`
+  array); the reader in `crates/requirement-import/src/strictdoc.rs` is then the only place to change.
 
 ## Limits
 
@@ -449,8 +486,8 @@ the audit files and the output of a sync run against the mock.
   (products 1 to 5: plain Jira, StrictDoc, Xray, Zephyr Scale, Zephyr Squad; see below).
 * NOT verified against a real Jira, Xray, Zephyr Scale or Zephyr Squad instance. Every endpoint
   shape (Xray `/rest/raven/1.0`, Zephyr Scale `/v2`, Zephyr Squad `/rest/zapi/latest`), the
-  Jira link and issue payloads, and the StrictDoc export layout are ASSUMPTIONS from public
-  documentation as remembered.
+  Jira link and issue payloads are ASSUMPTIONS from public documentation as remembered. The StrictDoc
+  export layout is not among them: it is verified (see "StrictDoc export layout" above).
 
 ### Limits
 

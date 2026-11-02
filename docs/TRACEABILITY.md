@@ -34,13 +34,13 @@ Requirement IDs come from the requirements tool (StrictDoc or Jira), never from 
   with a level that is not a requirement type, a UID that appears twice, or a file that is not
   JSON in the expected shape fails the command, naming the file and item.
 
-  **ASSUMPTION (TCMS-42.3, not verified):** StrictDoc is not installed in this environment and no
-  real export sample exists. The layout read is the one assumed by `requirement-import`
-  (`crates/requirement-import/src/strictdoc.rs`): a JSON object with a `documents` array, each
-  document with a `path` and a `requirements` array of items with `uid` and `level`. The same
-  parser serves `requirement-import`, so the assumption lives in one place. The fixture
-  `crates/test-executor/tests/fixtures/strictdoc_export.json` is a crafted file written to that
-  assumed layout, not a StrictDoc output. Check the layout against a real export before relying on it.
+  The `.json` file is the `index.json` written by `strictdoc export --formats json` (StrictDoc 0.20.0 output,
+  verified; see the "StrictDoc export layout" section of `docs/JIRA_INTEGRATION.md` for the full rules). An item
+  without `LEVEL`, or with a level that is not a requirement type, fails the command naming the file and item,
+  and a UID that appears twice fails it too. The old lowercase layout (`documents`, `path`, `requirements`) is not
+  accepted and is refused with a message naming `DOCUMENTS`. The project's own `docs/strictdoc` sources set no `LEVEL`,
+  so an export of them is refused until `LEVEL` is added to those files. The unit-test fixture `crates/test-executor/tests/fixtures/strictdoc_export.json`
+  is hand-written in the layout of a real export; the real-tool exports are in `crates/tcms/tests/fixtures/strictdoc`.
 
   ```bash
   test-executor trace-matrix testcases/ --requirements strictdoc_export.json
@@ -87,7 +87,7 @@ test-executor report --matrix trace-matrix.yaml --runs test-runs/ --kind traceab
 | `--format FORMAT` | Output format: `markdown` (default), `asciidoc`, `json` or `yaml`. See [Output formats](#output-formats) |
 | `--output FILE` | Write the text to a file instead of stdout |
 | `--test-cases DIR` | Test cases, searched recursively. Supplies each case's test type (the report columns) and obsolete status. Without it every case is shown in the `other` column and the obsolete count is `not recorded` |
-| `--requirements-export FILE` | StrictDoc JSON export (same assumed layout as the matrix's `.json` requirements). Supplies the source document of each requirement. Without it every row sits under `## Document: not recorded` |
+| `--requirements-export FILE` | StrictDoc JSON export (same layout as the matrix's `.json` requirements). Supplies the source document of each requirement. Without it every row sits under `## Document: not recorded` |
 | `--generated-at TIMESTAMP` | Generation time, RFC 3339 (for example `2026-10-31T09:00:00Z`), written into the report header. Without it the current UTC time is used |
 | `--fail-on-gaps` | Exit 2 when the run has gaps or failed results, after the report is written. Without it a written report always exits 0. See [Exit status and pipeline use](#exit-status-and-pipeline-use) |
 

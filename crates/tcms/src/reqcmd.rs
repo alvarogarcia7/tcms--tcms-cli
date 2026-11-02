@@ -19,7 +19,7 @@ pub enum RequirementsCommand {
         /// Directory for the requirement YAML files (one `<id>.yaml` each)
         #[arg(long, default_value = "requirements")]
         out: PathBuf,
-        /// StrictDoc only: JSON export of the document set (assumed layout, see docs/JIRA_INTEGRATION.md)
+        /// StrictDoc only: JSON export of the document set (layout of `strictdoc export --formats json`, see docs/JIRA_INTEGRATION.md)
         #[arg(long)]
         input: Option<PathBuf>,
         /// StrictDoc only: commit the export was taken at; recorded as each requirement's version

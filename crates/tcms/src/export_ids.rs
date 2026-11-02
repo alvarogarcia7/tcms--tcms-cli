@@ -17,7 +17,7 @@ pub struct ExportIdsArgs {
     /// Write the valid IDs here instead of stdout
     #[arg(long)]
     pub output: Option<PathBuf>,
-    /// StrictDoc IDs: local JSON export of the document set (assumed layout, see docs/JIRA_INTEGRATION.md); no URL
+    /// StrictDoc IDs: local JSON export of the document set (layout of `strictdoc export --formats json`, see docs/JIRA_INTEGRATION.md); no URL
     #[arg(long)]
     pub input: Option<PathBuf>,
     /// Acting TCMS user for the Jira read (default: $TCMS_USER, then $USER)
