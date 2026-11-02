@@ -107,6 +107,15 @@ pub fn render_documents_yaml(
     Ok(texts.join("---\n"))
 }
 
+/// Check one report document against the schema it is given (04-05). Returns no text: the CLI
+/// calls this before any byte is written, for every format and every shape. A serialisation
+/// failure is `OutputError::Serialize`; a violation is `OutputError::Schema` with every message.
+pub fn check_document(document: &ReportDocument, schema: &Value) -> Result<(), OutputError> {
+    let value =
+        serde_json::to_value(document).map_err(|e| OutputError::Serialize(e.to_string()))?;
+    check(&value, schema)
+}
+
 /// Validate one instance; a failed check becomes `OutputError::Schema` with every message.
 fn check(instance: &Value, schema: &Value) -> Result<(), OutputError> {
     validate_document(instance, schema).map_err(OutputError::Schema)

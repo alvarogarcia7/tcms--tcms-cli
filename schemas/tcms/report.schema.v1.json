@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "TCMS Report Schema v1",
-  "description": "JSON schema for the traceability report and its three Phase 3 views (summary, gaps, problems), as machine-readable documents. Every object is closed (additionalProperties false). A document of one kind is accepted only with the content shape of that kind.",
+  "description": "JSON schema for the traceability report and its three Phase 3 views (summary, gaps, problems), as machine-readable documents. Traceability content is either the grid content or a shape A or B content (04-05). Every object is closed (additionalProperties false). A document of one kind is accepted only with the content shape of that kind.",
   "type": "object",
   "properties": {
     "type": {
@@ -96,6 +96,12 @@
       "enum": ["VERIFIED", "FAILED", "ERRORED", "NOT RUN", "PARTIAL", "NO TESTS"]
     },
     "traceability_content": {
+      "description": "Shape content when the content has a shape key (a or b), grid content otherwise. if/then/else, not oneOf: a oneOf failure hides the field-level messages of the grid.",
+      "if": { "required": ["shape"] },
+      "then": { "$ref": "#/definitions/shape_content" },
+      "else": { "$ref": "#/definitions/grid_content" }
+    },
+    "grid_content": {
       "type": "object",
       "additionalProperties": false,
       "required": ["documents"],
@@ -104,6 +110,52 @@
           "type": "array",
           "items": { "$ref": "#/definitions/document" }
         }
+      }
+    },
+    "shape_content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["shape", "documents"],
+      "properties": {
+        "shape": { "enum": ["a", "b"] },
+        "documents": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/shape_document" }
+        }
+      }
+    },
+    "shape_document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "requirements"],
+      "properties": {
+        "name": { "type": ["string", "null"] },
+        "requirements": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/shape_requirement" }
+        }
+      }
+    },
+    "shape_requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requirement_id", "final_verdict", "cases"],
+      "properties": {
+        "requirement_id": { "type": "string", "minLength": 1 },
+        "final_verdict": { "$ref": "#/definitions/status" },
+        "cases": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/shape_case" }
+        }
+      }
+    },
+    "shape_case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["test_case_id", "outcome"],
+      "properties": {
+        "test_case_id": { "type": "string", "minLength": 1 },
+        "outcome": { "enum": ["pass", "fail", "error", "NOT RUN"] }
       }
     },
     "document": {

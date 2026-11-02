@@ -634,7 +634,11 @@ fn shape_rejects_outcome_outside_enum() {
 fn shape_requirement_rejects_grid_only_keys() {
     assert_accepted(&shape_base());
     let mut doc = shape_base();
-    set(&mut doc, "/content/documents/0/requirements/0/level", json!("HLR"));
+    set(
+        &mut doc,
+        "/content/documents/0/requirements/0/level",
+        json!("HLR"),
+    );
     assert_rejected(&doc);
 }
 

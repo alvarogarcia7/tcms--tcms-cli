@@ -4,6 +4,10 @@
 //! builders (summary, gaps, problems) field by field into serialisable structs. The output is
 //! checked by `validate_document` against `schemas/tcms/report.schema.v1.json`.
 //!
+//! `build_shape_document` maps the same traceability model into the shape A or shape B content
+//! (04-05, D-02-6-1..3): one row per requirement with its final verdict, and the test cases of
+//! that requirement with their own outcome. Shape documents are validated before any write too.
+//!
 //! Pure: no clock, no file reads, no hash-ordered maps. A missing value is `null` or an empty
 //! array, never a placeholder text. Nothing is skipped when it is empty (the schema requires
 //! every key). The views are read as they are; they are not changed here.
@@ -62,6 +66,7 @@ pub struct DocumentHeader {
 #[serde(untagged)]
 pub enum ReportContent {
     Traceability(TraceabilityContent),
+    Shape(ShapeContent),
     Summary(SummaryContent),
     Gaps(GapsContent),
     Problems(ProblemsContent),
@@ -70,6 +75,50 @@ pub enum ReportContent {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct TraceabilityContent {
     pub documents: Vec<DocumentSectionOut>,
+}
+
+/// The two traceability layouts that have a machine-readable shape (D-02-6-2). Each is a view
+/// over the same model; `as_str` gives the value of `content.shape` in the document.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TraceShape {
+    A,
+    B,
+}
+
+impl TraceShape {
+    /// `a` or `b`, the value the schema accepts for `content.shape`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            TraceShape::A => "a",
+            TraceShape::B => "b",
+        }
+    }
+}
+
+/// Shape content of a traceability document: `shape` is `a` or `b`, `documents` are the shape rows.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ShapeContent {
+    pub shape: &'static str,
+    pub documents: Vec<ShapeDocumentOut>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ShapeDocumentOut {
+    pub name: Option<String>,
+    pub requirements: Vec<ShapeRequirementOut>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ShapeRequirementOut {
+    pub requirement_id: String,
+    pub final_verdict: &'static str,
+    pub cases: Vec<ShapeCaseOut>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ShapeCaseOut {
+    pub test_case_id: String,
+    pub outcome: &'static str,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -253,6 +302,42 @@ pub fn build_document(model: &ReportModel) -> ReportDocument {
         ReportKind::Traceability,
         &model.header,
         ReportContent::Traceability(TraceabilityContent { documents }),
+    )
+}
+
+fn shape_case_out(case: &CaseEntry) -> ShapeCaseOut {
+    ShapeCaseOut {
+        test_case_id: case.test_case_id.clone(),
+        outcome: case.outcome.label(),
+    }
+}
+
+fn shape_requirement_out(row: &RequirementRow) -> ShapeRequirementOut {
+    ShapeRequirementOut {
+        requirement_id: row.requirement_id.clone(),
+        final_verdict: row.status.label(),
+        cases: row.cases.iter().map(shape_case_out).collect(),
+    }
+}
+
+/// The traceability document of the Phase 2 model in shape A or B. Pure field-by-field mapping,
+/// in model order; empty documents and requirements are kept, as in the grid.
+pub fn build_shape_document(model: &ReportModel, shape: TraceShape) -> ReportDocument {
+    let documents = model
+        .documents
+        .iter()
+        .map(|section: &DocumentSection| ShapeDocumentOut {
+            name: section.name.clone(),
+            requirements: section.rows.iter().map(shape_requirement_out).collect(),
+        })
+        .collect();
+    document(
+        ReportKind::Traceability,
+        &model.header,
+        ReportContent::Shape(ShapeContent {
+            shape: shape.as_str(),
+            documents,
+        }),
     )
 }
 
