@@ -136,6 +136,11 @@ fn tc_tcms_vv_c5_test_case_missing_from_run() {
 }
 
 #[test]
+fn tc_tcms_vv_c6_run_with_zero_test_cases_is_refused() {
+    assert_case("TC_TCMS_VV_C6_001");
+}
+
+#[test]
 fn every_case_file_in_the_folder_has_a_meta_test() {
     // Keep this list in step with the case files: a new case needs a test above.
     let mut found: Vec<String> = fs::read_dir(repo_root().join("testcases/tcms-vv"))
@@ -152,6 +157,7 @@ fn every_case_file_in_the_folder_has_a_meta_test() {
             "TC_TCMS_VV_C2_001",
             "TC_TCMS_VV_C3_001",
             "TC_TCMS_VV_C5_001",
+            "TC_TCMS_VV_C6_001",
         ],
         "case files under {} changed",
         Path::new("testcases/tcms-vv").display()

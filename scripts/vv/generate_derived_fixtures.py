@@ -194,6 +194,24 @@ def generate(dest):
     ])
 
 
+    # 7. A run with no test case results at all (zero test cases): an error for `tcms vv metrics`.
+    f = base(dest, "zero-test-cases")
+    run_dir = os.path.join(f, "runs", "RUN-DERIVED-EMPTY-01")
+    write(os.path.join(run_dir, "test-run.yaml"), (
+        "run_id: RUN-DERIVED-EMPTY-01\n"
+        f'started_at: "{DERIVED_STARTED}"\n'
+        f'finished_at: "{DERIVED_STARTED}"\n'
+        "results: []\n"
+    ))
+    write(os.path.join(run_dir, "verification-results.yaml"), "test_results: []\n")
+    derived_from(f, "RUN-DERIVED-EMPTY-01", [
+        f"runs/RUN-DERIVED-EMPTY-01/test-run.yaml: new file with run_id RUN-DERIVED-EMPTY-01, started_at and"
+        f" finished_at set to {DERIVED_STARTED}, and results: [] (no test case results).",
+        "runs/RUN-DERIVED-EMPTY-01/verification-results.yaml: new file with test_results: [].",
+        "Requirements and case files are unchanged copies.",
+    ])
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--dest", default=os.path.join(FIXTURES, "derived"),

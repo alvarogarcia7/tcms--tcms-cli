@@ -1,0 +1,53 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: TCMS-47
+item: 1
+tc: 6
+id: TC_TCMS_VV_C6_001
+description: >-
+  Run with zero test cases: tcms vv metrics refuses the selected run. It writes nothing to stdout, exits 1,
+  and the error message names the run. The refusal is the expected result for this configuration.
+general_initial_conditions:
+  tooling:
+  - jq is installed
+initial_conditions:
+  repository:
+  - the tcms binary is built (TCMS_BIN, default target/debug/tcms)
+test_sequences:
+- id: 1
+  name: Run with zero test cases (derived fixture zero-test-cases)
+  description: 'RUN-DERIVED-EMPTY-01 has results: [] in its test-run record.'
+  initial_conditions:
+    repository:
+    - the derived fixture data is present under crates/tcms/tests/fixtures/vv-metrics
+  steps:
+  - step: 1
+    description: Nothing is written to stdout (zero bytes)
+    command: '"${TCMS_BIN:-target/debug/tcms}" --schemas-root schemas/ vv metrics --root crates/tcms/tests/fixtures/vv-metrics/derived/zero-test-cases --run RUN-DERIVED-EMPTY-01 --now 2026-11-02T10:00:00+04:00 2>/dev/null | wc -c | tr -d " "'
+    expected:
+      success: true
+      result: 0
+      output: '0'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qx '0' <<< "$COMMAND_OUTPUT"
+  - step: 2
+    description: The error message names the run and the zero-test-case rule
+    command: '"${TCMS_BIN:-target/debug/tcms}" --schemas-root schemas/ vv metrics --root crates/tcms/tests/fixtures/vv-metrics/derived/zero-test-cases --run RUN-DERIVED-EMPTY-01 --now 2026-11-02T10:00:00+04:00 2>&1 >/dev/null | sed -n "s/^error: //p"'
+    expected:
+      success: true
+      result: 0
+      output: run RUN-DERIVED-EMPTY-01 has no test cases; a run with zero test cases is an error
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qx 'run RUN-DERIVED-EMPTY-01 has no test cases; a run with zero test cases is an error' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: The exit status is 1
+    command: '"${TCMS_BIN:-target/debug/tcms}" --schemas-root schemas/ vv metrics --root crates/tcms/tests/fixtures/vv-metrics/derived/zero-test-cases --run RUN-DERIVED-EMPTY-01 --now 2026-11-02T10:00:00+04:00 >/dev/null 2>&1; echo $?'
+    expected:
+      success: true
+      result: 0
+      output: '1'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qx '1' <<< "$COMMAND_OUTPUT"
