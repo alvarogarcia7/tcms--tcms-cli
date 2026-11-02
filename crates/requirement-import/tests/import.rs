@@ -1,5 +1,5 @@
 //! Requirement import against the mock Jira (both layouts) and the StrictDoc fixture.
-//! Verified against the mock only; the StrictDoc layout is an assumption (see strictdoc.rs).
+//! Verified against the mock only; the StrictDoc fixture is in the layout of a real export.
 
 use std::path::{Path, PathBuf};
 
@@ -295,7 +295,7 @@ fn strictdoc_fixture_imports_with_path_uid_and_commit() {
     assert_eq!(hlr12["source_system"], "strictdoc");
     assert_eq!(hlr12["type"], "HLR");
     assert_eq!(
-        hlr12["source"], "docs/srs.sdoc#HLR-12",
+        hlr12["source"], "Software Requirements#HLR-12",
         "document path and UID"
     );
     assert_eq!(hlr12["version"], "9f1c2ab", "commit");
@@ -305,7 +305,7 @@ fn strictdoc_fixture_imports_with_path_uid_and_commit() {
     let sys: serde_yaml::Value =
         serde_yaml::from_str(&std::fs::read_to_string(out.join("SYS-4.yaml")).unwrap()).unwrap();
     assert_eq!(sys["type"], "system");
-    assert_eq!(sys["source"], "docs/system.sdoc#SYS-4");
+    assert_eq!(sys["source"], "System Requirements#SYS-4");
 
     // idempotent
     let before = snapshot(&out);
