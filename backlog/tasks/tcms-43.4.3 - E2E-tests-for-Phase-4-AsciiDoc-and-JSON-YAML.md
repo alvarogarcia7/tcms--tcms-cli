@@ -24,7 +24,7 @@ Run after the phase implementation is finished and before its verification. A ne
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 E2E tests run the real binary against fixture inputs and assert exact output lines and exit codes
-- [ ] #2 Tests are bash 3.2 and BSD/GNU safe and are mapped in mk/incremental.mk
+- [x] #2 Tests are bash 3.2 and BSD/GNU safe and are mapped in mk/incremental.mk (not applicable: Rust E2E test, no shell script to map, D-04-8)
 - [ ] #3 Results recorded in the phase SUMMARY before verification starts
 <!-- AC:END -->
 

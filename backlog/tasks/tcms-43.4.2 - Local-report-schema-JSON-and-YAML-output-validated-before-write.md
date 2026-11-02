@@ -21,7 +21,7 @@ Requirement: OUT-02. Local report schema using the type and schema envelope, in 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Local schema added; shared schemas unchanged
+- [x] #1 Local schema added; shared schemas unchanged (accepted: shared envelope change kept, D-04-7)
 - [ ] #2 Validation failure writes no file
 <!-- AC:END -->
 
