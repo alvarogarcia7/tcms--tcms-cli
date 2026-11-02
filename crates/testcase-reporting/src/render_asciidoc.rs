@@ -5,7 +5,10 @@
 //! that comes from the model passes through `escape_adoc` (D-02, D-06).
 
 use crate::model::{DocumentSection, Header, ReportModel, RequirementRow, TestColumn};
+use crate::gaps::GapsReport;
 use crate::non_blank;
+use crate::problems::ProblemsReport;
+use crate::summary::SummaryReport;
 
 /// Start-of-line characters that are written as numeric references at the start of a cell or a
 /// paragraph line, so a value cannot begin a block, a heading, a list or an attribute entry.
@@ -273,12 +276,35 @@ fn yes_no(covered: bool) -> &'static str {
     }
 }
 
+/// Summary view as one AsciiDoc document (SUM-01, OUT-01). Stub for the RED commit.
+pub fn render_asciidoc_summary(report: &SummaryReport) -> String {
+    let _ = report;
+    unimplemented!("04-01 Task 2: render_asciidoc_summary")
+}
+
+/// Gaps view as one AsciiDoc document (GAP-01, OUT-01). Stub for the RED commit.
+pub fn render_asciidoc_gaps(report: &GapsReport) -> String {
+    let _ = report;
+    unimplemented!("04-01 Task 2: render_asciidoc_gaps")
+}
+
+/// Problem reports view as one AsciiDoc document (PRB-01, OUT-01). Stub for the RED commit.
+pub fn render_asciidoc_problems(report: &ProblemsReport) -> String {
+    let _ = report;
+    unimplemented!("04-01 Task 2: render_asciidoc_problems")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::model::{
         CaseEntry, DocumentSection, Header, InputsSection, RequirementRow, TestColumn,
     };
+    use crate::gaps::{GapCase, GapRequirement};
+    use crate::problems::ProblemRow;
+    use crate::summary::{RequirementSummaryRow, RunSummaryRow};
+    use crate::view::ResultCounts;
+    use testcase_verification::Verdict;
     use crate::rollup::{CaseOutcome, VerificationStatus};
     use testcase_verification::RequirementLevel;
 
@@ -503,5 +529,371 @@ No traceable content
         assert!(text.starts_with("= Traceability Report\n\n"));
         assert!(text.contains("NOT RUN"));
         assert!(text.ends_with('\n') && !text.ends_with("\n\n"));
+    }
+
+    fn summary_fixture() -> SummaryReport {
+        SummaryReport {
+            header: golden_model().header,
+            runs: vec![
+                RunSummaryRow {
+                    run_id: "RUN|1".to_string(),
+                    build_id: "b1".to_string(),
+                    used: true,
+                    excluded_reason: None,
+                    counts: ResultCounts {
+                        pass: 1,
+                        fail: 1,
+                        not_executed: 0,
+                        error: 1,
+                        total: 3,
+                    },
+                },
+                RunSummaryRow {
+                    run_id: "RUN-2".to_string(),
+                    build_id: "b2".to_string(),
+                    used: false,
+                    excluded_reason: Some("superseded".to_string()),
+                    counts: ResultCounts {
+                        pass: 0,
+                        fail: 0,
+                        not_executed: 2,
+                        error: 0,
+                        total: 2,
+                    },
+                },
+            ],
+            requirements: vec![
+                RequirementSummaryRow {
+                    requirement_id: "HLR-1".to_string(),
+                    level: RequirementLevel::Hlr,
+                    status: VerificationStatus::Verified,
+                    counts: ResultCounts {
+                        pass: 2,
+                        fail: 0,
+                        not_executed: 0,
+                        error: 0,
+                        total: 2,
+                    },
+                },
+                RequirementSummaryRow {
+                    requirement_id: "LLR-2".to_string(),
+                    level: RequirementLevel::Llr,
+                    status: VerificationStatus::Failed,
+                    counts: ResultCounts {
+                        pass: 0,
+                        fail: 1,
+                        not_executed: 1,
+                        error: 0,
+                        total: 2,
+                    },
+                },
+            ],
+            linked: ResultCounts {
+                pass: 2,
+                fail: 1,
+                not_executed: 1,
+                error: 0,
+                total: 4,
+            },
+        }
+    }
+
+    #[test]
+    fn summary_golden_matches_exact_text() {
+        let expected = r##"= Run Summary
+
+== Report header
+
+[cols="2",options="header"]
+|===
+| Field
+| Value
+| Matrix
+| TM-1
+| Baseline
+| not recorded
+| Runs
+| RUN-1, RUN-2
+| Builds
+| b1, b2
+| Environments
+| lab-1
+| Testers
+| alice
+| Obsolete test cases excluded
+| 2
+| Generated
+| 2026-10-31T09:00:00Z
+|===
+
+== Results per run
+
+[cols="8",options="header"]
+|===
+| Run
+| Build
+| Used
+| pass
+| fail
+| not_executed
+| error
+| Total
+| RUN&#124;1
+| b1
+| yes
+| 1
+| 1
+| 0
+| 1
+| 3
+| RUN-2
+| b2
+| no: superseded
+| 0
+| 0
+| 2
+| 0
+| 2
+|===
+
+== Results per requirement
+
+[cols="8",options="header"]
+|===
+| Requirement
+| Level
+| Status
+| pass
+| fail
+| not_executed
+| error
+| Total
+| HLR-1
+| HLR
+| VERIFIED
+| 2
+| 0
+| 0
+| 0
+| 2
+| LLR-2
+| LLR
+| FAILED
+| 0
+| 1
+| 1
+| 0
+| 2
+|===
+
+== Linked test cases
+
+pass 2, fail 1, not_executed 1, error 0, total 4
+"##;
+        assert_eq!(render_asciidoc_summary(&summary_fixture()), expected);
+    }
+
+    #[test]
+    fn summary_empty_tables_use_the_markdown_placeholders() {
+        let mut report = summary_fixture();
+        report.runs.clear();
+        report.requirements.clear();
+        let text = render_asciidoc_summary(&report);
+        assert!(text.contains("\nNo runs loaded\n"), "{text}");
+        assert!(text.contains("\nNo requirements\n"), "{text}");
+        assert!(!text.contains("== Inputs"), "{text}");
+    }
+
+    fn gaps_fixture() -> GapsReport {
+        GapsReport {
+            header: golden_model().header,
+            no_tests: vec![GapRequirement {
+                requirement_id: "HLR-3".to_string(),
+                level: RequirementLevel::Hlr,
+                document: Some("docs/srs.sdoc".to_string()),
+            }],
+            missing_normal_range: Vec::new(),
+            missing_robustness: vec![GapRequirement {
+                requirement_id: "LLR-2".to_string(),
+                level: RequirementLevel::Llr,
+                document: None,
+            }],
+            no_result: vec![GapCase {
+                test_case_id: "T4".to_string(),
+                requirement_ids: vec!["LLR-2".to_string()],
+            }],
+        }
+    }
+
+    #[test]
+    fn gaps_golden_matches_exact_text() {
+        let expected = r##"= Coverage Gaps
+
+== Report header
+
+[cols="2",options="header"]
+|===
+| Field
+| Value
+| Matrix
+| TM-1
+| Baseline
+| not recorded
+| Runs
+| RUN-1, RUN-2
+| Builds
+| b1, b2
+| Environments
+| lab-1
+| Testers
+| alice
+| Obsolete test cases excluded
+| 2
+| Generated
+| 2026-10-31T09:00:00Z
+|===
+
+== Requirements with no test cases (1)
+
+[cols="3",options="header"]
+|===
+| Requirement
+| Level
+| Document
+| HLR-3
+| HLR
+| docs/srs.sdoc
+|===
+
+== Requirements missing a normal-range test (0)
+
+None
+
+== Requirements missing a robustness test (1)
+
+[cols="3",options="header"]
+|===
+| Requirement
+| Level
+| Document
+| LLR-2
+| LLR
+| not recorded
+|===
+
+== Test cases with no recorded result (1)
+
+[cols="2",options="header"]
+|===
+| Test case
+| Requirements
+| T4
+| LLR-2
+|===
+"##;
+        assert_eq!(render_asciidoc_gaps(&gaps_fixture()), expected);
+    }
+
+    fn problems_fixture() -> ProblemsReport {
+        ProblemsReport {
+            header: golden_model().header,
+            rows: vec![
+                ProblemRow {
+                    test_case_id: "T3".to_string(),
+                    verdict: Verdict::Fail,
+                    run_id: "RUN-2".to_string(),
+                    build_id: "b2".to_string(),
+                    problem_report_id: Some("PR-7".to_string()),
+                    requirement_ids: vec!["LLR-2".to_string()],
+                },
+                ProblemRow {
+                    test_case_id: "T5".to_string(),
+                    verdict: Verdict::Error,
+                    run_id: "RUN-1".to_string(),
+                    build_id: "b1".to_string(),
+                    problem_report_id: None,
+                    requirement_ids: Vec::new(),
+                },
+            ],
+            missing_count: 1,
+        }
+    }
+
+    #[test]
+    fn problems_golden_matches_exact_text() {
+        let expected = r##"= Problem Reports
+
+== Report header
+
+[cols="2",options="header"]
+|===
+| Field
+| Value
+| Matrix
+| TM-1
+| Baseline
+| not recorded
+| Runs
+| RUN-1, RUN-2
+| Builds
+| b1, b2
+| Environments
+| lab-1
+| Testers
+| alice
+| Obsolete test cases excluded
+| 2
+| Generated
+| 2026-10-31T09:00:00Z
+|===
+
+Failed or errored results: 2
+
+Without problem report: 1
+
+[cols="6",options="header"]
+|===
+| Test case
+| Verdict
+| Run
+| Build
+| Problem report
+| Requirements
+| T3
+| fail
+| RUN-2
+| b2
+| PR-7
+| LLR-2
+| T5
+| error
+| RUN-1
+| b1
+| **MISSING problem_report_id**
+| -
+|===
+"##;
+        assert_eq!(render_asciidoc_problems(&problems_fixture()), expected);
+    }
+
+    #[test]
+    fn problems_flag_appears_only_on_the_missing_row() {
+        let text = render_asciidoc_problems(&problems_fixture());
+        let flagged: Vec<&str> = text
+            .lines()
+            .filter(|line| line.contains("**MISSING problem_report_id**"))
+            .collect();
+        assert_eq!(flagged, vec!["| **MISSING problem_report_id**"]);
+        assert!(text.contains("Without problem report: 1"), "{text}");
+    }
+
+    #[test]
+    fn problems_empty_list_uses_the_markdown_placeholder() {
+        let mut report = problems_fixture();
+        report.rows.clear();
+        report.missing_count = 0;
+        let text = render_asciidoc_problems(&report);
+        assert!(text.contains("\nNo failed or errored results\n"), "{text}");
+        assert!(text.contains("Failed or errored results: 0"), "{text}");
     }
 }
