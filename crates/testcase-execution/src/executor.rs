@@ -2432,8 +2432,6 @@ fn convert_pattern_to_sed_ere(pattern: &str) -> String {
     let escaped = pattern.replace('/', "\\/");
     let trail = if pattern.ends_with('$') { "" } else { ".*" };
     let lead = if pattern.starts_with('^') { "" } else { ".*" };
-    let group = if escaped.starts_with('(') { "" } else { "" };
-    let _ = group;
     format!("s/{}{}{}/\\1/p", lead, escaped, trail)
 }
 
