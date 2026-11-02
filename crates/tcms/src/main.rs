@@ -2,6 +2,7 @@
 
 mod extrefs;
 mod jiracmd;
+mod locate;
 mod prcmd;
 mod refcmd;
 mod reqcmd;
@@ -44,7 +45,7 @@ enum Command {
         #[command(subcommand)]
         command: prcmd::PrCommand,
     },
-    /// Requirements: import from the configured source (Jira features or StrictDoc export)
+    /// Requirements: import from the configured source, or locate IDs in Jira or a StrictDoc export
     Requirements {
         #[command(subcommand)]
         command: reqcmd::RequirementsCommand,
@@ -58,19 +59,24 @@ enum Command {
 
 fn main() {
     let cli = Cli::parse();
-    if let Err(e) = run(cli) {
-        eprintln!("error: {e:#}");
-        std::process::exit(1);
+    // Every error exits 1 except the codes a command reports itself (`requirements locate`: 0, 1, 2)
+    match run(cli) {
+        Ok(0) => {}
+        Ok(code) => std::process::exit(code),
+        Err(e) => {
+            eprintln!("error: {e:#}");
+            std::process::exit(1);
+        }
     }
 }
 
-fn run(cli: Cli) -> Result<()> {
+fn run(cli: Cli) -> Result<i32> {
     let ctx = refcmd::Context::new(cli.config, cli.schemas_root);
     match cli.command {
-        Command::Ref { command } => refcmd::run(&ctx, command),
-        Command::Jira { command } => jiracmd::run(&ctx, command),
+        Command::Ref { command } => refcmd::run(&ctx, command).map(|()| 0),
+        Command::Jira { command } => jiracmd::run(&ctx, command).map(|()| 0),
         Command::Requirements { command } => reqcmd::run(&ctx, command),
-        Command::Pr { command } => prcmd::run(&ctx, command),
-        Command::Vv { command } => vvcmd::run(&ctx, command),
+        Command::Pr { command } => prcmd::run(&ctx, command).map(|()| 0),
+        Command::Vv { command } => vvcmd::run(&ctx, command).map(|()| 0),
     }
 }

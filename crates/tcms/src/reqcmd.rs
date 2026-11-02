@@ -1,4 +1,5 @@
 //! `tcms requirements import`: write requirement YAML from the configured requirement source.
+//! `tcms requirements locate`: check that requirement IDs exist in their source (read-only).
 
 use std::path::PathBuf;
 
@@ -33,9 +34,13 @@ pub enum RequirementsCommand {
         #[arg(long = "as")]
         actor: Option<String>,
     },
+    /// Check that requirement IDs exist in their source (Jira issue or StrictDoc export item); read-only
+    Locate(crate::locate::LocateArgs),
 }
 
-pub fn run(ctx: &Context, cmd: RequirementsCommand) -> Result<()> {
+/// Run a `requirements` subcommand. Returns the process exit code: `import` is 0 on success and
+/// an error propagates (exit 1 in `main`); `locate` owns its codes 0, 1 and 2.
+pub fn run(ctx: &Context, cmd: RequirementsCommand) -> Result<i32> {
     match cmd {
         RequirementsCommand::Import {
             out,
@@ -89,7 +94,8 @@ pub fn run(ctx: &Context, cmd: RequirementsCommand) -> Result<()> {
                 println!("  not in source, kept: {id}");
             }
             println!("written to {}", out.display());
-            Ok(())
+            Ok(0)
         }
+        RequirementsCommand::Locate(args) => Ok(crate::locate::run(ctx, args)),
     }
 }
