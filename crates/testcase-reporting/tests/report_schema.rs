@@ -272,6 +272,45 @@ fn full_problems() -> Value {
     )
 }
 
+// ---------------------------------------------------------------- shape content (04-05)
+
+/// One requirement of a shape A or B document: the verdict is a status, the cases are shape cases.
+fn shape_requirement(id: &str, final_verdict: &str, cases: Value) -> Value {
+    json!({ "requirement_id": id, "final_verdict": final_verdict, "cases": cases })
+}
+
+/// One test case row of a shape document: its own outcome, no column and no run.
+fn shape_case(id: &str, outcome: &str) -> Value {
+    json!({ "test_case_id": id, "outcome": outcome })
+}
+
+fn shape_document(name: Value, requirements: Value) -> Value {
+    json!({ "name": name, "requirements": requirements })
+}
+
+fn shape_traceability(shape: &str, documents: Value) -> Value {
+    json!({ "shape": shape, "documents": documents })
+}
+
+/// A valid shape A document: one document, one requirement, one passing case.
+fn shape_base() -> Value {
+    envelope(
+        "traceability",
+        full_header(),
+        shape_traceability(
+            "a",
+            json!([shape_document(
+                json!("docs/srs.sdoc"),
+                json!([shape_requirement(
+                    "HLR-1",
+                    "VERIFIED",
+                    json!([shape_case("T1", "pass")])
+                )]),
+            )]),
+        ),
+    )
+}
+
 // ---------------------------------------------------------------- compile and accept
 
 #[test]
@@ -550,4 +589,71 @@ fn envelope_accepts_report_type() {
         .expect("envelope compiles");
     let pair = json!({ "type": "report", "schema": SCHEMA_URI });
     assert!(envelope.is_valid(&pair), "envelope rejects the report pair");
+}
+
+// ---------------------------------------------------------------- shape content (04-05)
+
+#[test]
+fn shape_a_and_b_documents_are_accepted() {
+    assert_accepted(&shape_base());
+    let shape_b = envelope(
+        "traceability",
+        full_header(),
+        shape_traceability(
+            "b",
+            json!([shape_document(
+                Value::Null,
+                json!([shape_requirement("LLR-2", "NO TESTS", json!([]))]),
+            )]),
+        ),
+    );
+    assert_accepted(&shape_b);
+}
+
+#[test]
+fn shape_rejects_unknown_shape_letter() {
+    assert_accepted(&shape_base());
+    let mut doc = shape_base();
+    set(&mut doc, "/content/shape", json!("c"));
+    assert_rejected(&doc);
+}
+
+#[test]
+fn shape_rejects_outcome_outside_enum() {
+    assert_accepted(&shape_base());
+    let mut doc = shape_base();
+    set(
+        &mut doc,
+        "/content/documents/0/requirements/0/cases/0/outcome",
+        json!("PASS"),
+    );
+    assert_rejected(&doc);
+}
+
+#[test]
+fn shape_requirement_rejects_grid_only_keys() {
+    assert_accepted(&shape_base());
+    let mut doc = shape_base();
+    set(&mut doc, "/content/documents/0/requirements/0/level", json!("HLR"));
+    assert_rejected(&doc);
+}
+
+#[test]
+fn shape_case_rejects_column_key() {
+    assert_accepted(&shape_base());
+    let mut doc = shape_base();
+    set(
+        &mut doc,
+        "/content/documents/0/requirements/0/cases/0/column",
+        json!("normal_range"),
+    );
+    assert_rejected(&doc);
+}
+
+#[test]
+fn shape_rows_without_shape_key_are_rejected() {
+    assert_accepted(&shape_base());
+    let mut doc = shape_base();
+    remove(&mut doc, "/content/shape");
+    assert_rejected(&doc);
 }

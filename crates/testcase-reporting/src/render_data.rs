@@ -959,4 +959,67 @@ mod documents_tests {
             other => panic!("expected a schema error, got {other:?}"),
         }
     }
+
+    // ------------------------------------------------------------------ shape documents (red, 04-05)
+
+    fn shape_schema_requiring_missing_field() -> Value {
+        let mut schema = schema();
+        schema["required"]
+            .as_array_mut()
+            .expect("top-level required list")
+            .push(Value::from("nonexistent_field"));
+        schema
+    }
+
+    #[test]
+    fn check_document_accepts_a_valid_shape_a_document() {
+        let model = super::tests::small_model();
+        let doc = crate::report_document::build_shape_document(
+            &model,
+            crate::report_document::TraceShape::A,
+        );
+        assert!(check_document(&doc, &schema()).is_ok());
+    }
+
+    #[test]
+    fn check_document_accepts_a_valid_shape_b_document() {
+        let model = super::tests::small_model();
+        let doc = crate::report_document::build_shape_document(
+            &model,
+            crate::report_document::TraceShape::B,
+        );
+        assert!(check_document(&doc, &schema()).is_ok());
+    }
+
+    #[test]
+    fn check_document_rejects_a_schema_mismatch_with_messages() {
+        let model = super::tests::small_model();
+        let doc = crate::report_document::build_shape_document(
+            &model,
+            crate::report_document::TraceShape::A,
+        );
+        match check_document(&doc, &shape_schema_requiring_missing_field()) {
+            Err(OutputError::Schema(messages)) => {
+                assert!(
+                    messages.iter().any(|m| m.contains("nonexistent_field")),
+                    "{messages:?}"
+                );
+            }
+            other => panic!("expected a schema error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn check_document_mismatch_returns_schema_error_variant() {
+        let model = super::tests::small_model();
+        let doc = crate::report_document::build_shape_document(
+            &model,
+            crate::report_document::TraceShape::B,
+        );
+        let result = check_document(&doc, &shape_schema_requiring_missing_field());
+        assert!(
+            matches!(result, Err(OutputError::Schema(_))),
+            "expected exactly the Schema variant, got {result:?}"
+        );
+    }
 }

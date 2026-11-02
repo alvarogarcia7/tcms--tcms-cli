@@ -1037,4 +1037,61 @@ mod tests {
             text(&build_summary_document(input()))
         );
     }
+
+    // ------------------------------------------------------------------ shape documents (red, 04-05)
+
+    fn shape_requirement_ids(doc: &ReportDocument) -> Vec<String> {
+        let v = value(doc);
+        v["content"]["documents"]
+            .as_array()
+            .expect("documents")
+            .iter()
+            .flat_map(|d| d["requirements"].as_array().expect("requirements").clone())
+            .map(|r| r["requirement_id"].as_str().expect("id").to_string())
+            .collect()
+    }
+
+    fn grid_case_ids(doc: &ReportDocument) -> Vec<String> {
+        let v = value(doc);
+        v["content"]["documents"]
+            .as_array()
+            .expect("documents")
+            .iter()
+            .flat_map(|d| d["requirements"].as_array().expect("requirements").clone())
+            .flat_map(|r| r["cases"].as_array().expect("cases").clone())
+            .map(|c| c["test_case_id"].as_str().expect("id").to_string())
+            .collect()
+    }
+
+    #[test]
+    fn shape_documents_validate_against_the_schema() {
+        let (distinct, _) = distinct_fixture();
+        for model in [golden_model(), distinct] {
+            for shape in [TraceShape::A, TraceShape::B] {
+                let doc = build_shape_document(&model, shape);
+                assert_eq!(doc.kind, ReportKind::Traceability);
+                assert_valid(&doc);
+            }
+        }
+    }
+
+    #[test]
+    fn shape_content_has_shape_letter() {
+        let model = golden_model();
+        let a = value(&build_shape_document(&model, TraceShape::A));
+        let b = value(&build_shape_document(&model, TraceShape::B));
+        assert_eq!(a["content"]["shape"], "a");
+        assert_eq!(b["content"]["shape"], "b");
+    }
+
+    #[test]
+    fn shape_requirement_order_matches_grid() {
+        let (model, _) = distinct_fixture();
+        let grid = build_document(&model);
+        for shape in [TraceShape::A, TraceShape::B] {
+            let doc = build_shape_document(&model, shape);
+            assert_eq!(shape_requirement_ids(&doc), shape_requirement_ids(&grid));
+            assert_eq!(grid_case_ids(&doc), grid_case_ids(&grid));
+        }
+    }
 }
