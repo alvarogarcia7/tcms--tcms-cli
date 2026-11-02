@@ -4,18 +4,132 @@
 //! tables. Reads the report model only: no clock, no environment lookups, no hash-ordered
 //! iteration. Every model string passes through `escape_adoc`; the fixed words are literals.
 
-use crate::model::ReportModel;
+use crate::model::{DocumentSection, ReportModel, RequirementRow};
+use crate::render_asciidoc::{escape_adoc, header_block, inputs_block};
+
+const NOT_RECORDED: &str = "not recorded";
+const NO_CONTENT: &str = "No traceable content";
+const EMPTY_CELL: &str = "-";
+const SHAPE_A_HEADER: &str = "| Requirement | Test cases (ID, status) | Final verdict |";
+const SHAPE_B_VERDICT_HEADER: &str = "| Requirement | Final verdict |";
+const SHAPE_B_CASE_HEADER: &str = "| TESTCASE ID | Status |";
 
 /// Shape A: one row per requirement with its test cases as `ID (outcome)` and the final verdict.
-/// Placeholder until the implementation commit.
-pub fn render_asciidoc_shape_a(_model: &ReportModel) -> String {
-    String::new()
+pub fn render_asciidoc_shape_a(model: &ReportModel) -> String {
+    render(model, table_a)
 }
 
 /// Shape B: per requirement, a verdict table, then a case-status table when it has cases.
-/// Placeholder until the implementation commit.
-pub fn render_asciidoc_shape_b(_model: &ReportModel) -> String {
-    String::new()
+pub fn render_asciidoc_shape_b(model: &ReportModel) -> String {
+    render(model, tables_b)
+}
+
+/// The shared frame: title, Inputs, header, then one block per document, one trailing newline.
+fn render(model: &ReportModel, body: fn(&[RequirementRow]) -> String) -> String {
+    let mut blocks: Vec<String> = vec![
+        "= Traceability Report".to_string(),
+        inputs_block(&model.inputs.details),
+        header_block(&model.header),
+    ];
+    blocks.extend(
+        model
+            .documents
+            .iter()
+            .map(|section| document_block(section, body)),
+    );
+
+    let mut out = blocks.join("\n\n");
+    out.push('\n');
+    out
+}
+
+/// Same heading and empty-document rule as the Markdown shapes.
+fn document_block(section: &DocumentSection, body: fn(&[RequirementRow]) -> String) -> String {
+    let name = section
+        .name
+        .as_deref()
+        .map_or_else(|| NOT_RECORDED.to_string(), escape_adoc);
+    let text = if section.rows.is_empty() {
+        NO_CONTENT.to_string()
+    } else {
+        body(&section.rows)
+    };
+    format!("== Document: {name}\n\n{text}")
+}
+
+/// One AsciiDoc table: the column attribute, a fence, a single header row, the body cells (one
+/// per `| ` line) and the closing fence.
+fn shape_table(columns: usize, header_row: &str, cell_lines: &[String]) -> String {
+    let mut lines = vec![
+        format!("[cols=\"{columns}\",options=\"header\"]"),
+        "|===".to_string(),
+        header_row.to_string(),
+    ];
+    lines.extend(cell_lines.iter().cloned());
+    lines.push("|===".to_string());
+    lines.join("\n")
+}
+
+/// Shape A body: one table per document, one row per requirement.
+fn table_a(rows: &[RequirementRow]) -> String {
+    let cell_lines: Vec<String> = rows
+        .iter()
+        .flat_map(|row| {
+            [
+                format!("| {}", escape_adoc(&row.requirement_id)),
+                format!("| {}", case_list(row)),
+                format!("| {}", row.status.label()),
+            ]
+        })
+        .collect();
+    shape_table(3, SHAPE_A_HEADER, &cell_lines)
+}
+
+/// `ID (outcome)` entries in model order, joined with hard line breaks; `-` when there are none.
+fn case_list(row: &RequirementRow) -> String {
+    if row.cases.is_empty() {
+        return EMPTY_CELL.to_string();
+    }
+    row.cases
+        .iter()
+        .map(|case| {
+            format!(
+                "{} ({})",
+                escape_adoc(&case.test_case_id),
+                case.outcome.label()
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(" +\n")
+}
+
+/// Shape B body: per requirement, a verdict table, then a case-status table when it has cases.
+/// Tables are separated by a blank line; a requirement without cases gets only the verdict table.
+fn tables_b(rows: &[RequirementRow]) -> String {
+    rows.iter()
+        .map(|row| {
+            let verdict_lines = [
+                format!("| {}", escape_adoc(&row.requirement_id)),
+                format!("| {}", row.status.label()),
+            ];
+            let mut tables = vec![shape_table(2, SHAPE_B_VERDICT_HEADER, &verdict_lines)];
+            if !row.cases.is_empty() {
+                let case_lines: Vec<String> = row
+                    .cases
+                    .iter()
+                    .flat_map(|case| {
+                        [
+                            format!("| {}", escape_adoc(&case.test_case_id)),
+                            format!("| {}", case.outcome.label()),
+                        ]
+                    })
+                    .collect();
+                tables.push(shape_table(2, SHAPE_B_CASE_HEADER, &case_lines));
+            }
+            tables.join("\n\n")
+        })
+        .collect::<Vec<_>>()
+        .join("\n\n")
 }
 
 #[cfg(test)]
@@ -693,7 +807,7 @@ mod tests {
             if in_table {
                 if line == "|===" {
                     assert!(
-                        table_columns > 0 && cells % table_columns == 0,
+                        table_columns > 0 && cells.is_multiple_of(table_columns),
                         "{at}: {cells} cells for {table_columns} columns"
                     );
                     tables.push(table_columns);
