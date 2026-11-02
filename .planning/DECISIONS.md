@@ -148,3 +148,10 @@ Entry format:
 - **Decision**: (a). AsciiDoc grid and shapes A/B keep the Inputs section (Markdown grid and shapes print it via `inputs_block`). AsciiDoc summary, gaps and problems have no Inputs section, like their Markdown views. Markdown output is not touched, so it stays byte-identical. **Why**: OUT-01 and the plan's own rule are "same sections, columns and fixed words as Markdown"; (b) would make the two formats differ and the Markdown determinism tests stay valid either way.
 - **Plan changes required (04-01-PLAN.md, not edited)**: (1) must_haves line 18: drop "and with the Inputs section"; (2) line 21: change "every AsciiDoc document" to "the AsciiDoc grid and shapes A/B documents"; (3) line 60: replace the "Mandatory Inputs" paragraph with "AsciiDoc views have no Inputs section, matching Markdown"; (4) Task 2: remove the `inputs: &InputsSection` parameter from `render_asciidoc_summary`, `_gaps`, `_problems`, drop Inputs from their frames, goldens and tests, and from the SUMMARY note; (5) other plans (04-02..04) that call these three functions must stop passing inputs.
 - **Supersedes / affects**: 04-01 Task 2; D-14 reading
+
+## D-04-4: One-pipe cell check exempts the table header row
+- **Phase / stage**: 4 / plan (04-01 Task 3)
+- **Question**: Task 3 requires the literal header line `| TESTCASE ID | Status |` and also exactly one pipe per cell line. Both cannot hold for the header row.
+- **Options considered**: (a) exempt the header row (first cell line after the `options="header"` attribute line) from the one-pipe check; (b) drop the literal header requirement
+- **Decision**: (a). Body cell lines keep the exactly-one-pipe check, so value escaping stays tested; the header row is asserted by its literal. **Why**: header text is fixed words, not input values, so pipes there carry no injection risk, and the literal keeps parity with Markdown.
+- **Supersedes / affects**: 04-01 Task 3 acceptance criteria (lines 227, 263)
