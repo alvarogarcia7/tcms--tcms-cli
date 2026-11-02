@@ -90,30 +90,51 @@ fn push_reference(out: &mut String, c: char) {
     out.push_str(&format!("&#{};", c as u32));
 }
 
-/// The start-of-line rule, applied to the first non-space character of a value. A leading run of
-/// `=` is encoded in full (so `== Heading` cannot start a section); any other listed character is
-/// encoded alone.
+/// Roman-numeral letters, for a multi-letter ordered-list marker such as `IV)`.
+const ROMAN_LETTERS: &str = "ivxlcdmIVXLCDM";
+
+/// The start-of-line rule, applied to a value. Leading spaces are dropped first, so a value can
+/// never start an indented literal block. A leading run of `=` is encoded in full (so `== Heading`
+/// cannot start a section). A leading ordered-list marker is encoded by its first character. Any
+/// other listed character is encoded alone.
 fn encode_line_start(text: &str) -> String {
     let body = text.trim_start_matches(' ');
-    let indent = &text[..text.len() - body.len()];
     let Some(first) = body.chars().next() else {
-        return text.to_string();
+        return String::new();
     };
     let mut out = String::with_capacity(text.len() + 8);
-    out.push_str(indent);
     if first == '=' {
         let run = body.len() - body.trim_start_matches('=').len();
         for _ in 0..run {
             push_reference(&mut out, '=');
         }
         out.push_str(&body[run..]);
-    } else if LINE_START_CHARS.contains(&first) {
+    } else if is_ordered_marker(body) || LINE_START_CHARS.contains(&first) {
         push_reference(&mut out, first);
         out.push_str(&body[first.len_utf8()..]);
     } else {
         out.push_str(body);
     }
     out
+}
+
+/// True when the value starts with an ordered-list marker: digits, one letter, or roman numerals,
+/// followed by `.` or `)`. Only the marker's first character is encoded, which stops AsciiDoc from
+/// reading the line as a list item. Some ordinary words made only of roman letters (for example
+/// `mix.`) are encoded too; the reference renders as the same character, so the text reads the same.
+fn is_ordered_marker(body: &str) -> bool {
+    let Some(end) = body.find(['.', ')']) else {
+        return false;
+    };
+    let marker = &body[..end];
+    if marker.is_empty() {
+        return false;
+    }
+    let digits = marker.chars().all(|c| c.is_ascii_digit());
+    let single_letter =
+        marker.chars().count() == 1 && marker.chars().all(|c| c.is_ascii_alphabetic());
+    let roman = marker.chars().all(|c| ROMAN_LETTERS.contains(c));
+    digits || single_letter || roman
 }
 
 /// Render the traceability report as one AsciiDoc document ending with exactly one newline
@@ -653,6 +674,59 @@ mod tests {
         for (input, expected) in pairs {
             assert_eq!(escape_adoc_line_start(input), *expected, "input: {input:?}");
         }
+    }
+
+    /// True when a rendered line starts an ordered-list item: an alphanumeric run, then `.` or `)`.
+    fn starts_ordered_item(line: &str) -> bool {
+        line.find(['.', ')'])
+            .is_some_and(|i| i > 0 && line[..i].chars().all(|c| c.is_ascii_alphanumeric()))
+    }
+
+    /// Checks the rendered text (never the source): no literal block, no ordered list and no other
+    /// block start at the beginning of a body line. Skips the `== Inputs` heading and the blank line.
+    fn assert_no_live_block_starts(text: &str) {
+        for line in text.lines().skip(2) {
+            assert!(!line.starts_with([' ', '\t']), "literal block: {text}");
+            assert!(!starts_ordered_item(line), "ordered list: {text}");
+            assert!(
+                !line
+                    .chars()
+                    .next()
+                    .is_some_and(|c| LINE_START_CHARS.contains(&c)),
+                "block start: {text}"
+            );
+        }
+    }
+
+    #[test]
+    fn ordered_markers_and_leading_spaces_are_encoded_exactly() {
+        let pairs: &[(&str, &str)] = &[
+            ("1. x", "&#49;. x"),
+            ("a. y", "&#97;. y"),
+            ("IV) z", "&#73;V) z"),
+            ("iv) z", "&#105;v) z"),
+            ("3) item", "&#51;) item"),
+            ("  indented", "indented"),
+            ("   \t  tabbed", "tabbed"),
+            ("Trace 1. x", "Trace 1. x"),
+        ];
+        for (input, expected) in pairs {
+            assert_eq!(escape_adoc(input), *expected, "input: {input:?}");
+        }
+    }
+
+    #[test]
+    fn hostile_ordered_markers_render_as_plain_text() {
+        for value in ["1. x", "a. y", "IV) z", "  indented"] {
+            assert_no_live_block_starts(&inputs_block(value));
+        }
+        let all = "1. x\na. y\nIV) z\n  indented";
+        let text = inputs_block(all);
+        assert_no_live_block_starts(&text);
+        assert!(
+            text.contains("&#49;. x +\n&#97;. y +\n&#73;V) z +\nindented"),
+            "{text}"
+        );
     }
 
     #[test]
