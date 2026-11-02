@@ -1,0 +1,63 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: TCMS-47
+item: 1
+tc: 1
+id: TC_TCMS_VV_C1_001
+description: >-
+  Requirement covered and passing: tcms vv metrics on the recorded SUT-1 data reports both requirements
+  as COVERED and the quality gate as PASSED at 100 percent. Happy path only.
+general_initial_conditions:
+  tooling:
+  - jq is installed
+initial_conditions:
+  repository:
+  - the tcms binary is built (TCMS_BIN, default target/debug/tcms)
+test_sequences:
+- id: 1
+  name: Requirement covered and passing (SUT-1, run RUN-32921)
+  description: Figures of the recorded SUT-1 run, with a fixed clock.
+  initial_conditions:
+    repository:
+    - the derived fixture data is present under crates/tcms/tests/fixtures/vv-metrics
+  steps:
+  - step: 1
+    description: Quality gate verdict is PASSED
+    command: 'set -o pipefail; "${TCMS_BIN:-target/debug/tcms}" --schemas-root schemas/ vv metrics --root crates/tcms/tests/fixtures/vv-metrics/sut-1 --run RUN-32921 --now 2026-11-02T10:00:00+04:00 | jq -r ".gate.verdict"'
+    expected:
+      success: true
+      result: 0
+      output: PASSED
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qx 'PASSED' <<< "$COMMAND_OUTPUT"
+  - step: 2
+    description: Gate pass rate display is 100
+    command: 'set -o pipefail; "${TCMS_BIN:-target/debug/tcms}" --schemas-root schemas/ vv metrics --root crates/tcms/tests/fixtures/vv-metrics/sut-1 --run RUN-32921 --now 2026-11-02T10:00:00+04:00 | jq -r ".gate.passRate.display"'
+    expected:
+      success: true
+      result: 0
+      output: '100'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qx '100' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: Requirement SUT1-2 is COVERED
+    command: 'set -o pipefail; "${TCMS_BIN:-target/debug/tcms}" --schemas-root schemas/ vv metrics --root crates/tcms/tests/fixtures/vv-metrics/sut-1 --run RUN-32921 --now 2026-11-02T10:00:00+04:00 | jq -r ".requirements.items[] | select(.id == \"SUT1-2\") | .coverage"'
+    expected:
+      success: true
+      result: 0
+      output: COVERED
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qx 'COVERED' <<< "$COMMAND_OUTPUT"
+  - step: 4
+    description: Requirement SUT1-1 is COVERED
+    command: 'set -o pipefail; "${TCMS_BIN:-target/debug/tcms}" --schemas-root schemas/ vv metrics --root crates/tcms/tests/fixtures/vv-metrics/sut-1 --run RUN-32921 --now 2026-11-02T10:00:00+04:00 | jq -r ".requirements.items[] | select(.id == \"SUT1-1\") | .coverage"'
+    expected:
+      success: true
+      result: 0
+      output: COVERED
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qx 'COVERED' <<< "$COMMAND_OUTPUT"

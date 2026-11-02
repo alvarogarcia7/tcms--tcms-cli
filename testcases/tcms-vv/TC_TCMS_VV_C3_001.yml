@@ -1,0 +1,63 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: TCMS-47
+item: 1
+tc: 3
+id: TC_TCMS_VV_C3_001
+description: >-
+  Requirement covered but failing: the linked test case fails in the selected run, so tcms vv metrics
+  reports the requirement as FAILING and the quality gate as FAILED at 50 percent. Happy path only.
+general_initial_conditions:
+  tooling:
+  - jq is installed
+initial_conditions:
+  repository:
+  - the tcms binary is built (TCMS_BIN, default target/debug/tcms)
+test_sequences:
+- id: 1
+  name: Requirement covered but failing (derived fixture failing-run)
+  description: SUT1_PASS_001 fails in RUN-DERIVED-FAIL-01 after passing in RUN-32921.
+  initial_conditions:
+    repository:
+    - the derived fixture data is present under crates/tcms/tests/fixtures/vv-metrics
+  steps:
+  - step: 1
+    description: Quality gate verdict is FAILED
+    command: 'set -o pipefail; "${TCMS_BIN:-target/debug/tcms}" --schemas-root schemas/ vv metrics --root crates/tcms/tests/fixtures/vv-metrics/derived/failing-run --run RUN-DERIVED-FAIL-01 --now 2026-11-02T10:00:00+04:00 | jq -r ".gate.verdict"'
+    expected:
+      success: true
+      result: 0
+      output: FAILED
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qx 'FAILED' <<< "$COMMAND_OUTPUT"
+  - step: 2
+    description: Gate pass rate display is 50
+    command: 'set -o pipefail; "${TCMS_BIN:-target/debug/tcms}" --schemas-root schemas/ vv metrics --root crates/tcms/tests/fixtures/vv-metrics/derived/failing-run --run RUN-DERIVED-FAIL-01 --now 2026-11-02T10:00:00+04:00 | jq -r ".gate.passRate.display"'
+    expected:
+      success: true
+      result: 0
+      output: '50'
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qx '50' <<< "$COMMAND_OUTPUT"
+  - step: 3
+    description: Requirement SUT1-2 is FAILING
+    command: 'set -o pipefail; "${TCMS_BIN:-target/debug/tcms}" --schemas-root schemas/ vv metrics --root crates/tcms/tests/fixtures/vv-metrics/derived/failing-run --run RUN-DERIVED-FAIL-01 --now 2026-11-02T10:00:00+04:00 | jq -r ".requirements.items[] | select(.id == \"SUT1-2\") | .coverage"'
+    expected:
+      success: true
+      result: 0
+      output: FAILING
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qx 'FAILING' <<< "$COMMAND_OUTPUT"
+  - step: 4
+    description: Requirement SUT1-1 is still COVERED
+    command: 'set -o pipefail; "${TCMS_BIN:-target/debug/tcms}" --schemas-root schemas/ vv metrics --root crates/tcms/tests/fixtures/vv-metrics/derived/failing-run --run RUN-DERIVED-FAIL-01 --now 2026-11-02T10:00:00+04:00 | jq -r ".requirements.items[] | select(.id == \"SUT1-1\") | .coverage"'
+    expected:
+      success: true
+      result: 0
+      output: COVERED
+    verification:
+      result: '[[ $EXIT_CODE -eq 0 ]]'
+      output: grep -qx 'COVERED' <<< "$COMMAND_OUTPUT"

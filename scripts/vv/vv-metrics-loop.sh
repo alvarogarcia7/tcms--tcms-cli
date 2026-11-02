@@ -34,7 +34,9 @@ REPORTS='sut-1|RUN-32921
 derived/failing-run|RUN-DERIVED-FAIL-01
 derived/no-data-run|RUN-DERIVED-NODATA-01
 derived/blocked-only-run|RUN-DERIVED-BLOCKED-01
-derived/skipped-outside-denominator|RUN-DERIVED-SKIP-01'
+derived/skipped-outside-denominator|RUN-DERIVED-SKIP-01
+derived/uncovered-requirement|RUN-DERIVED-UNCOVERED-01
+derived/missing-case-result|RUN-DERIVED-MISSING-01'
 
 # hash_reports OUTFILE: write "<sha256>  <fixture>/<run>" lines for every fixture report.
 hash_reports() {

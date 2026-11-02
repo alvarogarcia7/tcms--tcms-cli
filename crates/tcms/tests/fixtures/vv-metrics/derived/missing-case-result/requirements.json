@@ -1,0 +1,7 @@
+{
+  "product_id": "sut-1",
+  "requirements": [
+    { "id": "SUT1-1" },
+    { "id": "SUT1-2" }
+  ]
+}
