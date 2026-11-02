@@ -1,0 +1,84 @@
+type: test_case
+schema: tcms/test-case.schema.v1.json
+requirement: "HOOK_TEARDOWN_TEST_AFTER_STEP_FAILURE"
+item: 1
+tc: 1
+id: 'TEST_HOOK_TEARDOWN_001_AFTER_STEP_FAILURE'
+description: 'B56E33C6-20D8-447D-B170-17AD3442F5A4 Reference test for TCMS-9: Verifies teardown_test hook is executed even when test steps fail. Step 1 intentionally fails, and teardown_test hook creates a marker file to prove it was called.'
+
+general_initial_conditions:
+  system:
+    - "Shell environment is available"
+
+initial_conditions:
+  system:
+    - "All commands can be executed"
+    - "Temporary directory is available for marker file"
+
+hooks:
+  teardown_test:
+    command: "scripts/teardown_after_failure.sh"
+    on_error: "fail"
+
+test_sequences:
+  - id: 1
+    name: "First Sequence - Step 1 Fails Intentionally"
+    description: |
+                   First test sequence where step 1 intentionally fails.
+                   The teardown_test hook should still execute after the failure,
+                   creating a marker file to verify it was called.
+                   This demonstrates TCMS-9: hooks execute even if scripts fail.
+    initial_conditions:
+      system:
+        - "Shell is ready"
+    steps:
+      - step: 1
+        description: "FAIL ON PURPOSE - Verification intentionally returns false"
+        command: echo "Sequence 1 - Step 1 executed"
+        expected:
+          success: false
+          result: 1
+          output: ""
+        verification:
+          result: "false"
+          output: "grep -q 'Sequence 1 - Step 1 executed' <<< \"$COMMAND_OUTPUT\""
+      - step: 2
+        description: "SHOULD NEVER EXECUTE - Step 2 should be skipped after step 1 failure"
+        command: echo "Sequence 1 - Step 2 executed"
+        expected:
+          success: false
+          result: 1
+          output: ""
+        verification:
+          result: "[[ $EXIT_CODE -eq 0 ]]"
+          output: "grep -q 'Sequence 1 - Step 2 executed' <<< \"$COMMAND_OUTPUT\""
+  - id: 2
+    name: "Verify Teardown Hook Executed"
+    description: |
+                   This sequence verifies that the teardown_test hook was called
+                   by checking for the existence of the marker file created by
+                   the hook script.
+    initial_conditions:
+      system:
+        - "Shell is ready"
+    steps:
+      - step: 1
+        description: "Verify teardown hook created marker file despite step 1 failure"
+        command: "[ -f /tmp/teardown_hook_executed_marker ] && cat /tmp/teardown_hook_executed_marker"
+        expected:
+          success: true
+          result: 0
+          output: "teardown_test hook was executed"
+        verification:
+          result: "[[ $EXIT_CODE -eq 0 ]]"
+          output: "grep -q 'teardown_test hook was executed' <<< \"$COMMAND_OUTPUT\""
+      - step: 2
+        description: "Clean up marker file"
+        command: "rm -f /tmp/teardown_hook_executed_marker"
+        expected:
+          success: true
+          result: 0
+          output: ""
+        verification:
+          result: "[[ $EXIT_CODE -eq 0 ]]"
+          output: "true"
