@@ -1,6 +1,10 @@
 # ============================================================================
 # Testcase Manager Makefile
 # ============================================================================
+
+# Parallel compile and link jobs for every cargo call. Linking many test binaries at once exhausted
+# memory and disk; override with CARGO_BUILD_JOBS=<n> make ... (or unset it to use all cores).
+export CARGO_BUILD_JOBS ?= 4
 #
 # This Makefile uses an INCREMENTAL BUILD STRATEGY by default for everyday
 # development workflows. Common targets like `make build`, `make test`,
@@ -838,7 +842,10 @@ acceptance-test: build-acceptance-binaries
 		echo "Using TPDG from PATH: $$(which test-plan-documentation-generator)"; \
 	fi; \
 	echo ""; \
-	if ./test-acceptance/run_acceptance_suite.sh 2>&1 | tee "$$LOG_FILE"; then \
+	STATUS_FILE=$$(mktemp); \
+	{ ./test-acceptance/run_acceptance_suite.sh 2>&1; echo $$? > "$$STATUS_FILE"; } | tee "$$LOG_FILE"; \
+	SUITE_STATUS=$$(cat "$$STATUS_FILE"); rm -f "$$STATUS_FILE"; \
+	if [ "$$SUITE_STATUS" -eq 0 ]; then \
 		echo ""; \
 		echo "=========================================" | tee -a "$$LOG_FILE"; \
 		echo "Acceptance Test Suite: SUCCESS" | tee -a "$$LOG_FILE"; \
@@ -848,7 +855,7 @@ acceptance-test: build-acceptance-binaries
 		echo "Summary report: test-acceptance/reports/acceptance_suite_summary.txt" | tee -a "$$LOG_FILE"; \
 		exit 0; \
 	else \
-		EXIT_CODE=$$?; \
+		echo "Suite exit status: $$SUITE_STATUS"; \
 		echo ""; \
 		echo "=========================================" | tee -a "$$LOG_FILE"; \
 		echo "Acceptance Test Suite: FAILED" | tee -a "$$LOG_FILE"; \

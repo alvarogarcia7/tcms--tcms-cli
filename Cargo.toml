@@ -119,3 +119,12 @@ path = "examples/test_verify_integration.rs"
 [[example]]
 name = "audit_traceability_demo"
 path = "examples/audit_traceability_demo.rs"
+
+# Keep test and dev binaries small: line tables only (backtraces and breakpoints by file/line work,
+# variable-level debuginfo is dropped). Full debuginfo made the tcms binary 130 MB, ~100 MB of it debuginfo,
+# and linking many test binaries in parallel ran the machine out of memory and disk.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.test]
+debug = "line-tables-only"
