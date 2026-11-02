@@ -27,3 +27,8 @@ Assertions per scenario: the verdict roll-up matches the coverage (VERIFIED, NOT
 ## Assumptions (default, since the 3-minute window passed)
 - Use the existing tcms CLI and test-executor report/trace commands; no new report renderer.
 - Markdown and AsciiDoc only; no PDF conversion.
+
+## 1a. Diagram detail (added by user)
+- For every arrow in the diagram, show an example invocation with fake data and fake files (for example: `test-executor report --matrix <scenario>/requirements/trace_matrix.yaml --runs <scenario>/runs --kind traceability --format markdown --generated-at <fixed-date>`).
+- For every step, list the input paths and output paths it reads and writes (plans/, runs/, requirements/, tcms-config/, reports/ ...), so the diagram doubles as a file map.
+- Use fake, example values only; no real customer or Jira data.
