@@ -202,3 +202,17 @@ Entry format:
 - **Options considered**: (a) fix the plan criterion: summary JSON is a valid format since Phase 4 (D-04-2, plan 04-04), so it is not an error case; (b) make the code reject it, contradicting D-04-2.
 - **Decision**: (a). ROADMAP SC1 reserves exit 1 for input or validation errors; a valid format is neither. Case removed from 05-03 section D; the E2E already asserts exit 0 (section B, test_report_exit_codes_e2e.sh lines 284-291). No production code change.
 - **Supersedes / affects**: 05-03 plan task criterion D; D-04-5 and D-05-1 unchanged
+
+- **ID**: D-07-7
+- **Phase / stage**: 7 / execute (07-01)
+- **Question**: Who edits the "assumed layout" help text in `crates/tcms/src/export_ids.rs:20` and `reqcmd.rs:22`, outside 07-01 `files_modified`?
+- **Options considered**: (a) widen 07-01 to reword the two help strings now; (b) defer the wording and the grep criterion to 07-05.
+- **Decision**: (b). 07-05 owns the "assumed" to "verified" move (D-07-6) and its own grep gate covers `crates` `*.rs`; its `files_modified` and action now list both files. 07-01 records the criterion as deferred. No source change. **Why**: wording only, no behaviour change, and one plan owns all such wording.
+- **Supersedes / affects**: 07-01 summary criteria; 07-05 plan
+
+- **ID**: D-07-8
+- **Phase / stage**: 7 / execute (07-01 review)
+- **Question**: `collect_items` in `crates/requirement-import/src/strictdoc.rs` hardcodes `safety_related` and `security_related` to false; should the reader take them from the export?
+- **Options considered**: (a) read the flags from StrictDoc node fields; (b) keep false, document that StrictDoc exports are not read for these flags, and name the follow-up.
+- **Decision**: (b). The checked-in real export (`crates/requirement-import/tests/fixtures/strictdoc_export.json`) and the 07-01 and 07-05 plans show no safety or security field, so (a) would need an invented field name. Keep `Some(false)`; the None-versus-Some(false) question stays out of scope (it changes YAML output). Fixer: add a module doc paragraph in strictdoc.rs and a comment at the two `false` lines saying the flags are not read from StrictDoc exports and are always false; add the same sentence to 07-01-SUMMARY.md; tests at lines 283-288 stay. Follow-up: read the flags only if a real export with them is added to the fixtures (custom StrictDoc fields), through a new plan.
+- **Supersedes / affects**: 07-01 summary; 07-05 plan line 67 (consistent)
