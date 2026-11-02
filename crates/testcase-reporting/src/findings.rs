@@ -9,8 +9,11 @@
 //! left them out. A requirement with no tests is listed in all three requirement lists (Phase 3
 //! decision), so it counts three times, as the gaps report prints it.
 
+use crate::gaps::build_gaps;
 use crate::model::ReportModel;
+use crate::problems::build_problems;
 use crate::select::RunSelection;
+use crate::view::ViewInput;
 
 /// The two counts that decide the exit status of `report --fail-on-gaps` (plan 05-02).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -39,8 +42,16 @@ impl Findings {
 
 /// The findings of one report run, from the same two views that the reports print.
 pub fn collect_findings(model: &ReportModel, selection: &RunSelection) -> Findings {
-    let _ = (model, selection);
-    Findings::default()
+    let input = ViewInput { model, selection };
+    let gaps = build_gaps(input);
+    let problems = build_problems(input);
+    Findings {
+        gap_entries: gaps.no_tests.len()
+            + gaps.missing_normal_range.len()
+            + gaps.missing_robustness.len()
+            + gaps.no_result.len(),
+        failed_results: problems.rows.len(),
+    }
 }
 
 #[cfg(test)]
