@@ -10,7 +10,9 @@ use std::path::PathBuf;
 const SCHEMA_URI: &str = "tcms/report.schema.v1.json";
 
 fn repo_file(relative: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..").join(relative)
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join(relative)
 }
 
 fn read_json(path: &PathBuf) -> Value {
@@ -122,12 +124,7 @@ fn minimal_traceability() -> Value {
 }
 
 const STATUS_LABELS: [&str; 6] = [
-    "VERIFIED",
-    "FAILED",
-    "ERRORED",
-    "NOT RUN",
-    "PARTIAL",
-    "NO TESTS",
+    "VERIFIED", "FAILED", "ERRORED", "NOT RUN", "PARTIAL", "NO TESTS",
 ];
 
 fn requirement(id: &str, level: &str, status: &str, cases: Value) -> Value {
@@ -384,7 +381,10 @@ header_missing_test!(rejects_header_missing_build_ids, "build_ids");
 header_missing_test!(rejects_header_missing_environments, "environments");
 header_missing_test!(rejects_header_missing_testers, "testers");
 header_missing_test!(rejects_header_missing_generated_at, "generated_at");
-header_missing_test!(rejects_header_missing_obsolete_excluded, "obsolete_excluded");
+header_missing_test!(
+    rejects_header_missing_obsolete_excluded,
+    "obsolete_excluded"
+);
 
 #[test]
 fn rejects_header_extra_key() {
@@ -398,28 +398,44 @@ fn rejects_header_extra_key() {
 #[test]
 fn rejects_row_unknown_status() {
     let mut doc = full_traceability();
-    set(&mut doc, "/content/documents/0/requirements/0/status", json!("DONE"));
+    set(
+        &mut doc,
+        "/content/documents/0/requirements/0/status",
+        json!("DONE"),
+    );
     assert_rejected(&doc);
 }
 
 #[test]
 fn rejects_row_level_mlr() {
     let mut doc = full_traceability();
-    set(&mut doc, "/content/documents/0/requirements/0/level", json!("MLR"));
+    set(
+        &mut doc,
+        "/content/documents/0/requirements/0/level",
+        json!("MLR"),
+    );
     assert_rejected(&doc);
 }
 
 #[test]
 fn rejects_case_column_misc() {
     let mut doc = full_traceability();
-    set(&mut doc, "/content/documents/0/requirements/0/cases/0/column", json!("misc"));
+    set(
+        &mut doc,
+        "/content/documents/0/requirements/0/cases/0/column",
+        json!("misc"),
+    );
     assert_rejected(&doc);
 }
 
 #[test]
 fn rejects_case_outcome_passed() {
     let mut doc = full_traceability();
-    set(&mut doc, "/content/documents/0/requirements/0/cases/0/outcome", json!("passed"));
+    set(
+        &mut doc,
+        "/content/documents/0/requirements/0/cases/0/outcome",
+        json!("passed"),
+    );
     assert_rejected(&doc);
 }
 
@@ -490,7 +506,11 @@ fn rejects_gaps_extra_key_in_requirement() {
 
 #[test]
 fn rejects_problems_kind_with_traceability_content() {
-    let doc = envelope("problems", full_header(), full_traceability()["content"].clone());
+    let doc = envelope(
+        "problems",
+        full_header(),
+        full_traceability()["content"].clone(),
+    );
     assert_rejected(&doc);
 }
 
