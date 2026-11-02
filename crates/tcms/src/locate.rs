@@ -3,11 +3,11 @@
 
 use std::collections::BTreeMap;
 use std::io::IsTerminal;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context as _, Result};
 use clap::ValueEnum;
-use id_resolver::{Resolved, Resolver};
+use id_resolver::{IntegrationConfig, Resolved, Resolver};
 use jira_client::JiraClient;
 use requirement_import::{
     jira,
@@ -69,7 +69,7 @@ pub struct LocateResult {
 }
 
 /// IDs with repeats removed, keeping the first occurrence (a repeated ID is reported once).
-fn dedup_ids(ids: &[String]) -> Vec<String> {
+pub(crate) fn dedup_ids(ids: &[String]) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for id in ids {
         if !out.contains(id) {
@@ -117,7 +117,7 @@ fn strictdoc_index(items: Vec<ExportItem>) -> Result<BTreeMap<String, ExportItem
 }
 
 /// One result line, without marker or colour (the output contract of plan 06-02).
-fn render_line(r: &LocateResult) -> String {
+pub(crate) fn render_line(r: &LocateResult) -> String {
     if !r.found {
         return format!("{}: not found in {} ({})", r.id, r.source, r.system);
     }
@@ -189,16 +189,21 @@ fn exit_code(results: &[LocateResult]) -> i32 {
     }
 }
 
-/// Perform the whole lookup. Nothing is printed here. Order: resolve every ID (D-02), refuse a
-/// StrictDoc ID without `--input`, read the export once, build every Jira client, then one batch
-/// search per Jira system (D-03, D-08). A failure at any step returns before a result exists.
-fn locate(ctx: &Context, args: &LocateArgs) -> Result<Vec<LocateResult>> {
-    let cfg = ctx.load_config()?;
-    let resolver = Resolver::new(&cfg)?;
+/// Batch lookup shared by `locate` and `export-ids` (D-12). Nothing is printed here. Order: resolve
+/// every ID (D-02), refuse a StrictDoc ID without `--input`, read the export once, build every Jira
+/// client, then one batch search per Jira system (D-03, D-08). A failure at any step returns before
+/// a result exists.
+pub(crate) fn lookup(
+    cfg: &IntegrationConfig,
+    ids: &[String],
+    input: Option<&Path>,
+    actor: Option<String>,
+) -> Result<Vec<LocateResult>> {
+    let resolver = Resolver::new(cfg)?;
 
     // D-02: every ID resolves before any lookup is sent
     let mut resolved: Vec<(String, Resolved)> = Vec::new();
-    for id in dedup_ids(&args.ids) {
+    for id in dedup_ids(ids) {
         let r = resolver.resolve_id(&id)?;
         if !(r.system_type.is_jira() || r.system_type.is_strictdoc()) {
             bail!(
@@ -211,7 +216,7 @@ fn locate(ctx: &Context, args: &LocateArgs) -> Result<Vec<LocateResult>> {
 
     // D-06: a StrictDoc ID needs the export
     if let Some((id, r)) = resolved.iter().find(|(_, r)| r.system_type.is_strictdoc()) {
-        if args.input.is_none() {
+        if input.is_none() {
             bail!(
                 "{id}: belongs to StrictDoc system '{}'; pass --input <export.json>",
                 r.system
@@ -221,7 +226,7 @@ fn locate(ctx: &Context, args: &LocateArgs) -> Result<Vec<LocateResult>> {
 
     // D-05: the export is read once per run
     let index = match (
-        &args.input,
+        input,
         resolved.iter().any(|(_, r)| r.system_type.is_strictdoc()),
     ) {
         (Some(path), true) => {
@@ -241,7 +246,7 @@ fn locate(ctx: &Context, args: &LocateArgs) -> Result<Vec<LocateResult>> {
     }
 
     // D-08: every client is built (token read, nothing sent) before the first search
-    let actor = acting_user(args.actor.clone());
+    let actor = acting_user(actor);
     let mut clients: BTreeMap<String, JiraClient> = BTreeMap::new();
     for name in groups.keys() {
         let system = cfg
@@ -298,6 +303,12 @@ fn locate(ctx: &Context, args: &LocateArgs) -> Result<Vec<LocateResult>> {
         })
         .collect();
     Ok(results)
+}
+
+/// Perform the `locate` lookup for the parsed arguments (see [`lookup`]).
+fn locate(ctx: &Context, args: &LocateArgs) -> Result<Vec<LocateResult>> {
+    let cfg = ctx.load_config()?;
+    lookup(&cfg, &args.ids, args.input.as_deref(), args.actor.clone())
 }
 
 /// Run `tcms requirements locate` and return the process exit code (0, 1 or 2).

@@ -1,5 +1,6 @@
 //! `tcms`: command line for external references and the Jira integration.
 
+mod export_ids;
 mod extrefs;
 mod jiracmd;
 mod locate;
