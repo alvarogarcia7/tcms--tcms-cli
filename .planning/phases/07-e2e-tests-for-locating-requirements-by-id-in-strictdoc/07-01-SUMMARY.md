@@ -1,15 +1,15 @@
 # Phase 7 Plan 01: Real StrictDoc export reader Summary
 
-**The StrictDoc reader now reads the real `strictdoc export --formats json` layout (DOCUMENTS, NODES, uppercase fields) and refuses the old lowercase layout; all three consumers (import, locate, trace-matrix) use it. One Phase 6 report test still uses the old layout, so the workspace is not green.**
+**The StrictDoc reader now reads the real `strictdoc export --formats json` layout (DOCUMENTS, NODES, uppercase fields) and refuses the old lowercase layout; all three consumers (import, locate, trace-matrix) use it. The one Phase 6 report test that still wrote the old layout now writes the real layout, so `cargo test -p tcms` and `cargo test -p test-executor` both pass.**
 
 ## Status
 
-Plan NOT complete: the must-have "whole workspace stays green" is NOT MET (see Blocker).
+Plan NOT complete: the workspace-green criterion is MET, but the grep gate and the "assumed layout" help text are NOT MET (see Blocker 2).
 
 ## Performance
 
-- Tasks: 3 of 3 executed and committed
-- Commits: 3 task commits, no push
+- Tasks: 3 of 3 executed and committed, plus one follow-up fix (`d76c0ed`)
+- Commits: 4 commits (3 task commits and the `report_cli` fix), no push
 
 ## Accomplishments
 
@@ -25,6 +25,7 @@ Plan NOT complete: the must-have "whole workspace stays green" is NOT MET (see B
 1. `1bbb7bf` feat(07-01): read the real StrictDoc export layout (requirement-import reader, fixture, import tests)
 2. `7958c60` feat(07-01): trace-matrix reads the real StrictDoc layout (test-executor fixture and tests)
 3. `57de018` feat(07-01): locate and import tests use the real StrictDoc layout (tcms tests, locate help text)
+4. `d76c0ed` fix(07-01): move report_cli old-layout test to real StrictDoc layout (test-executor `report_cli.rs`, per D-07-3)
 
 ## Decisions Applied
 
@@ -48,11 +49,12 @@ Plan NOT complete: the must-have "whole workspace stays green" is NOT MET (see B
 | parent_uids only from TYPE Parent | MET | `only_parent_relations_become_parent_ids` ok |
 | REQUIREMENT without LEVEL refuses export, naming UID | MET | `item_without_level_is_refused`; `a_strictdoc_export_item_without_level_is_refused`; `locate_strictdoc_item_without_level_exits_2` |
 | Old lowercase layout refused, message names DOCUMENTS | MET | `old_lowercase_layout_is_refused`; `locate_strictdoc_old_lowercase_layout_is_refused` |
-| Every old-layout test and fixture moved; whole workspace green | NOT MET | see Blocker |
+| Every old-layout test and fixture moved | MET | `report_cli.rs` `export_file()` migrated in `d76c0ed`; the remaining old-layout inline JSON in `requirements_locate_cli.rs` is the refusal test and is meant to stay |
+| Whole workspace green: `cargo test -p tcms` and `cargo test -p test-executor` both exit 0 | MET | tcms: all binaries ok; test-executor: 12 suites ok, exit 0 (after `d76c0ed`) |
 | requirement-import: `cargo test` ok | MET | 28 unit and 6 integration tests ok |
 | requirement-import: clippy `-D warnings` | MET | no warnings reported |
 | test-executor trace_matrix tests ok | MET | 12 ok in `trace_matrix_cli`, 2 unit tests ok |
-| test-executor: `cargo test -p test-executor` exit 0 | NOT MET | one failing test, see Blocker |
+| test-executor: `cargo test -p test-executor` exit 0 | MET | exit 0 after `d76c0ed` (the `report_cli` test that failed now passes) |
 | test-executor: clippy `-D warnings` | MET with `--no-deps` | plain run stops on pre-existing `testcase-execution/src/executor.rs:2435:45` lint |
 | tcms: `cargo fmt --check -p tcms` | MET | exit 0 |
 | tcms: `cargo clippy -p tcms --all-targets -- -D warnings` | MET | exit 0 |
@@ -64,21 +66,9 @@ Plan NOT complete: the must-have "whole workspace stays green" is NOT MET (see B
 
 ## Blocker
 
-**1. `cargo test -p test-executor --all-features --no-fail-fast` fails in one test:**
+**1. RESOLVED in `d76c0ed`:** `documents_group_rows_and_mark_a_document_without_requirements` failed because `export_file()` in `crates/test-executor/tests/report_cli.rs` wrote the old lowercase layout. `export_file()` now writes `DOCUMENTS` / `NODES` / `REQUIREMENT` nodes with uppercase fields. The document TITLEs are `docs/srs.sdoc` and `docs/empty.sdoc`, so the path comes from the TITLE and every assertion is unchanged. The file was outside this plan's `files_modified`; it was edited per D-07-3.
 
-```
-test documents_group_rows_and_mark_a_document_without_requirements ... FAILED
-thread 'documents_group_rows_and_mark_a_document_without_requirements' panicked at crates/test-executor/tests/report_cli.rs:865:5:
-Error: /tmp/.tmpeNavFb/export.json is not a StrictDoc export
-Caused by:
-    0: StrictDoc export: expected the JSON written by 'strictdoc export --formats json' (an object with a 'DOCUMENTS' array)
-    1: missing field `DOCUMENTS` at line 7 column 72
-test result: FAILED. 55 passed; 1 failed
-```
-
-The cause is `crates/test-executor/tests/report_cli.rs:558`, `export_file()`, which writes an export in the old lowercase layout. The test also asserts the document heading `docs/srs.sdoc`, which under the real layout becomes the document TITLE, so it needs assertion changes as well as input changes. `report_cli.rs` is not in this plan's `files_modified`, so it was not edited, and the test was not weakened. Fix: add `crates/test-executor/tests/report_cli.rs` to this plan's `files_modified` and migrate `export_file()` and its assertions to the real layout.
-
-**2. Old-layout residue outside `files_modified`:** the help strings still say "assumed layout" in `crates/tcms/src/export_ids.rs:20` and `crates/tcms/src/reqcmd.rs:22`. The plan's Task 3 action asked for `export_ids.rs` to change, but it is not in `files_modified`, so it was not edited. The plan's grep gate also matches `crates/testcase-reporting/*` and `crates/test-executor/tests/report_formats_e2e.rs` and `report_shapes_e2e.rs`. Those hits are the report schema's own `documents` key, not the StrictDoc layout, so the gate as written cannot pass without a narrower pattern.
+**2. Old-layout residue outside `files_modified` (still NOT MET):** the help strings still say "assumed layout" in `crates/tcms/src/export_ids.rs:20` and `crates/tcms/src/reqcmd.rs:22`. The plan's Task 3 action asked for `export_ids.rs` to change, but it is not in `files_modified`, so it was not edited. The plan's grep gate also matches `crates/testcase-reporting/*` and `crates/test-executor/tests/report_formats_e2e.rs` and `report_shapes_e2e.rs`. Those hits are the report schema's own `documents` key, not the StrictDoc layout, so the gate as written cannot pass without a narrower pattern.
 
 ## Deviations from Plan
 
