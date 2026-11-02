@@ -1,13 +1,70 @@
 {
-  "_comment": "CRAFTED FIXTURE: written by hand to the ASSUMED StrictDoc JSON layout (see crates/requirement-import/src/strictdoc.rs). Not a real StrictDoc export.",
-  "documents": [
+  "_COMMENT": "Hand-written fixture in the layout of strictdoc export --formats json (DOCUMENTS, NODES, uppercase fields). Not an export of the real tool.",
+  "DOCUMENTS": [
     {
-      "path": "docs/srs.sdoc",
-      "requirements": [
-        {"uid": "SYS-1", "level": "system", "statement": "The system updates the SMS settings."},
-        {"uid": "HLR-1", "level": "HLR", "title": "SMS update", "statement": "Apply within 5 s.", "status": "approved", "parent_uids": ["SYS-1"]},
-        {"uid": "LLR-2", "level": "LLR", "title": "SMS parser", "statement": "Parse the update frame.", "status": "draft", "parent_uids": ["HLR-1"]},
-        {"uid": "HLR-3", "level": "HLR", "title": "SMS retry", "statement": "Retry a failed update three times.", "status": "approved", "parent_uids": ["SYS-1"]}
+      "TITLE": "Software Requirements",
+      "_NODE_TYPE": "DOCUMENT",
+      "NODES": [
+        {
+          "_NODE_TYPE": "REQUIREMENT",
+          "UID": "SYS-1",
+          "LEVEL": "system",
+          "STATEMENT": "The system updates the SMS settings."
+        },
+        {
+          "_NODE_TYPE": "SECTION",
+          "TITLE": "High-level",
+          "NODES": [
+            {
+              "_NODE_TYPE": "REQUIREMENT",
+              "UID": "HLR-1",
+              "LEVEL": "HLR",
+              "TITLE": "SMS update",
+              "STATEMENT": "Apply within 5 s.",
+              "STATUS": "approved",
+              "RELATIONS": [
+                {
+                  "TYPE": "Parent",
+                  "VALUE": "SYS-1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_NODE_TYPE": "SECTION",
+          "TITLE": "Low-level",
+          "NODES": [
+            {
+              "_NODE_TYPE": "REQUIREMENT",
+              "UID": "LLR-2",
+              "LEVEL": "LLR",
+              "TITLE": "SMS parser",
+              "STATEMENT": "Parse the update frame.",
+              "STATUS": "draft",
+              "RELATIONS": [
+                {
+                  "TYPE": "Parent",
+                  "VALUE": "HLR-1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_NODE_TYPE": "REQUIREMENT",
+          "UID": "HLR-3",
+          "LEVEL": "HLR",
+          "TITLE": "SMS retry",
+          "STATEMENT": "Retry a failed update three times.",
+          "STATUS": "approved",
+          "RELATIONS": [
+            {
+              "TYPE": "Parent",
+              "VALUE": "SYS-1"
+            }
+          ]
+        }
       ]
     }
   ]

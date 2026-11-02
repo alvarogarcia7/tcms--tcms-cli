@@ -547,8 +547,8 @@ fn build_dependency_resolver_from_dir(test_case_dir: &Path) -> Result<Dependency
     Ok(DependencyResolver::new(index))
 }
 
-/// Requirements of the matrix. A `.json` file is a StrictDoc export (its layout is an assumption,
-/// see `requirement_import::strictdoc`); anything else is read by `testcase_verification`.
+/// Requirements of the matrix. A `.json` file is the JSON of `strictdoc export --formats json`, read
+/// by `requirement_import::strictdoc`; anything else is read by `testcase_verification`.
 fn read_matrix_requirements(path: &Path) -> Result<Vec<testcase_verification::Requirement>> {
     let is_json = path.is_file()
         && path
@@ -1967,11 +1967,12 @@ mod tests {
         let path = dir.path().join("export.json");
         std::fs::write(
             &path,
-            r#"{"documents":[{"path":"docs/srs.sdoc","requirements":[
-                {"uid":"SYS-1","level":"system"},
-                {"uid":"HLR-1","level":"HLR"},
-                {"uid":"LLR-2","level":"LLR"},
-                {"uid":"SFR-3","level":"SFR"}]}]}"#,
+            r#"{"DOCUMENTS":[{"TITLE":"Software Requirements","NODES":[
+                {"_NODE_TYPE":"REQUIREMENT","UID":"SYS-1","LEVEL":"system"},
+                {"_NODE_TYPE":"REQUIREMENT","UID":"HLR-1","LEVEL":"HLR"},
+                {"_NODE_TYPE":"SECTION","TITLE":"Low-level","NODES":[
+                    {"_NODE_TYPE":"REQUIREMENT","UID":"LLR-2","LEVEL":"LLR"}]},
+                {"_NODE_TYPE":"REQUIREMENT","UID":"SFR-3","LEVEL":"SFR"}]}]}"#,
         )
         .unwrap();
         let reqs = read_matrix_requirements(&path).unwrap();
@@ -1992,14 +1993,18 @@ mod tests {
         let path = dir.path().join("export.json");
         let cases = [
             (
-                r#"{"documents":[{"path":"a.sdoc","requirements":[{"uid":"X-1","level":"Epic"}]}]}"#,
+                r#"{"DOCUMENTS":[{"TITLE":"a","NODES":[{"_NODE_TYPE":"REQUIREMENT","UID":"X-1","LEVEL":"Epic"}]}]}"#,
                 "not a requirement type",
             ),
             (
-                r#"{"documents":[{"path":"a.sdoc","requirements":[{"uid":"HLR-1","level":"HLR"},{"uid":"HLR-1","level":"HLR"}]}]}"#,
+                r#"{"DOCUMENTS":[{"TITLE":"a","NODES":[{"_NODE_TYPE":"REQUIREMENT","UID":"HLR-1","LEVEL":"HLR"},{"_NODE_TYPE":"REQUIREMENT","UID":"HLR-1","LEVEL":"HLR"}]}]}"#,
                 "appears twice",
             ),
             ("{ not json", "not a StrictDoc export"),
+            (
+                r#"{"DOCUMENTS":[{"TITLE":"a","NODES":[{"_NODE_TYPE":"REQUIREMENT","UID":"HLR-1"}]}]}"#,
+                "has no LEVEL",
+            ),
         ];
         for (text, expected) in cases {
             std::fs::write(&path, text).unwrap();

@@ -204,7 +204,7 @@ fn runs_link_through_run_ids() {
     assert_eq!(matrix["links"][0]["run_ids"][0], "RUN-7");
 }
 
-/// The crafted StrictDoc export (assumed layout): SYS-1 (system), HLR-1, LLR-2, HLR-3.
+/// The StrictDoc export (real layout, hand-written): SYS-1 (system), HLR-1, LLR-2 (in a section), HLR-3.
 fn strictdoc_fixture() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/strictdoc_export.json")
 }
@@ -308,7 +308,7 @@ fn a_strictdoc_export_with_every_requirement_covered_passes_the_check() {
 fn an_invalid_strictdoc_export_is_an_error_with_the_file_named() {
     let dir = tempfile::tempdir().unwrap();
     std::fs::create_dir(dir.path().join("cases")).unwrap();
-    write(dir.path(), "export.json", "{ \"documents\": [");
+    write(dir.path(), "export.json", "{ \"DOCUMENTS\": [");
 
     let output = run_with_requirements(dir.path(), &dir.path().join("export.json"), &[]);
     assert_eq!(output.status.code(), Some(1));
@@ -323,12 +323,13 @@ fn an_invalid_strictdoc_export_is_an_error_with_the_file_named() {
 fn a_strictdoc_export_with_an_unknown_node_type_is_refused() {
     let dir = tempfile::tempdir().unwrap();
     std::fs::create_dir(dir.path().join("cases")).unwrap();
-    let text = std::fs::read_to_string(strictdoc_fixture())
-        .unwrap()
-        .replace(
-            "\"LLR-2\", \"level\": \"LLR\"",
-            "\"LLR-2\", \"level\": \"Epic\"",
-        );
+    let text = std::fs::read_to_string(strictdoc_fixture()).unwrap();
+    assert_eq!(
+        text.matches("\"LEVEL\": \"LLR\"").count(),
+        1,
+        "the fixture holds exactly one LLR node"
+    );
+    let text = text.replace("\"LEVEL\": \"LLR\"", "\"LEVEL\": \"Epic\"");
     write(dir.path(), "export.json", &text);
 
     let output = run_with_requirements(dir.path(), &dir.path().join("export.json"), &[]);
@@ -347,7 +348,7 @@ fn a_strictdoc_export_without_hlr_or_llr_is_refused() {
     write(
         dir.path(),
         "export.json",
-        r#"{"documents":[{"path":"a.sdoc","requirements":[{"uid":"SYS-1","level":"system"}]}]}"#,
+        r#"{"DOCUMENTS":[{"TITLE":"a","NODES":[{"_NODE_TYPE":"REQUIREMENT","UID":"SYS-1","LEVEL":"system"}]}]}"#,
     );
 
     let output = run_with_requirements(dir.path(), &dir.path().join("export.json"), &[]);
@@ -356,5 +357,24 @@ fn a_strictdoc_export_without_hlr_or_llr_is_refused() {
         String::from_utf8_lossy(&output.stderr).contains("No HLR or LLR found"),
         "{}",
         String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+fn a_strictdoc_export_item_without_level_is_refused() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::create_dir(dir.path().join("cases")).unwrap();
+    write(
+        dir.path(),
+        "export.json",
+        r#"{"DOCUMENTS":[{"TITLE":"a","NODES":[{"_NODE_TYPE":"REQUIREMENT","UID":"HLR-1"}]}]}"#,
+    );
+
+    let output = run_with_requirements(dir.path(), &dir.path().join("export.json"), &[]);
+    assert_eq!(output.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("HLR-1") && stderr.contains("has no LEVEL"),
+        "{stderr}"
     );
 }
