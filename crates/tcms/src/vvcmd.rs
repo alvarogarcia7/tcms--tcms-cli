@@ -30,6 +30,9 @@ pub enum VvCommand {
         /// Run to report (default: the last recorded run by start time)
         #[arg(long)]
         run: Option<String>,
+        /// Plan to report on: only the runs whose `plan_id` is this plan. Error when no run has it.
+        #[arg(long)]
+        plan: Option<String>,
         /// Quality-gate threshold in percent, 50 to 100 (D-89)
         #[arg(long, default_value_t = 90)]
         gate: u64,
@@ -51,6 +54,7 @@ pub fn run(ctx: &Context, cmd: VvCommand) -> Result<()> {
         VvCommand::Metrics {
             root,
             run,
+            plan,
             gate,
             flaky_threshold,
             out,
@@ -65,7 +69,14 @@ pub fn run(ctx: &Context, cmd: VvCommand) -> Result<()> {
             let generated_at =
                 resolve_now(now.as_deref(), std::env::var("TCMS_NOW").ok().as_deref())?;
             let data = load(&root, ctx.schemas_root())?;
-            let report = build_report(&data, run.as_deref(), gate, flaky_threshold, &generated_at)?;
+            let report = build_report(
+                &data,
+                run.as_deref(),
+                plan.as_deref(),
+                gate,
+                flaky_threshold,
+                &generated_at,
+            )?;
             let text = format!("{}\n", serde_json::to_string_pretty(&report)?);
             match out {
                 Some(path) => write_atomic(&path, text.as_bytes())?,
@@ -124,6 +135,8 @@ struct CaseResult {
 #[derive(Debug, Clone)]
 struct RecordedRun {
     run_id: String,
+    /// The plan the run executes (`plan_id` in test-run.yaml), if recorded.
+    plan_id: Option<String>,
     started_at: String,
     finished_at: Option<String>,
     results: Vec<CaseResult>,
@@ -239,6 +252,7 @@ fn load_runs(root: &Path) -> Result<Vec<RecordedRun>> {
         let (steps, verified_case_ids) = load_steps(&dir.join("verification-results.yaml"))?;
         runs.push(RecordedRun {
             run_id,
+            plan_id: str_field(&doc, "plan_id"),
             started_at: str_field(&doc, "started_at").unwrap_or_default(),
             finished_at: str_field(&doc, "finished_at"),
             results,
@@ -365,21 +379,47 @@ fn percent_json(ratio: Option<Ratio>, display: fn(&Ratio) -> u64) -> Json {
 }
 
 fn build_report(
-    data: &VvData,
+    all: &VvData,
     run_id: Option<&str>,
+    plan: Option<&str>,
     gate: u64,
     flaky: u64,
     generated_at: &str,
 ) -> Result<Json> {
-    if data.runs.is_empty() {
+    if all.runs.is_empty() {
         bail!("no recorded V&V runs (runs/*/test-run.yaml) under the data root");
     }
+    // With --plan, only the runs of that plan take part: selection, previous run and stability.
+    let scoped;
+    let data = match plan {
+        Some(p) => {
+            scoped = VvData {
+                runs: all
+                    .runs
+                    .iter()
+                    .filter(|r| r.plan_id.as_deref() == Some(p))
+                    .cloned()
+                    .collect(),
+                cases: all.cases.clone(),
+                schema_errors: all.schema_errors.clone(),
+                requirement_ids: all.requirement_ids.clone(),
+            };
+            if scoped.runs.is_empty() {
+                bail!("no recorded run for plan {p} (no run has plan_id {p})");
+            }
+            &scoped
+        }
+        None => all,
+    };
     let sel = match run_id {
         Some(id) => data
             .runs
             .iter()
             .position(|r| r.run_id == id)
-            .ok_or_else(|| anyhow!("run {id} is not among the recorded runs"))?,
+            .ok_or_else(|| match plan {
+                Some(p) => anyhow!("run {id} is not a run of plan {p}"),
+                None => anyhow!("run {id} is not among the recorded runs"),
+            })?,
         None => data.runs.len() - 1,
     };
     let run = &data.runs[sel];
@@ -625,6 +665,7 @@ mod tests {
         let data = VvData {
             runs: vec![RecordedRun {
                 run_id: "R-EMPTY".to_string(),
+                plan_id: None,
                 started_at: "2026-01-01T00:00:00Z".to_string(),
                 finished_at: Some("2026-01-01T01:00:00Z".to_string()),
                 results: Vec::new(),
@@ -635,7 +676,7 @@ mod tests {
             schema_errors: Vec::new(),
             requirement_ids: Vec::new(),
         };
-        let err = build_report(&data, None, 90, 4, "2026-01-02T00:00:00Z")
+        let err = build_report(&data, None, None, 90, 4, "2026-01-02T00:00:00Z")
             .unwrap_err()
             .to_string();
         assert!(
