@@ -1,0 +1,278 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TCMS Report Schema v1",
+  "description": "JSON schema for the traceability report and its three Phase 3 views (summary, gaps, problems), as machine-readable documents. Every object is closed (additionalProperties false). A document of one kind is accepted only with the content shape of that kind.",
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "report"
+    },
+    "schema": {
+      "const": "tcms/report.schema.v1.json"
+    },
+    "kind": {
+      "enum": ["traceability", "summary", "gaps", "problems"]
+    },
+    "header": {
+      "$ref": "#/definitions/header"
+    },
+    "content": {
+      "type": "object"
+    }
+  },
+  "required": ["type", "schema", "kind", "header", "content"],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "required": ["kind"],
+        "properties": { "kind": { "const": "traceability" } }
+      },
+      "then": {
+        "properties": { "content": { "$ref": "#/definitions/traceability_content" } }
+      }
+    },
+    {
+      "if": {
+        "required": ["kind"],
+        "properties": { "kind": { "const": "summary" } }
+      },
+      "then": {
+        "properties": { "content": { "$ref": "#/definitions/summary_content" } }
+      }
+    },
+    {
+      "if": {
+        "required": ["kind"],
+        "properties": { "kind": { "const": "gaps" } }
+      },
+      "then": {
+        "properties": { "content": { "$ref": "#/definitions/gaps_content" } }
+      }
+    },
+    {
+      "if": {
+        "required": ["kind"],
+        "properties": { "kind": { "const": "problems" } }
+      },
+      "then": {
+        "properties": { "content": { "$ref": "#/definitions/problems_content" } }
+      }
+    }
+  ],
+  "definitions": {
+    "header": {
+      "type": "object",
+      "description": "Report header. The same eight keys for every kind (Phase 2 Header).",
+      "additionalProperties": false,
+      "required": [
+        "matrix_id",
+        "baseline_id",
+        "run_ids",
+        "build_ids",
+        "environments",
+        "testers",
+        "generated_at",
+        "obsolete_excluded"
+      ],
+      "properties": {
+        "matrix_id": { "type": "string", "minLength": 1 },
+        "baseline_id": { "type": ["string", "null"] },
+        "run_ids": { "type": "array", "items": { "type": "string" } },
+        "build_ids": { "type": "array", "items": { "type": "string" } },
+        "environments": { "type": "array", "items": { "type": "string" } },
+        "testers": { "type": "array", "items": { "type": "string" } },
+        "generated_at": { "type": "string", "minLength": 1 },
+        "obsolete_excluded": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "level": {
+      "enum": ["HLR", "LLR"]
+    },
+    "status": {
+      "enum": ["VERIFIED", "FAILED", "ERRORED", "NOT RUN", "PARTIAL", "NO TESTS"]
+    },
+    "traceability_content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["documents"],
+      "properties": {
+        "documents": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/document" }
+        }
+      }
+    },
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "requirements"],
+      "properties": {
+        "name": { "type": ["string", "null"] },
+        "requirements": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/requirement" }
+        }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requirement_id",
+        "level",
+        "status",
+        "normal_range_covered",
+        "robustness_covered",
+        "cases"
+      ],
+      "properties": {
+        "requirement_id": { "type": "string", "minLength": 1 },
+        "level": { "$ref": "#/definitions/level" },
+        "status": { "$ref": "#/definitions/status" },
+        "normal_range_covered": { "type": "boolean" },
+        "robustness_covered": { "type": "boolean" },
+        "cases": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/case" }
+        }
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["test_case_id", "column", "outcome", "run_id"],
+      "properties": {
+        "test_case_id": { "type": "string", "minLength": 1 },
+        "column": { "enum": ["normal_range", "robustness", "other"] },
+        "outcome": { "enum": ["pass", "fail", "error", "NOT RUN"] },
+        "run_id": { "type": ["string", "null"] }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pass", "fail", "not_executed", "error", "total"],
+      "properties": {
+        "pass": { "type": "integer", "minimum": 0 },
+        "fail": { "type": "integer", "minimum": 0 },
+        "not_executed": { "type": "integer", "minimum": 0 },
+        "error": { "type": "integer", "minimum": 0 },
+        "total": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "summary_content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runs", "requirements", "linked"],
+      "properties": {
+        "runs": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/run_summary" }
+        },
+        "requirements": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/requirement_summary" }
+        },
+        "linked": { "$ref": "#/definitions/counts" }
+      }
+    },
+    "run_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_id", "build_id", "used", "excluded_reason", "counts"],
+      "properties": {
+        "run_id": { "type": "string" },
+        "build_id": { "type": "string" },
+        "used": { "type": "boolean" },
+        "excluded_reason": { "type": ["string", "null"] },
+        "counts": { "$ref": "#/definitions/counts" }
+      }
+    },
+    "requirement_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requirement_id", "level", "status", "counts"],
+      "properties": {
+        "requirement_id": { "type": "string", "minLength": 1 },
+        "level": { "$ref": "#/definitions/level" },
+        "status": { "$ref": "#/definitions/status" },
+        "counts": { "$ref": "#/definitions/counts" }
+      }
+    },
+    "gaps_content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["no_tests", "missing_normal_range", "missing_robustness", "no_result"],
+      "properties": {
+        "no_tests": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/gap_requirement" }
+        },
+        "missing_normal_range": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/gap_requirement" }
+        },
+        "missing_robustness": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/gap_requirement" }
+        },
+        "no_result": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/gap_case" }
+        }
+      }
+    },
+    "gap_requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requirement_id", "level", "document"],
+      "properties": {
+        "requirement_id": { "type": "string", "minLength": 1 },
+        "level": { "$ref": "#/definitions/level" },
+        "document": { "type": ["string", "null"] }
+      }
+    },
+    "gap_case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["test_case_id", "requirement_ids"],
+      "properties": {
+        "test_case_id": { "type": "string", "minLength": 1 },
+        "requirement_ids": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "problems_content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rows", "missing_count"],
+      "properties": {
+        "rows": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/problem_row" }
+        },
+        "missing_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "problem_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "test_case_id",
+        "verdict",
+        "run_id",
+        "build_id",
+        "problem_report_id",
+        "requirement_ids"
+      ],
+      "properties": {
+        "test_case_id": { "type": "string", "minLength": 1 },
+        "verdict": { "enum": ["fail", "error"] },
+        "run_id": { "type": "string" },
+        "build_id": { "type": "string" },
+        "problem_report_id": { "type": ["string", "null"] },
+        "requirement_ids": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

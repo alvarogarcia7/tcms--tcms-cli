@@ -506,9 +506,16 @@ fn envelope_accepts_report_type() {
         types.iter().any(|t| t == "report"),
         "envelope type enum lacks report"
     );
+    // The envelope's relative "$id" cannot be resolved by jsonschema 0.17 without a base URI;
+    // the constraints under test do not depend on it, so it is dropped for compilation only.
+    let mut envelope_for_compile = envelope_schema.clone();
+    envelope_for_compile
+        .as_object_mut()
+        .expect("envelope is an object")
+        .remove("$id");
     let envelope = JSONSchema::options()
         .with_draft(Draft::Draft7)
-        .compile(&envelope_schema)
+        .compile(&envelope_for_compile)
         .expect("envelope compiles");
     let pair = json!({ "type": "report", "schema": SCHEMA_URI });
     assert!(envelope.is_valid(&pair), "envelope rejects the report pair");
