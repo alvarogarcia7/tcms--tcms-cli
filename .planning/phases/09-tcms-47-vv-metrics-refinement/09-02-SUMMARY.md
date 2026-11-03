@@ -76,6 +76,13 @@ Precedence: flag over file over default, for all three parameters. The window ke
 2. **No upper bound on the window.** tcms-web's `ReportService` has `MAX_WINDOW = 50`. The backlog gives only "at least 1", so none is enforced here.
 3. **The AC 2 reading.** The plan's shape puts the number under `value`. A literal reading of "the value appears in `parameters.stability_window_runs`" would put the number directly there. The two cannot both hold; I followed the plan.
 
+## Review fixes
+
+- Behaviour assertion added to `flag_overrides_file`: three flips are FLAKY at the file threshold (3) and STABLE with `--flaky-threshold 6`.
+- Wrong-type case added to `vvconfig.rs` `wrong_type_names_file_and_key`: `stability_window_runs: "12"` is refused with the file and key named.
+- Untested branch: in `write_all_atomic`, the error path where restoring the first target itself fails (the `rollback incomplete` message, `restore` returning an error for index 0). It is not tested. The two rollback tests cover the successful restore of the first target and the removal of a first target that did not exist. Forcing the failure is not possible unprivileged on Linux: after the rename the target is a file this process just wrote, so a later `fs::write` to it succeeds. The only remaining routes need root (permission or immutable-attribute tricks) or a fault-injection seam in production code, which would fake the failure. Not forced, not faked.
+- Backlog TCMS-47.2 set to Done: ACs 1 to 6 and DoD 1 and 2 checked; AC 7 left unchecked and marked BLOCKED.
+
 ## Self-Check
 
 Self-Check: PASSED. Files present: `crates/tcms/src/vvconfig.rs`, `crates/tcms/tests/vv_config_cli.rs`,

@@ -238,6 +238,10 @@ mod tests {
         assert!(err.contains("gate_threshold_percent"), "{err}");
         let err = error_of("flaky_flip_threshold: 2.5\n");
         assert!(err.contains("flaky_flip_threshold"), "{err}");
+        let err = error_of("stability_window_runs: \"12\"\n");
+        assert!(err.contains("data/vv-config.yaml"), "{err}");
+        assert!(err.contains("stability_window_runs"), "{err}");
+        assert!(err.contains("must be an integer"), "{err}");
     }
 
     #[test]

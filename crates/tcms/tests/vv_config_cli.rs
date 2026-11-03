@@ -154,6 +154,22 @@ fn flag_overrides_file() {
         v["parameters"]["flakyThreshold"],
         json!({"value": 6, "source": "flag"})
     );
+
+    // Behaviour, not just the echoed value: three flips are FLAKY at the file's threshold of 3,
+    // and STABLE when the flag raises the threshold to 6.
+    set_pass_001_three_flips_in_window(&root);
+    let file = report(&root, &[]);
+    let c = stability_of(&file, "SUT1_PASS_001");
+    assert_eq!(
+        (c["stability"].as_str(), c["flips"].as_u64()),
+        (Some("FLAKY"), Some(3))
+    );
+    let flagged = report(&root, &["--flaky-threshold", "6"]);
+    let c = stability_of(&flagged, "SUT1_PASS_001");
+    assert_eq!(
+        (c["stability"].as_str(), c["flips"].as_u64()),
+        (Some("STABLE"), Some(3))
+    );
 }
 
 #[test]
