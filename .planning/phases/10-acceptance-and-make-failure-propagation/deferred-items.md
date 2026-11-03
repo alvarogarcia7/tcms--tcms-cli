@@ -106,3 +106,9 @@ in single-file mode exits 0. The verifier prints a WARN about no test run record
 ### Test E after Task A
 
 tests/integration/test_run_e2e_scripts.sh: 6 passed, 0 failed. Audit reports 0 deferred out-of-scope flags.
+
+## Resolution (phase 10 close, branch feature/phase-10-acceptance-make-propagation)
+
+- D-4: done in commit a0309df. The Makefile reads `.env` as NAME=value lines only (D-10-1). `.env` was not edited.
+- D-3: NOT resolved, user action. No sudo on this machine. Run `sudo apt-get install -y expect`. check_environment.sh is unchanged (D-10-2).
+- D-7/D-9: `make coverage-e2e` and the full `make test` were not run (disk fell to 340 MB during the build). See D-10-7.

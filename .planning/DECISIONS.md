@@ -325,3 +325,11 @@ Entry format:
 - **Decision**: (b). Every stage 1 to 7 function returns 1 when its `*_FAILED` counter is non-zero, so the return code already carries the counter. A second check would disagree with a KNOWN stage. Unlisted failures are counted in UNLISTED_FAILURES, which decides the exit code.
 - **Why**: one decision point, and a listed failure can no longer be overridden by a counter.
 - **Supersedes / affects**: 10-03 Task 2 wording about the consistency check
+
+## D-10-7: make test and coverage-e2e not completed here; feature branch not merged into dev
+- **Phase / stage**: 10 / execute (phase close)
+- **Question**: can the phase's gates be reported as passed, and can the feature branch merge into dev?
+- **Facts**: `make test` (default BASE_REF=main) was started. It rebuilds nearly the whole workspace in debug, and the disk fell from 3.4 GB to 340 MB. The executor stopped it at the disk guard during the build, before any E2E step. `make coverage-e2e` was not started, for the same reason (cargo-llvm-cov is in ~/.cargo/bin and would run a full coverage build). `check_environment.sh` fails through the runner because `expect` is missing (D-10-2), so make test would stay red at that step even with disk space.
+- **Decision**: report `make test` and `make coverage-e2e` as NOT RUN, not as passed. The feature branch is pushed to origin and gitlab, but NOT merged into dev: the one gate the phase names (make test) has not produced a result. The orchestrator decides the merge after a make test run on a machine with `expect` and disk to spare.
+- **Checks that did pass** (this session): `make acceptance-test` exit 0 (89 files, stages 1 to 10 PASS, 0 KNOWN); `test-acceptance/tests/test_suite_exit_contract.sh` exit 0 (cases A to E); `test-acceptance/tests/test_stage1_discovery.sh` exit 0; `tests/integration/test_run_e2e_scripts.sh` exit 0 (6 passed).
+- **Supersedes / affects**: 10-02 Checkpoint (make test, coverage-e2e); TCMS-46 AC 1 and AC 3 left unchecked
