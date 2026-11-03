@@ -120,6 +120,7 @@ Plans:
 | 4. AsciiDoc and Machine-Readable Output | 0/0 | Not started | - |
 | 5. Pipeline Use: Exit Codes and E2E | 0/0 | Not started | - |
 | 9. TCMS-47 V&V metrics refinement | 0/3 | Not started | - |
+| 10. Acceptance and make failure propagation | 0/3 | Not started | - |
 
 ### Phase 6: Requirement lookup: tcms requirements locate verifies that requirement IDs exist in the configured Jira backlog or StrictDoc export
 
@@ -177,3 +178,18 @@ Plans:
 - [ ] 09-02-PLAN.md — TCMS-47.2 consumer: vv-config.yaml reader, `--stability-window`, parameter sources in output, error cases, schema check via checkpoint (wave 2, depends on 09-01)
 - [ ] 09-03-PLAN.md — TCMS-47.1 report: `tcms-vv-report` crate, Markdown and AsciiDoc, golden files for sut-1 and derived fixtures, exit codes, docs and DATA_FLOW 4.5 (wave 3, depends on 09-02)
 **Notes**: Open items (snake_case vs camelCase field, missing vv-config and verification-results schemas, combinator command name) are listed in 09-CONTEXT.md and resolved at the plan checkpoints.
+
+
+### Phase 10: Acceptance and make failure propagation
+
+**Goal**: `make acceptance-test`, `make test` and `make coverage-e2e` report honestly: the acceptance suite finds every test case file (both `.yml` and `.yaml`) and fails on zero inputs, `make acceptance-test` exits non-zero on any unlisted stage failure with stages 8 and 9 passing or listed as known failures with a backlog id, and a failing E2E script or verifier step makes `make test` and `make coverage-e2e` exit non-zero while green runs stay green.
+**Requirements**: TCMS-45, TCMS-46
+**Depends on:** Phase 9
+**Spec**: `.planning/phases/10-acceptance-and-make-failure-propagation/10-CONTEXT.md` (decisions D-45-1..3, D-46-1..3, open items O-1, O-2)
+**Plans:** 3 plans
+
+Plans:
+- [ ] 10-01-PLAN.md — TCMS-45 AC 1: shared discovery for `.yml` and `.yaml` used by Stage 1 and Stage 2, zero inputs fail, count-guard test first (wave 1)
+- [ ] 10-02-PLAN.md — TCMS-46 AC 1-3: E2E runner with failing and missing script handling, Makefile `;` chain fixed, exit-code audit, verification warning fixed at cause, gates recorded (wave 1, TDD)
+- [ ] 10-03-PLAN.md — TCMS-45 AC 2-3: suite exit contract, known-failure list with backlog ids, stages 8 and 9 fixed or listed, `make acceptance-test` recorded (wave 2, depends on 10-01 and 10-02, has a decision checkpoint)
+**Notes**: On `dev` the Stage 1 find already matches `*.yml` only (commit 428fb36); the TCMS-45 description refers to `main`. The `;`-chained verifier steps in the `test-e2e` affected branch are the likely reason TCMS-46 failures were swallowed; 10-02 confirms this from a log before fixing. `coverage-e2e` SKIPPED paths stay green (open item O-1).
