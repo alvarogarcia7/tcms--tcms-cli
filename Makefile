@@ -212,6 +212,7 @@ test-audit-verifier-keys: build-audit-verifier
 test: setup-python-for-test
 	${MAKE} test-unit
 	${MAKE} test-e2e
+	./test-acceptance/tests/test_stage1_discovery.sh
 	${MAKE} verify-testcases
 	${MAKE} strictdoc-validate
 # 	${MAKE} generate-docs-coverage

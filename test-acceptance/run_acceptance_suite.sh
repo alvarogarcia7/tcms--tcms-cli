@@ -53,6 +53,7 @@ source "$SCRIPT_DIR/acceptance_env.sh"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$PROJECT_ROOT/scripts/lib/find-binary.sh" || exit 1
 source "$PROJECT_ROOT/scripts/lib/logger.sh" || exit 1
+source "$SCRIPT_DIR/lib/discover_test_cases.sh" || exit 1
 
 # Default configuration
 VERBOSE=0
@@ -291,15 +292,20 @@ validate_test_cases() {
         return 1
     fi
     
-    # Find all test case YAML files
+    # Find all test case YAML files (*.yml and *.yaml, shared with Stage 2)
     local yaml_files=()
     while IFS= read -r -d '' file; do
         yaml_files+=("$file")
-    done < <(find "$TEST_CASES_DIR" -type f -name "*.yml" -print0 | sort -z)
-    
+    done < <(discover_test_case_files "$TEST_CASES_DIR")
+
     TOTAL_TEST_CASES=${#yaml_files[@]}
     log_info "Found $TOTAL_TEST_CASES test case YAML files"
     echo ""
+
+    # Zero inputs must fail the stage, not pass it (TCMS-45 AC 1)
+    if ! require_test_case_files "$TOTAL_TEST_CASES"; then
+        return 1
+    fi
     
     for yaml_file in "${yaml_files[@]}"; do
         local basename=$(basename "$yaml_file")
@@ -341,14 +347,15 @@ generate_test_scripts() {
     # Create scripts directory if it doesn't exist
     mkdir -p "$SCRIPTS_DIR"
     
-    # Find all test case YAML files
+    # Find all test case YAML files (same discovery as Stage 1)
     local yaml_files=()
     while IFS= read -r -d '' file; do
         yaml_files+=("$file")
-    done < <(find "$TEST_CASES_DIR" -type f -name "*.yml" -print0 | sort -z)
-    
+    done < <(discover_test_case_files "$TEST_CASES_DIR")
+
     for yaml_file in "${yaml_files[@]}"; do
-        local basename=$(basename "$yaml_file" .yml)
+        local basename=$(basename "$yaml_file")
+        basename="${basename%.*}"
         local script_file="$SCRIPTS_DIR/${basename}.sh"
         
         log_verbose "Generating: $basename.sh"
