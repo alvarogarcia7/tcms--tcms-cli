@@ -6,6 +6,7 @@ prints one JSON document on stdout.
 
 ```bash
 tcms vv metrics --root <DATA_ROOT> [--run <RUN_ID>] [--gate <PERCENT>] [--flaky-threshold <N>]
+                 [--stability-window <N>]
 ```
 
 | Option | Default | Meaning |
@@ -13,8 +14,9 @@ tcms vv metrics --root <DATA_ROOT> [--run <RUN_ID>] [--gate <PERCENT>] [--flaky-
 | `--root` | (required) | Directory with `runs/<RUN_ID>/test-run.yaml`, the test case files and `requirements.json` |
 | `--run` | last recorded run | Run to report. Runs are ordered by `started_at`, then run id |
 | `--plan` | all runs | Plan to report on: only runs whose `plan_id` equals it take part (selection, previous run, stability and `runsRecorded`). No such run is an error; `--run` must be a run of that plan |
-| `--gate` | `90` | Quality-gate threshold in percent, `50` to `100` (D-89). Other values are refused |
-| `--flaky-threshold` | `4` | Flips at or above which a case is `FLAKY` (D-97). Must be at least 1 |
+| `--gate` | `90` | Quality-gate threshold in percent, `50` to `100` (D-89). Other values are refused. No clap default: the effective default 90 applies when neither flag nor `vv-config.yaml` gives a value |
+| `--flaky-threshold` | `4` | Flips at or above which a case is `FLAKY` (D-97). Must be at least 1. No clap default; effective default 4 (see `--gate`) |
+| `--stability-window` | `12` | Number of most recent runs, up to the selected run, that the stability history covers. At least 1 |
 | `--schemas-root` (global) | `$TCMS_SCHEMAS_ROOT` or `schemas/` | Used to validate the test case files |
 
 The formulas follow the decisions D-95 to D-97 and the tcms-web reference snapshot in
@@ -101,7 +103,7 @@ pass; the tracker's closed state is not read. The reference counts defects from 
 
 ## Stability and flaky cases (D-97)
 
-For each case in the selected run, over the runs up to and including the selected run, oldest first:
+For each case in the selected run, over the last `--stability-window` runs (default 12) up to and including the selected run, oldest first:
 
 - Only PASSED and FAILED results count. BLOCKED, SKIPPED, UNTESTED and absent results are ignored.
 - A flip is a change between two neighbouring kept results.
@@ -110,12 +112,38 @@ For each case in the selected run, over the runs up to and including the selecte
 
 `stability.flakyCount` counts the `FLAKY` cases in the selected run.
 
+## Per-product settings (vv-config.yaml)
+
+If `<DATA_ROOT>/vv-config.yaml` exists, `tcms vv metrics` reads it so a CI job uses the same settings as Verdict:
+
+```yaml
+type: vv-config
+schema: tcms/vv-config.schema.v1.json
+gate_threshold_percent: 95   # integer, 50 to 100
+flaky_flip_threshold: 3      # integer, at least 1
+```
+
+- Precedence per parameter: flag over file over default (gate 90, flaky threshold 4, window 12).
+  The stability window has no file key; it comes from `--stability-window` or the default.
+- The `parameters` object of the output reports the value and its source (`file`, `flag` or `default`) for the
+  gate, the flaky threshold and the window (`stability_window_runs`).
+- A missing file keeps the previous behaviour. A wrong type, an unknown key or an out-of-range value fails, and the
+  message names the file and the key.
+- Window rule: the stability history is the last N runs up to and including the selected run.
+  Behaviour change: before, the history was all runs up to the selected run, so flips older than the window
+  (default 12 runs) no longer count. Use `--stability-window` with a large value to get the old result.
+- TCMS-47.2 AC 7 (validation against a vv-config JSON schema) is **blocked**: no such schema exists in this
+  repository, and none is invented. Until it is vendored, only the Rust checks above apply. The test
+  `vv_config_validates_against_schema` in `crates/tcms/tests/vv_config_cli.rs` is ignored with that reason.
+
 ## Output
 
 All field names are camelCase. Nullable fields are `null` as described.
 
 ```json
 {
+  "parameters":   { "gateThresholdPercent": {value, source}, "flakyThreshold": {value, source},
+                    "stability_window_runs": {value, source} }   (source: "file" | "flag" | "default"),
   "run":          { "runId", "startedAt", "finishedAt" (null while in progress), "provisional" },
   "gate":         { "gateThresholdPercent", "denominator", "counts": {passed, failed, blocked, skipped, untested},
                     "passRate": {"display", "exact"} | null, "verdict": PASSED|FAILED|NO_DATA,

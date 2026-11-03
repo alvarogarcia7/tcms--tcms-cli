@@ -239,3 +239,21 @@ fn parameters_block_reports_window_source() {
         Value::from("default")
     );
 }
+
+/// TCMS-47.2 AC 7: validation against tcms/vv-config.schema.json. Runs once the schema is vendored.
+#[test]
+#[ignore = "TCMS-47.2 AC 7: status blocked, no vv-config schema in repo (CONTEXT Q2)"]
+fn vv_config_validates_against_schema() {
+    let read = |name: &str| {
+        fs::read_to_string(fixtures().join("config").join(name).join("vv-config.yaml")).unwrap()
+    };
+    let ok: Result<Value, _> =
+        testcase_common::parse_and_validate_yaml_string(&read("valid"), repo_schemas(), "valid");
+    assert!(ok.is_ok(), "{ok:?}");
+    let bad: Result<Value, _> = testcase_common::parse_and_validate_yaml_string(
+        &read("wrong-type"),
+        repo_schemas(),
+        "wrong-type",
+    );
+    assert!(bad.is_err());
+}
