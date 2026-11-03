@@ -326,6 +326,84 @@ fn parameters_block_reports_window_source() {
     );
 }
 
+/// Three flips of SUT1_PASS_001 inside the default window of 12 runs (the last 12 of 14). Within the window the
+/// verdicts are fail, pass, fail, pass (three flips, last kept result passed); the runs before it are unchanged.
+fn set_pass_001_three_flips_in_window(root: &Path) {
+    for (run, verdict) in FIRST_FIVE_RUNS
+        .iter()
+        .zip(["pass", "pass", "fail", "pass", "fail"])
+    {
+        set_verdict(
+            &root.join("runs").join(run).join("test-run.yaml"),
+            "SUT1_PASS_001",
+            verdict,
+        );
+    }
+}
+
+#[test]
+fn file_flaky_threshold_changes_the_stability_verdict() {
+    let (_tmp, root) = sut1_root();
+    set_pass_001_three_flips_in_window(&root);
+
+    // No file: the default threshold of 4 is above the 3 flips, so the case is STABLE.
+    let default = report(&root, &[]);
+    let c = stability_of(&default, "SUT1_PASS_001");
+    assert_eq!(
+        (c["stability"].as_str(), c["flips"].as_u64()),
+        (Some("STABLE"), Some(3))
+    );
+
+    // The file's threshold of 3 is reached by the 3 flips, so the case is FLAKY.
+    use_config(&root, "valid");
+    let file = report(&root, &[]);
+    let c = stability_of(&file, "SUT1_PASS_001");
+    assert_eq!(
+        (c["stability"].as_str(), c["flips"].as_u64()),
+        (Some("FLAKY"), Some(3))
+    );
+}
+
+/// Make SUT1_CALC_001 fail in the selected run (RUN-32921). Its two cases are then one pass and one fail,
+/// a pass rate of 50 percent.
+fn fail_calc_001_in_selected_run(root: &Path) {
+    set_verdict(
+        &root.join("runs/RUN-32921/test-run.yaml"),
+        "SUT1_CALC_001",
+        "fail",
+    );
+}
+
+#[test]
+fn file_gate_changes_the_verdict_and_the_flag_overrides_it() {
+    let (_tmp, root) = sut1_root();
+    fail_calc_001_in_selected_run(&root);
+
+    // 50 percent is below the default gate of 90: FAILED.
+    let none = report(&root, &[]);
+    assert_eq!(none["gate"]["gateThresholdPercent"], 90);
+    assert_eq!(none["gate"]["verdict"], "FAILED");
+
+    // The file's gate of 50 is reached by 50 percent: PASSED.
+    use_config(&root, "gate-50");
+    let file = report(&root, &[]);
+    assert_eq!(file["gate"]["gateThresholdPercent"], 50);
+    assert_eq!(file["gate"]["verdict"], "PASSED");
+    assert_eq!(
+        file["parameters"]["gateThresholdPercent"],
+        json!({"value": 50, "source": "file"})
+    );
+
+    // The flag of 90 replaces the file's 50, so the verdict is FAILED again.
+    let flagged = report(&root, &["--gate", "90"]);
+    assert_eq!(flagged["gate"]["gateThresholdPercent"], 90);
+    assert_eq!(flagged["gate"]["verdict"], "FAILED");
+    assert_eq!(
+        flagged["parameters"]["gateThresholdPercent"],
+        json!({"value": 90, "source": "flag"})
+    );
+}
+
 /// TCMS-47.2 AC 7: validation against `tcms/vv-config.schema.json` passes for a valid file and fails for an
 /// invalid one. Status: BLOCKED. The schema is not in this repository (CONTEXT Q2), so no schema is invented
 /// here. Remove the `ignore` once the schema is vendored under `schemas/`.

@@ -11,6 +11,7 @@ temporary directory and, where needed, copies one of these files to `<DATA_ROOT>
 | `out-of-range/` | `vv-config.yaml` | out-of-range value | exit non-zero; message names the file and `gate_threshold_percent` (49 is below 50) |
 | `window/` | `vv-config.yaml` | file window used, flag over file (D-47-4) | `stability_window_runs` 14 from `source: file`; flag `--stability-window 12` gives `source: flag` |
 | `window-zero/` | `vv-config.yaml` | window below 1 (D-47-4) | exit non-zero; message names the file and `stability_window_runs` |
+| `gate-50/` | `vv-config.yaml` | file gate changes the verdict; flag overrides it | gate 50 from `source: file` gives PASSED for a 50 percent run; `--gate 90` gives FAILED |
 
 `golden-sut1-default.json` is the output of `tcms vv metrics --root sut-1 --now 2026-01-01T00:00:00Z`
 from the binary before TCMS-47.2 (no `parameters` block). The default-case test requires that every other
