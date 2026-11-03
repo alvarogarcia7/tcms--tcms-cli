@@ -271,3 +271,11 @@ Entry format:
 - **Decision**: (a). No zero-case golden is made and no source is changed. The refusal is the specified behaviour: docs/VV_METRICS.md says a selected run with zero test case results is an error, exits non-zero, names the run, and is not reported as `NO_DATA`.
 - **Why**: TCMS-47 already specifies the refusal; rendering a document for it would contradict that and add an output no command produces.
 - **Supersedes / affects**: 09-03 AC 10 and the "Zero-test-cases" deviation; 09-03-SUMMARY.md
+
+## D-08-2: replay of recorded runs vs the spec stages (plan 08-02)
+- **Phase / stage**: 8 / plan (08-02)
+- **Question**: 08-02-PLAN.md replaced the generate, execute and verify stages of 08-SPEC.md section 2 with a replay of recorded runs/ records. Is the replay an addition or a replacement?
+- **Options considered**: (a) the replay is an additional, separately named stage after the spec's stages, section 2 unchanged; (b) the replay replaces section 2 stages, which needs the user's sign-off, so the plan keeps section 2 and drops the replay.
+- **Decision**: (b). The plan text says the replay stands in for generate, execute and verify, so it removes spec stages rather than adding coverage; (a) does not apply. The plan keeps the section 2 stages and drops the replay. Sections 2.1 and 6 (D-08-1: exit-code equivalence; failing-test injection that must run execute and verify) are unchanged.
+- **Why**: only the user may change the spec's stage list; section 6 needs real execute and verify stages to detect the injected failure.
+- **Supersedes / affects**: 08-02-PLAN.md line 82 only (other plan lines that mention the replay, D-08-A and the stage log still need follow-up edits); 08-SPEC.md unchanged
