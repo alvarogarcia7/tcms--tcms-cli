@@ -109,8 +109,9 @@ jobs:
 
       - name: Create or update release
         run: |
-          prerelease=""
-          case "$TAG" in *-rc*) prerelease="--prerelease" ;; esac
+          # Always a prerelease. GitHub only builds the release correctly when the tag
+          # includes "-rc" (for example v2026-11-03_new-crate-rc.1); see docs/RELEASE.md.
+          prerelease="--prerelease"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" dist/*.zip --clobber
           else
