@@ -18,6 +18,19 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 source "$PROJECT_ROOT/scripts/lib/find-binary.sh" || exit 1
 source "$PROJECT_ROOT/scripts/lib/logger.sh" || exit 1
 
+# logger.sh's fail() only prints. Count failures here so the script's exit status reflects them (TCMS-46 D-1).
+FAILURE_COUNT=0
+fail() {
+    FAILURE_COUNT=$((FAILURE_COUNT + 1))
+    echo -e "${RED}✗${NC} $1" >&2
+}
+finish_run() {
+    if [[ $FAILURE_COUNT -gt 0 ]]; then
+        echo -e "${RED}✗${NC} $FAILURE_COUNT check(s) failed" >&2
+        exit 1
+    fi
+}
+
 # Find audit-verifier binary using workspace-aware search
 cd "$PROJECT_ROOT"
 AUDIT_VERIFIER_BIN=$(find_binary "audit-verifier")
@@ -533,4 +546,5 @@ echo "==========================================="
 echo ""
 
 pass "All tests passed!"
+finish_run
 exit 0
