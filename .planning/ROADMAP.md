@@ -119,6 +119,7 @@ Plans:
 | 3. Summary, Gaps and Problem Reports | 0/0 | Not started | - |
 | 4. AsciiDoc and Machine-Readable Output | 0/0 | Not started | - |
 | 5. Pipeline Use: Exit Codes and E2E | 0/0 | Not started | - |
+| 9. TCMS-47 V&V metrics refinement | 0/3 | Not started | - |
 
 ### Phase 6: Requirement lookup: tcms requirements locate verifies that requirement IDs exist in the configured Jira backlog or StrictDoc export
 
@@ -164,3 +165,15 @@ Plans:
 - [ ] 08-05-PLAN.md — CI wiring in .gitlab-ci.yml and .github/workflows/workspace.yml, Make target, quality gates recorded (wave 5)
 **Notes**: The spec names `tcms report`; no such command exists. The report and trace-matrix commands are `test-executor report` and `test-executor trace-matrix` (crates/test-executor). Scenarios use `--no-coverage-check` on trace-matrix, since full-one and half would otherwise fail the normal-range and robustness check. mermaid-cli (mmdc) is not installed locally; the diagram check is recorded honestly.
 
+### Phase 9: TCMS-47 V&V metrics refinement
+
+**Goal**: The TCMS-47 family is finished in tcms-cli: the per-case results of a run are combined into one run record (TCMS-47.3), `tcms vv metrics` reads the per-product `vv-config.yaml` and a stability window (TCMS-47.2), and `tcms-vv-report` renders the metrics as Markdown or AsciiDoc without computing anything (TCMS-47.1). Acceptance criteria of the backlog tasks are the source of truth; context and open items are in `.planning/phases/09-tcms-47-vv-metrics-refinement/09-CONTEXT.md`.
+**Requirements**: TCMS-47.3, TCMS-47.2, TCMS-47.1, TCMS-47
+**Depends on:** Phase 8
+**Plans:** 3 plans
+
+Plans:
+- [ ] 09-01-PLAN.md — TCMS-47.3 producer: `tcms vv combine` writes one test-run.yaml and verification-results.yaml from the per-case files, duplicate and verdict rules, validation before write, 63-file fixture (wave 1)
+- [ ] 09-02-PLAN.md — TCMS-47.2 consumer: vv-config.yaml reader, `--stability-window`, parameter sources in output, error cases, schema check via checkpoint (wave 2, depends on 09-01)
+- [ ] 09-03-PLAN.md — TCMS-47.1 report: `tcms-vv-report` crate, Markdown and AsciiDoc, golden files for sut-1 and derived fixtures, exit codes, docs and DATA_FLOW 4.5 (wave 3, depends on 09-02)
+**Notes**: Open items (snake_case vs camelCase field, missing vv-config and verification-results schemas, combinator command name) are listed in 09-CONTEXT.md and resolved at the plan checkpoints.
