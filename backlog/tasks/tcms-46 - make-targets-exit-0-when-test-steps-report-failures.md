@@ -1,9 +1,10 @@
 ---
 id: TCMS-46
-title: 'make test and coverage-e2e exit 0 when test steps report failures'
+title: make test and coverage-e2e exit 0 when test steps report failures
 status: To Do
 assignee: []
 created_date: '2026-10-31T10:00:00Z'
+updated_date: '2026-11-03T14:16:00Z'
 labels:
   - bug
   - ci
@@ -23,7 +24,7 @@ ordinal: 46000
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 A failing E2E script or failing verifier step makes make test and make coverage-e2e exit non-zero
-- [ ] #2 The "Verification output not generated" warning is either fixed or fails the run
+- [x] #2 The "Verification output not generated" warning is either fixed or fails the run
 - [ ] #3 Existing passing runs stay green
 <!-- AC:END -->
 

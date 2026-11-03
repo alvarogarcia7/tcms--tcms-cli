@@ -4,6 +4,7 @@ title: 'Acceptance suite finds no test cases: searches *.yaml, cases are *.yml'
 status: To Do
 assignee: []
 created_date: '2026-10-31T09:00:00Z'
+updated_date: '2026-11-03T14:16:00Z'
 labels:
   - bug
   - acceptance
@@ -24,9 +25,9 @@ Found while running the Phase 3 gates on branch traceability-matrix-report. Pres
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Stage 1 finds all 89 test case files (decide: rename to .yaml or match both extensions, and keep schema validation working)
-- [ ] #2 make acceptance-test exits non-zero when any stage has failures
-- [ ] #3 Stages 8 and 9 pass or are documented as known failures with a backlog reference
+- [x] #1 Stage 1 finds all 89 test case files (decide: rename to .yaml or match both extensions, and keep schema validation working)
+- [x] #2 make acceptance-test exits non-zero when any stage has failures
+- [x] #3 Stages 8 and 9 pass or are documented as known failures with a backlog reference
 <!-- AC:END -->
 
 ## Definition of Done
