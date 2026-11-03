@@ -2,7 +2,7 @@
 id: TCMS-47.2
 title: >-
   Read the per-product vv-config.yaml and add a stability-window option to tcms vv metrics
-status: Done
+status: In Progress
 assignee: []
 created_date: '2026-11-03T00:00:00Z'
 updated_date: '2026-11-03T00:00:00Z'
