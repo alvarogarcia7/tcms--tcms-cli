@@ -279,3 +279,25 @@ Entry format:
 - **Decision**: (b). The plan text says the replay stands in for generate, execute and verify, so it removes spec stages rather than adding coverage; (a) does not apply. The plan keeps the section 2 stages and drops the replay. Sections 2.1 and 6 (D-08-1: exit-code equivalence; failing-test injection that must run execute and verify) are unchanged.
 - **Why**: only the user may change the spec's stage list; section 6 needs real execute and verify stages to detect the injected failure.
 - **Supersedes / affects**: 08-02-PLAN.md line 82 only (other plan lines that mention the replay, D-08-A and the stage log still need follow-up edits); 08-SPEC.md unchanged
+
+## D-10-1: Makefile reads .env as NAME=value lines only (phase 10, D-4)
+- **Phase / stage**: 10 / execute (10-02 blocker D-4)
+- **Question**: `.env` is a bash snippet (conditionals, `source`, `export`). The Makefile's `-include .env` parsed it as make syntax, so every make run stopped with `missing separator`.
+- **Options considered**: (a) edit the user's `.env` into make syntax; (b) move the snippet elsewhere; (c) keep `-include` and let make parse it; (d) filter `.env` in the Makefile so only `NAME=value` lines are read.
+- **Decision**: (d). The Makefile loads `grep -E '^[A-Za-z_][A-Za-z0-9_]*=[^$`]*$'` output through `$(eval)`, guarded by `ifneq ($(wildcard .env),)`. `.env` is not edited.
+- **Why**: the user asked for the Makefile include to change and for `.env` to stay as it is. CARGO_BUILD_JOBS from `.env` still works (checked in a scratch directory: `jobs=8`, shell lines ignored). Values containing `$` or backticks are not loaded.
+- **Supersedes / affects**: the `-include .env` comment in the Makefile; D-4 in deferred-items.md
+
+## D-10-2: expect cannot be installed here (phase 10, D-3)
+- **Phase / stage**: 10 / execute (10-02 blocker D-3)
+- **Question**: check_environment.sh requires `expect`, which is not installed. Can it be installed?
+- **Options considered**: (a) delete or relax the check; (b) `apt-get download` the .deb and extract it into a scratch directory; (c) record it as a user action.
+- **Decision**: (c). No sudo on this machine (`sudo: command not found`, uid 1001). The check is kept unchanged. `make test` stays red at check_environment.sh until the user runs `sudo apt-get install -y expect`. Option (b) was rejected because it puts an unpackaged binary on PATH outside the package manager.
+- **Why**: D-46-3 forbids weakening a check to get a green run. Removing the check would hide a real environment gap.
+- **Supersedes / affects**: D-3 in deferred-items.md; the make test exit code in the phase report
+
+## D-10-3: make gates run with ~/.cargo/bin on PATH
+- **Phase / stage**: 10 / execute
+- **Question**: `cargo-llvm-cov` and `tpdg` are in `/home/orca/.cargo/bin`, which is not on the shell PATH. Without it, coverage-e2e takes the SKIPPED branch.
+- **Decision**: run every make gate with `PATH=/home/orca/.cargo/bin:$PATH` and `CARGO_HOME=/home/orca/.cargo`. The Makefile is not changed for this. SKIPPED is never counted as a pass.
+- **Supersedes / affects**: O-1 (coverage-e2e SKIPPED handling) is unchanged
