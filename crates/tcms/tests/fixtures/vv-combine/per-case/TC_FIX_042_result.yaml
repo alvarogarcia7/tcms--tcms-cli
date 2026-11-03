@@ -1,0 +1,24 @@
+type: test_result
+schema: tcms/test-result.schema.v1.json
+test_case_id: TC_FIX_042
+description: Fixture case TC_FIX_042 (layout of scripts/convert_verification_to_result_yaml.py)
+sequences:
+  - sequence_id: 1
+    name: Fixture sequence
+    step_results:
+      - Pass:
+          step: 1
+          description: step one
+      - Fail:
+          step: 2
+          description: step two
+          expected: {success: true, result: '0', output: ''}
+          actual_result: 1
+          actual_output: ''
+          reason: Fixture failure
+    all_steps_passed: false
+total_steps: 2
+passed_steps: 1
+failed_steps: 1
+not_executed_steps: 0
+overall_pass: false
