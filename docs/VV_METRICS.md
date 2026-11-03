@@ -137,6 +137,41 @@ All field names are camelCase. Nullable fields are `null` as described.
 - `loadSummary.distinctCases` counts the ids of the valid case files and the test cases of the verification
   results in all runs, each id once.
 
+## Combining per-case results (tcms vv combine)
+
+`tcms vv combine` turns the per-case results of one run into the run record that `tcms vv metrics` reads
+(TCMS-47.3). It is the producer; `tcms vv metrics` is still read-only.
+
+```bash
+tcms vv combine --root <DATA_ROOT> --run RUN-42 --plan PLAN-7 \
+  --build-id fw-1.4.2 --environment "Staging bench" --tester ci-bot
+```
+
+Input, under `runs/<RUN_ID>/`:
+
+- `per-case/<KEY>_result.yaml`: one `type: test_result` file per case, as written by
+  `scripts/convert_verification_to_result_yaml.py` (`test_case_id`, `total_steps`, `passed_steps`,
+  `failed_steps`, `overall_pass`).
+- `execution_logs/<KEY>_execution_log.json`: the execution log of the case. Its `timestamp` entries give the
+  case's start and finish. `KEY` is the file name without `_result.yaml`; it equals the test case id for
+  ordinary files.
+
+Output: `test-run.yaml` and `verification-results.yaml` in the same run folder. Both are validated before
+either is written. A failing validation names the problem and writes nothing.
+
+Rules (see `docs/RUN_RECORD_FORMAT.md`):
+
+- **Verdict:** a case with steps and none executed is `not_executed`. Otherwise `overall_pass: true` gives
+  `pass` and `false` gives `fail`.
+- **Duplicates:** when a test case id has several attempts, the executed attempt with the latest start wins.
+  A `not_executed` attempt never replaces an executed one; it counts only when no attempt was executed.
+- **Run times:** `started_at` is the earliest and `finished_at` the latest case timestamp of the run.
+- **Metadata:** `plan_id`, `build_id`, `environment` and `tester` come from the flags. The per-case files do
+  not carry them. `build_id`, `environment` and `tester` are required by the test-run schema, so a missing one
+  makes the command fail.
+- **Layout of `verification-results.yaml`:** there is no schema for it in the repository yet. The command
+  checks the fields that `tcms vv metrics` reads (`test_case_id`, `total_steps`, `passed_steps`) instead.
+
 ## Schema validation (deferred)
 
 The result objects are to be published in tcms-schemas (ISSUE-tcms-schemas-vv-metrics.md). Until then, this
@@ -154,6 +189,10 @@ command.
 - `crates/tcms/tests/fixtures/vv-metrics/sut-1/`: recorded SUT-1 runs, not edited.
 - `crates/tcms/tests/fixtures/vv-metrics/derived/`: failing, no-data, blocked-only and skipped cases, each with
   a `DERIVED_FROM` file and the expected figures in `derived/README.md`.
+- `crates/tcms/tests/fixtures/vv-combine/`: one run of 62 cases in the layout of the conversion script, with a
+  duplicate case and three not-executed cases. Layout and expected figures: its `README.md`.
+- `crates/tcms/tests/vv_combine_cli.rs`: `tcms vv combine` on that fixture, the duplicate rule, the
+  not_executed rule, the read-back by `tcms vv metrics`, and the no-write-on-failure rule.
 - `crates/tcms/tests/vv_metrics_cli.rs`: the CLI on the fixtures; `crates/tcms/src/vvmetrics.rs` has the unit
   tests for the boundaries (gate exactly reached, one below, denominator zero, all skipped, all untested,
   only blocked, delta signs, flip boundaries).

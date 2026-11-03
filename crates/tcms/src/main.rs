@@ -9,6 +9,7 @@ mod refcmd;
 mod reqcmd;
 mod synccmd;
 mod vvcmd;
+mod vvcombine;
 mod vvmetrics;
 
 use anyhow::Result;

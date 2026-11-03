@@ -15,6 +15,7 @@ use serde_json::{json, Value as Json};
 use testcase_common::load_and_validate_yaml;
 
 use crate::refcmd::Context;
+use crate::vvcombine;
 use crate::vvmetrics::{self, Coverage, Ratio, Stability, Status};
 
 /// At most this many case files with schema errors are listed (as VvLoadSummarizer.MAX_ERRORS).
@@ -46,6 +47,28 @@ pub enum VvCommand {
         /// Fixing it makes the output byte-for-byte reproducible.
         #[arg(long)]
         now: Option<String>,
+    },
+    /// Combine the per-case results of one run (runs/<RUN>/per-case, runs/<RUN>/execution_logs)
+    /// into runs/<RUN>/test-run.yaml and runs/<RUN>/verification-results.yaml (TCMS-47.3)
+    Combine {
+        /// Root of the recorded V&V data
+        #[arg(long)]
+        root: PathBuf,
+        /// Run folder name under runs/ to combine
+        #[arg(long)]
+        run: String,
+        /// Plan the run executes (`plan_id`)
+        #[arg(long)]
+        plan: Option<String>,
+        /// Build under test (`build_id`; required by the test-run schema)
+        #[arg(long)]
+        build_id: Option<String>,
+        /// Environment description (required by the test-run schema)
+        #[arg(long)]
+        environment: Option<String>,
+        /// Who executed the run (required by the test-run schema)
+        #[arg(long)]
+        tester: Option<String>,
     },
 }
 
@@ -84,6 +107,38 @@ pub fn run(ctx: &Context, cmd: VvCommand) -> Result<()> {
             }
             Ok(())
         }
+        VvCommand::Combine {
+            root,
+            run,
+            plan,
+            build_id,
+            environment,
+            tester,
+        } => {
+            if !root.is_dir() {
+                bail!("V&V data root {} is not a directory", root.display());
+            }
+            let meta = vvcombine::RunMetadata {
+                run_id: &run,
+                plan_id: plan.as_deref(),
+                build_id: build_id.as_deref(),
+                environment: environment.as_deref(),
+                tester: tester.as_deref(),
+            };
+            // Both documents are validated inside combine(); nothing is written when that fails.
+            let combined = vvcombine::combine(&root, &meta, ctx.schemas_root())?;
+            let run_dir = root.join("runs").join(&run);
+            write_atomic(&run_dir.join("test-run.yaml"), combined.test_run.as_bytes())?;
+            write_atomic(
+                &run_dir.join("verification-results.yaml"),
+                combined.verification_results.as_bytes(),
+            )?;
+            println!(
+                "combined run {run}: {} cases, {} pass, {} fail, {} not_executed",
+                combined.cases, combined.pass, combined.fail, combined.not_executed
+            );
+            Ok(())
+        }
     }
 }
 
@@ -109,7 +164,7 @@ fn resolve_now(arg: Option<&str>, env: Option<&str>) -> Result<String> {
 
 /// Write `bytes` to `path` through a temporary file in the same directory, so a reader never sees a
 /// partial report. Parent directories are created.
-fn write_atomic(path: &Path, bytes: &[u8]) -> Result<()> {
+pub(crate) fn write_atomic(path: &Path, bytes: &[u8]) -> Result<()> {
     if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
         fs::create_dir_all(parent).with_context(|| format!("creating {}", parent.display()))?;
     }
