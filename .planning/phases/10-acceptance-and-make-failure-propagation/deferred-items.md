@@ -73,3 +73,36 @@ Step 1 regenerates testcases/generated_samples/*.yml. The 8 regenerated files we
 
 The coverage-e2e target prints SKIPPED and exits 0 when cargo-llvm-cov is absent or SKIP_COVERAGE=1.
 This is recorded as UNVERIFIED in 10-02-SUMMARY.md, not as a passed 70% gate.
+
+## Resolution (owner decision: D-1 and D-2 are in scope)
+
+### D-1: partly done (commit efa6790)
+
+The six scripts now count fail() calls and exit 1 from finish_run when any check failed. No check logic
+was changed. Each script was run directly with bash (environment: verifier/audit binaries in target/debug,
+jq present, expect absent, not needed by these scripts):
+
+| Script | Direct run | Open reason |
+|--------|-----------|-------------|
+| crates/audit-verifier/tests/integration/test_audit_key_scenarios.sh | exit 1 (2 checks) | `verify-audit-signature --verbose` prints nothing: the binary never initializes a logger (`log::info!` is dropped). Product bug in audit-verifier, outside these files. |
+| crates/audit-verifier/tests/integration/test_audit_verifier_e2e.sh | exit 1 (2 checks) | Same cause as above. |
+| crates/testcase-manager/tests/integration/test_verifier_e2e.sh | exit 1 (7 checks) | Its temp config fixture has no `type`/`schema` fields, which CLAUDE.md requires; the verifier rejects it and the JSON and folder checks cascade. Fixture fix not made (minimal-edit instruction). |
+| crates/testcase-manager/tests/integration/test_verifier_edge_cases_e2e.sh | exit 1 (21 checks) | total_test_cases is 20, expected 15; per-case step lookups return empty. Not investigated further. |
+| crates/testcase-manager/tests/integration/test_verifier_container_e2e.sh | exit 0 | Open: none. |
+| crates/testcase-manager/tests/integration/smoke_test.sh | exit 0 | Open: none. |
+
+So D-1 is done as a mechanism (all six gate on failures), but four of the six still have failing checks
+and are NOT green. The gate exposed these failures, which were previously hidden.
+
+### D-2: done (commit 8d852a8)
+
+container_config.yml: `schema` changed to `tcms/container-config.schema.v1.json` (the existing file under
+schemas/tcms/), and `type` changed from `test_results_container` to `container_config` (the const that
+schema requires). Nothing else changed. validate-yaml passes, and `verifier --config container_config.yml`
+in single-file mode exits 0. The verifier prints a WARN about no test run record; this is not a failure.
+
+### Still open: D-3, D-4 (unchanged; they block `make`, not these scripts)
+
+### Test E after Task A
+
+tests/integration/test_run_e2e_scripts.sh: 6 passed, 0 failed. Audit reports 0 deferred out-of-scope flags.
