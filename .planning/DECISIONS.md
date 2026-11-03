@@ -246,6 +246,7 @@ Entry format:
 - **Decision**: (a). Add `schemas/tcms/verification-results.schema.json` (root `type`, `schema`, `run_id`, and `results` keyed by test_case_id, each requiring integer `total_steps` and `passed_steps`; step results optional). Document it in docs/RUN_RECORD_FORMAT.md (Files section) and make the combinator validate against it before writing, replacing the field-only `check_steps`. Set the file's `schema:` header to this schema's URI.
 - **Why**: keeps schema-validated output and the format doc as the single source of truth (D-47-1); code-only checks would hide the format.
 - **Supersedes / affects**: 09-01 AC 2, open item Q3; 09-01-SUMMARY.md
+- **Amendment (2026-11-03)**: the list key in `verification-results.yaml` is `test_results`, not `results` as written above. The code (`crates/tcms/src/vvcombine.rs`) and the schema `schemas/tcms/verification-results.schema.json` both use `test_results`, and the `tcms vv metrics` reader expects that name. The original entry is unchanged.
 
 ## D-47-3: "missing run" verdict mapping (AC 4, plan 09-01)
 - **Phase / stage**: 9 / execute (09-01 gate)

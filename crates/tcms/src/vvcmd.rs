@@ -127,12 +127,51 @@ pub fn run(ctx: &Context, cmd: VvCommand) -> Result<()> {
             };
             // Both documents are validated inside combine(); nothing is written when that fails.
             let combined = vvcombine::combine(&root, &meta, ctx.schemas_root())?;
+            // Both documents go to temporary files first; they are renamed into place only when both
+            // writes succeeded. A failed write removes the temporary files and leaves the run as it was.
             let run_dir = root.join("runs").join(&run);
-            write_atomic(&run_dir.join("test-run.yaml"), combined.test_run.as_bytes())?;
-            write_atomic(
-                &run_dir.join("verification-results.yaml"),
-                combined.verification_results.as_bytes(),
-            )?;
+            let targets = [
+                (run_dir.join("test-run.yaml"), combined.test_run.as_bytes()),
+                (
+                    run_dir.join("verification-results.yaml"),
+                    combined.verification_results.as_bytes(),
+                ),
+            ];
+            let pid = std::process::id();
+            let temps: Vec<PathBuf> = targets
+                .iter()
+                .map(|(target, _)| {
+                    let mut name = target.file_name().unwrap_or_default().to_os_string();
+                    name.push(format!(".tmp-{pid}"));
+                    target.with_file_name(name)
+                })
+                .collect();
+            let remove_temps = || {
+                for tmp in &temps {
+                    let _ = fs::remove_file(tmp);
+                }
+            };
+            let staged = targets
+                .iter()
+                .zip(&temps)
+                .try_for_each(|((_, bytes), tmp)| {
+                    fs::write(tmp, bytes).with_context(|| format!("writing {}", tmp.display()))
+                });
+            if let Err(err) = staged {
+                remove_temps();
+                return Err(err);
+            }
+            let renamed = targets
+                .iter()
+                .zip(&temps)
+                .try_for_each(|((target, _), tmp)| {
+                    fs::rename(tmp, target)
+                        .with_context(|| format!("replacing {}", target.display()))
+                });
+            if let Err(err) = renamed {
+                remove_temps();
+                return Err(err);
+            }
             println!(
                 "combined run {run}: {} cases, {} pass, {} fail, {} not_executed",
                 combined.cases, combined.pass, combined.fail, combined.not_executed

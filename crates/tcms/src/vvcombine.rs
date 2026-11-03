@@ -82,7 +82,7 @@ pub struct CaseAttempt {
 
 /// The attempt that counts for a case. Among executed attempts the latest `started_at` wins. A
 /// `not_executed` attempt counts only when no attempt was executed, so it never replaces an executed one.
-pub fn winner(attempts: &[CaseAttempt]) -> &CaseAttempt {
+pub fn winner(attempts: &[CaseAttempt]) -> Result<&CaseAttempt> {
     let executed: Vec<&CaseAttempt> = attempts
         .iter()
         .filter(|a| a.verdict.is_executed())
@@ -94,7 +94,7 @@ pub fn winner(attempts: &[CaseAttempt]) -> &CaseAttempt {
     };
     pool.into_iter()
         .max_by(|a, b| (a.first, &a.key).cmp(&(b.first, &b.key)))
-        .expect("winner() is called with at least one attempt")
+        .ok_or_else(|| anyhow!("no attempt to choose a winner from"))
 }
 
 /// The rendered documents and the verdict counts of one combined run.
@@ -196,7 +196,10 @@ pub fn combine(root: &Path, meta: &RunMetadata, schemas_root: &str) -> Result<Co
             .or_default()
             .push(attempt.clone());
     }
-    let winners: Vec<&CaseAttempt> = by_case.values().map(|v| winner(v)).collect();
+    let mut winners: Vec<&CaseAttempt> = Vec::with_capacity(by_case.len());
+    for (case, group) in &by_case {
+        winners.push(winner(group).with_context(|| format!("choosing the attempt for {case}"))?);
+    }
 
     let started = attempts.iter().filter_map(|a| a.first).min();
     let finished = attempts.iter().filter_map(|a| a.last).max();
@@ -411,9 +414,9 @@ mod tests {
             attempt("CASE__a1", Verdict::Pass, Some("2026-11-02T06:00:00Z")),
             attempt("CASE__a2", Verdict::Fail, Some("2026-11-02T09:00:00Z")),
         ];
-        assert_eq!(winner(&a).key, "CASE__a2");
+        assert_eq!(winner(&a).unwrap().key, "CASE__a2");
         let reversed = [a[1].clone(), a[0].clone()];
-        assert_eq!(winner(&reversed).key, "CASE__a2");
+        assert_eq!(winner(&reversed).unwrap().key, "CASE__a2");
     }
 
     #[test]
@@ -426,7 +429,7 @@ mod tests {
                 Some("2026-11-02T10:00:00Z"),
             ),
         ];
-        assert_eq!(winner(&a).verdict, Verdict::Pass);
+        assert_eq!(winner(&a).unwrap().verdict, Verdict::Pass);
     }
 
     #[test]
@@ -443,7 +446,12 @@ mod tests {
                 Some("2026-11-02T09:00:00Z"),
             ),
         ];
-        assert_eq!(winner(&a).key, "CASE__a2");
+        assert_eq!(winner(&a).unwrap().key, "CASE__a2");
+    }
+
+    #[test]
+    fn winner_of_no_attempts_is_an_error() {
+        assert!(winner(&[]).is_err());
     }
 
     #[test]
@@ -497,5 +505,50 @@ mod tests {
     fn steps_schema_rejects_non_integer_counts() {
         let bad = steps_doc("- test_case_id: A\n  total_steps: '2'\n  passed_steps: 1\n");
         assert!(validate_steps(&bad).is_err());
+    }
+
+    /// AC 4 (D-47-3): a case with no per-case file gets no entry, even when its execution log exists.
+    #[test]
+    fn case_without_a_per_case_file_is_absent_from_the_output() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        let run_dir = tmp.path().join("runs").join("RUN-ABS");
+        fs::create_dir_all(run_dir.join("per-case")).unwrap();
+        fs::create_dir_all(run_dir.join("execution_logs")).unwrap();
+        let result = "type: test_result\nschema: tcms/test-result.schema.v1.json\n\
+                      test_case_id: CASE_A\ndescription: A\nsequences: []\ntotal_steps: 2\n\
+                      passed_steps: 2\nfailed_steps: 0\nnot_executed_steps: 0\noverall_pass: true\n";
+        fs::write(run_dir.join("per-case").join("CASE_A_result.yaml"), result).unwrap();
+        let log = "[{\"test_sequence\": 1, \"step\": 1, \"command\": \"true\", \"exit_code\": 0, \
+                   \"output\": \"\", \"result_verification_pass\": true, \
+                   \"output_verification_pass\": true, \"timestamp\": \"2026-11-02T06:00:00Z\"}]\n";
+        fs::write(
+            run_dir
+                .join("execution_logs")
+                .join("CASE_A_execution_log.json"),
+            log,
+        )
+        .unwrap();
+        // CASE_B has an execution log but no per-case file: it must not appear in either document.
+        fs::write(
+            run_dir
+                .join("execution_logs")
+                .join("CASE_B_execution_log.json"),
+            log,
+        )
+        .unwrap();
+
+        let meta = RunMetadata {
+            run_id: "RUN-ABS",
+            plan_id: None,
+            build_id: Some("build-abs"),
+            environment: Some("bench"),
+            tester: Some("tester"),
+        };
+        let schemas = concat!(env!("CARGO_MANIFEST_DIR"), "/../../schemas");
+        let combined = combine(tmp.path(), &meta, schemas).unwrap();
+        assert_eq!(combined.cases, 1);
+        assert!(combined.test_run.contains("CASE_A"));
+        assert!(!combined.test_run.contains("CASE_B"));
+        assert!(!combined.verification_results.contains("CASE_B"));
     }
 }
