@@ -1,5 +1,5 @@
-type: test_results_container
-schema: tcms/testcase_results_container.schema.v1.json
+type: container_config
+schema: tcms/container-config.schema.v1.json
 title: Test Execution Results
 project: Test Case Manager - Verification Results
 environment: Development
