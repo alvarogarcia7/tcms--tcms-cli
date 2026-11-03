@@ -76,7 +76,13 @@ fn tcms_in(dir: &Path, cfg: &Path, args: &[&str], token: Option<&str>) -> Output
         .args(["--config", &cfg.to_string_lossy()])
         .args(["--schemas-root", &format!("{}/schemas/", root().display())])
         .args(args)
-        .env_remove(ENV);
+        .env_remove(ENV)
+        // CI sets a relative LLVM_PROFILE_FILE under coverage builds, so the child writes its
+        // profile into the working directory this test snapshots. Send it to the temp dir.
+        .env(
+            "LLVM_PROFILE_FILE",
+            std::env::temp_dir().join("tcms-%p-%m.profraw"),
+        );
     if let Some(t) = token {
         cmd.env(ENV, t);
     }
@@ -90,14 +96,16 @@ fn text(o: &Output) -> (String, String) {
     )
 }
 
-fn snapshot(dir: &Path) -> Vec<(String, String)> {
-    let mut out: Vec<(String, String)> = std::fs::read_dir(dir)
+/// Name and raw bytes of every entry in `dir`. Bytes, not text: a stray binary file must show up
+/// as a difference in the assertion, not as a panic inside this helper.
+fn snapshot(dir: &Path) -> Vec<(String, Vec<u8>)> {
+    let mut out: Vec<(String, Vec<u8>)> = std::fs::read_dir(dir)
         .unwrap()
         .map(|e| {
             let p = e.unwrap().path();
             (
                 p.file_name().unwrap().to_string_lossy().into_owned(),
-                std::fs::read_to_string(&p).unwrap(),
+                std::fs::read(&p).unwrap(),
             )
         })
         .collect();
