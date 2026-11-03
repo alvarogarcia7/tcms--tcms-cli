@@ -69,6 +69,12 @@ fn locate(dir: &Path, args: &[&str]) -> Output {
         .args(["requirements", "locate"])
         .args(args)
         .env_remove(TOKEN_ENV)
+        // CI sets a relative LLVM_PROFILE_FILE under coverage builds, so the child writes its
+        // profile into the working directory this test snapshots. Send it to the temp dir.
+        .env(
+            "LLVM_PROFILE_FILE",
+            std::env::temp_dir().join("tcms-%p-%m.profraw"),
+        )
         .output()
         .unwrap()
 }
@@ -85,15 +91,16 @@ fn code(o: &Output) -> Option<i32> {
     o.status.code()
 }
 
-/// Names and contents of every entry in `dir`, sorted.
-fn snapshot(dir: &Path) -> Vec<(String, String)> {
-    let mut out: Vec<(String, String)> = std::fs::read_dir(dir)
+/// Names and raw bytes of every entry in `dir`, sorted. Bytes, not text: a stray binary file must
+/// show up as a difference in the assertion, not as a panic inside this helper.
+fn snapshot(dir: &Path) -> Vec<(String, Vec<u8>)> {
+    let mut out: Vec<(String, Vec<u8>)> = std::fs::read_dir(dir)
         .unwrap()
         .map(|e| {
             let p = e.unwrap().path();
             (
                 p.file_name().unwrap().to_string_lossy().into_owned(),
-                std::fs::read_to_string(&p).unwrap(),
+                std::fs::read(&p).unwrap(),
             )
         })
         .collect();
