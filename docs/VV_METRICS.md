@@ -5,7 +5,7 @@ a document pipeline and the Verdict web application report the same figures. It 
 prints one JSON document on stdout.
 
 ```bash
-tcms vv metrics --root <DATA_ROOT> [--run <RUN_ID>] [--gate <PERCENT>] [--flaky-threshold <N>]
+tcms vv metrics --root <DATA_ROOT> [--run <RUN_ID>] [--gate <PERCENT>] [--flaky-threshold <N>] [--stability-window <N>]
 ```
 
 | Option | Default | Meaning |
@@ -13,14 +13,49 @@ tcms vv metrics --root <DATA_ROOT> [--run <RUN_ID>] [--gate <PERCENT>] [--flaky-
 | `--root` | (required) | Directory with `runs/<RUN_ID>/test-run.yaml`, the test case files and `requirements.json` |
 | `--run` | last recorded run | Run to report. Runs are ordered by `started_at`, then run id |
 | `--plan` | all runs | Plan to report on: only runs whose `plan_id` equals it take part (selection, previous run, stability and `runsRecorded`). No such run is an error; `--run` must be a run of that plan |
-| `--gate` | `90` | Quality-gate threshold in percent, `50` to `100` (D-89). Other values are refused |
-| `--flaky-threshold` | `4` | Flips at or above which a case is `FLAKY` (D-97). Must be at least 1 |
+| `--gate` | `90`, or the file, see below | Quality-gate threshold in percent, `50` to `100` (D-89). Other values are refused |
+| `--flaky-threshold` | `4`, or the file, see below | Flips at or above which a case is `FLAKY` (D-97). Must be at least 1 |
+| `--stability-window` | `12` | Runs of history the stability rule looks at: the last N runs up to and including the selected run. Must be at least 1 (TCMS-47.2) |
 | `--schemas-root` (global) | `$TCMS_SCHEMAS_ROOT` or `schemas/` | Used to validate the test case files |
 
 The formulas follow the decisions D-95 to D-97 and the tcms-web reference snapshot in
 `docs/reference/tcms-web/`. The reference (`report/PassRate.java`, `report/StabilityClassifier.java`,
 `trace/CoverageClassifier.java`, `vv/TestRunDataService.java`) is the specification; the rules below are
 what this command implements.
+
+## Per-product settings (`vv-config.yaml`, TCMS-47.2)
+
+Verdict keeps the per-product V&V settings in `<DATA_ROOT>/vv-config.yaml`. When that file exists, the command
+reads it and uses these keys:
+
+```yaml
+type: vv-config
+schema: tcms/vv-config.schema.v1.json
+gate_threshold_percent: 95   # integer 50 to 100
+flaky_flip_threshold: 3      # integer, at least 1
+```
+
+- **Precedence:** a flag over the file over the default. `--gate` overrides `gate_threshold_percent`,
+  `--flaky-threshold` overrides `flaky_flip_threshold`. `--stability-window` has no file key; its default is 12.
+- **Missing file:** the command behaves as without the file (defaults and flags only).
+- **Errors:** a file with a wrong type, an unknown key or an out-of-range value fails, and the message names the
+  file and the key. `type` and `schema` are accepted and not used. A bad flag fails whether or not the file exists.
+- **Source labels:** the output's `parameters` object says where each value came from:
+  `"gateThresholdPercent"`, `"flakyThreshold"` and `"stability_window_runs"` each have `value` and `source`, where
+  `source` is `file`, `flag` or `default`.
+- **Schema validation: BLOCKED.** TCMS-47.2 AC 7 (validation against `tcms/vv-config.schema.json`) cannot be met yet:
+  the schema is not in this repository. The test that will check it is in `crates/tcms/tests/vv_config_cli.rs`,
+  marked `ignore`, and runs once the schema is vendored. Until then the checks above are the only checks.
+
+## Stability window (TCMS-47.2)
+
+`--stability-window N` limits the stability history (D-97) to the last `N` runs up to and including the selected
+run. The default is 12.
+
+**Behaviour change:** before this option, the history was every run up to the selected one. For a data set
+with more than 12 runs, a case's flip count and its `FLAKY`/`STABLE` status can differ from the earlier output.
+Data sets of 12 runs or fewer are unchanged. To reproduce the earlier figures for a longer history, pass
+`--stability-window` with the number of runs in the data set.
 
 ## Data root
 
@@ -101,7 +136,8 @@ pass; the tracker's closed state is not read. The reference counts defects from 
 
 ## Stability and flaky cases (D-97)
 
-For each case in the selected run, over the runs up to and including the selected run, oldest first:
+For each case in the selected run, over the last `--stability-window` runs (default 12) up to and including the
+selected run, oldest first:
 
 - Only PASSED and FAILED results count. BLOCKED, SKIPPED, UNTESTED and absent results are ignored.
 - A flip is a change between two neighbouring kept results.
@@ -116,6 +152,9 @@ All field names are camelCase. Nullable fields are `null` as described.
 
 ```json
 {
+  "generatedAt": string,
+  "parameters":   { "gateThresholdPercent": {"value", "source"}, "flakyThreshold": {"value", "source"},
+                    "stability_window_runs": {"value", "source"} },
   "run":          { "runId", "startedAt", "finishedAt" (null while in progress), "provisional" },
   "gate":         { "gateThresholdPercent", "denominator", "counts": {passed, failed, blocked, skipped, untested},
                     "passRate": {"display", "exact"} | null, "verdict": PASSED|FAILED|NO_DATA,
@@ -193,6 +232,10 @@ command.
   duplicate case and three not-executed cases. Layout and expected figures: its `README.md`.
 - `crates/tcms/tests/vv_combine_cli.rs`: `tcms vv combine` on that fixture, the duplicate rule, the
   not_executed rule, the read-back by `tcms vv metrics`, and the no-write-on-failure rule.
+- `crates/tcms/tests/fixtures/vv-metrics/config/`: `vv-config.yaml` files (valid, wrong type, unknown key,
+  out of range) and `golden-sut1-default.json`, the output before TCMS-47.2. Described in its `README.md`.
+- `crates/tcms/tests/vv_config_cli.rs`: the config file, precedence (flag over file over default), the stability window
+  and each error case, on a copy of SUT-1.
 - `crates/tcms/tests/vv_metrics_cli.rs`: the CLI on the fixtures; `crates/tcms/src/vvmetrics.rs` has the unit
   tests for the boundaries (gate exactly reached, one below, denominator zero, all skipped, all untested,
   only blocked, delta signs, flip boundaries).
