@@ -2,8 +2,12 @@
 # Testcase Manager Makefile
 # ============================================================================
 
+# Load local settings (gitignored). Lets .env set CARGO_BUILD_JOBS, among others.
+-include .env
+
 # Parallel compile and link jobs for every cargo call. Linking many test binaries at once exhausted
-# memory and disk; override with CARGO_BUILD_JOBS=<n> make ... (or unset it to use all cores).
+# memory and disk. Precedence: command line > .env > shell environment > default (4).
+# Set it in .env (CARGO_BUILD_JOBS=<n>), or override per run: make build CARGO_BUILD_JOBS=8
 export CARGO_BUILD_JOBS ?= 4
 #
 # This Makefile uses an INCREMENTAL BUILD STRATEGY by default for everyday
