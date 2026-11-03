@@ -27,6 +27,7 @@ members = [
     "crates/test-run-manager",
     "crates/test-verify",
     "crates/tcms",
+    "crates/tcms-vv-report",
     "crates/test-backends",
     "crates/tpdg-compat",
     "crates/validate-json",

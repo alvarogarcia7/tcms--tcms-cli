@@ -1,0 +1,19 @@
+[package]
+name = "tcms-vv-report"
+version = "0.1.0"
+edition = "2021"
+description = "Render the V&V metrics of tcms vv metrics as a Markdown or AsciiDoc report (TCMS-47.1)"
+
+[lib]
+name = "tcms_vv_report"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tcms-vv-report"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

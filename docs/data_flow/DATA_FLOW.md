@@ -847,7 +847,7 @@ pub struct ReportSummary {
 
 The sequence diagram source is `docs/data_flow/2026-01-20_diagram_steps.mermaid`. It is the file map for the Phase 8 acceptance scenarios: each arrow carries one example invocation, and each step lists the directories it reads and writes. The examples use fake IDs only (REQ-001, TC-REQ001-NR, RUN-FAKE-001, BL-FAKE-001, TM-FAKE-001, FAKE-BUILD-1, fake-tester, "fake environment"). Every flag was checked against the `--help` output of the built binaries.
 
-Commands used: `validate-yaml`, `test-executor execute`, `verifier`, `test-executor trace-matrix`, `test-executor report`. The `tcms` crate has no report command; reports come from `test-executor report`.
+Commands used: `validate-yaml`, `test-executor execute`, `verifier`, `test-executor trace-matrix`, `test-executor report`. The V&V metric report is produced by `tcms-vv-report` from the metrics JSON written by `tcms vv metrics --out` (see `crates/tcms-vv-report/README.md`); it computes no figure of its own. The traceability report comes from `test-executor report`.
 
 Open question: `test-executor execute --help` has no output-path flag, so the location of the execution log written at S2 (`runs/logs/`) is not confirmed. The S2 row below marks it as to be confirmed.
 

@@ -214,6 +214,22 @@ Rules (see `docs/RUN_RECORD_FORMAT.md`):
 - **Layout of `verification-results.yaml`:** validated against `schemas/tcms/verification-results.schema.json`
   before writing. The list it carries is `test_results`, the key `tcms vv metrics` reads.
 
+## Report (tcms-vv-report)
+
+The metric report is produced by `tcms-vv-report` from the metrics JSON that `tcms vv metrics --out` writes (TCMS-47.1).
+The report computes no figure of its own: every number in it is a field of that JSON, and the gate pass rate and the
+V&V test-case pass rate are shown under different labels.
+
+```bash
+tcms vv metrics --root <DATA_ROOT> --out metrics.json
+tcms-vv-report --metrics metrics.json --format markdown --out report.md [--fail-on-gate]
+```
+
+Exit codes: `0` (also for FAILED and NO_DATA), `1` on error or a missing documented field, and `2` only with
+`--fail-on-gate` and a FAILED verdict, after the report is written. The sections, the null rendering and the table
+escaping are in [crates/tcms-vv-report/README.md](../crates/tcms-vv-report/README.md). Traceability stays with
+`test-executor report` (TCMS-43).
+
 ## Schema validation (deferred)
 
 The result objects are to be published in tcms-schemas (ISSUE-tcms-schemas-vv-metrics.md). Until then, this
