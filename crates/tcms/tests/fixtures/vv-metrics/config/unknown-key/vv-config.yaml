@@ -1,0 +1,4 @@
+type: vv-config
+schema: tcms/vv-config.schema.v1.json
+gate_threshold_percent: 90
+stability_window: 5
