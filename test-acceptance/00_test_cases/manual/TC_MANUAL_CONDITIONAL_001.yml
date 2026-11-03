@@ -64,9 +64,9 @@ test_sequences:
       output:
         condition: $has_display == true
         if_true:
-        - Did the GUI display correctly with all visual elements? (Y/n)
+        - "echo 'Operator check (GUI): Did the GUI display correctly with all visual elements? (Y/n)'"
         if_false:
-        - Did the CLI prompt appear and accept commands? (Y/n)
+        - "echo 'Operator check (CLI): Did the CLI prompt appear and accept commands? (Y/n)'"
   - step: 4
     description: Capture system capabilities
     command: command -v systemctl >/dev/null 2>&1 && echo 'systemd' || echo 'other'
@@ -93,9 +93,9 @@ test_sequences:
       output:
         condition: '[[ "$init_system" == "systemd" ]]'
         if_true:
-        - Did systemctl start command execute successfully? (Y/n)
+        - "echo 'Did systemctl start command execute successfully? (Y/n)'"
         if_false:
-        - Did the service init script start successfully? (Y/n)
+        - "echo 'Did the service init script start successfully? (Y/n)'"
   - step: 6
     description: Check network availability
     command: ping -c 1 -W 2 127.0.0.1 >/dev/null 2>&1 && echo 'online' || echo 'offline'
@@ -122,11 +122,11 @@ test_sequences:
       output:
         condition: '[[ "$network_status" == "online" ]]'
         if_true:
-        - Was the online update/sync operation successful? (Y/n)
+        - "echo 'Was the online update/sync operation successful? (Y/n)'"
         if_false:
-        - Did the offline mode operation complete successfully? (Y/n)
+        - "echo 'Did the offline mode operation complete successfully? (Y/n)'"
         always:
-        - Did the operation complete without errors? (Y/n)
+        - "echo 'Did the operation complete without errors? (Y/n)'"
   - step: 8
     manual: true
     description: Final conditional verification
