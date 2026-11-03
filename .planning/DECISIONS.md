@@ -301,3 +301,27 @@ Entry format:
 - **Question**: `cargo-llvm-cov` and `tpdg` are in `/home/orca/.cargo/bin`, which is not on the shell PATH. Without it, coverage-e2e takes the SKIPPED branch.
 - **Decision**: run every make gate with `PATH=/home/orca/.cargo/bin:$PATH` and `CARGO_HOME=/home/orca/.cargo`. The Makefile is not changed for this. SKIPPED is never counted as a pass.
 - **Supersedes / affects**: O-1 (coverage-e2e SKIPPED handling) is unchanged
+
+## D-10-4: stages 8 and 9 fixed or listed? (plan 10-03 checkpoint, decided by the executor)
+- **Phase / stage**: 10 / execute (10-03 decision checkpoint, TCMS-45 AC 3)
+- **Question**: stages 8 (glossary) and 9 (Jira) were not passing on the first run. Fix here, or list as known failures?
+- **Options considered**: (a) list both in known_failures.txt; (b) fix the cause if it is local to tcms-cli.
+- **Decision**: (b), and no known-failure entries were needed. Stage 8 passed (48 checks) and stage 9 passed (82 checks) in the baseline run. Their only dependency gap was that `build-acceptance-binaries` did not build `tcms` and `mock-jira`; it now runs `cargo build -p tcms -p jira-client --features mock`. known_failures.txt has no entries.
+- **Why**: TCMS-45 AC 3 is met by passing, which needs no backlog id. No new backlog task was created (open item O-2 not triggered).
+- **Supersedes / affects**: 10-03 Task 1 "record causes" step (causes were not failures on this run); Makefile build-acceptance-binaries
+
+## D-10-5: TC_MANUAL_CONDITIONAL_001 branch entries are echo commands (stage 2 fix)
+- **Phase / stage**: 10 / execute (10-03, stage 2 failure in the baseline run)
+- **Question**: stage 2 failed because the generated script contained operator prompts from `if_true`/`if_false` as bare shell text (shellcheck SC1046/SC1073). Fix the generator or the fixture?
+- **Options considered**: (a) make the generator render branch text as prompts for manual steps (bash-eval does not know a step is manual; bigger change); (b) change the fixture so each branch entry is a valid `echo '...'` command with the same question.
+- **Decision**: (b). docs/CONDITIONAL_VERIFICATION.md defines branch entries as shell commands, so the fixture was the non-conforming part. Seven entries changed (lines 67, 69, 96, 98, 125, 127, 129 of the fixture, in several steps). The verdict still comes only from the condition.
+- **Why**: smallest change that keeps the documented contract. The simple manual prompt path (`EXPR="..."`) is outside this fix and was not changed.
+- **Supersedes / affects**: TC_MANUAL_CONDITIONAL_001.yml only
+
+## D-10-6: stage exit contract is run_stage, the *_FAILED consistency block is removed
+- **Phase / stage**: 10 / execute (10-03 Task 2, TCMS-45 AC 2)
+- **Question**: keep the final `*_FAILED` block as a second source of truth?
+- **Options considered**: (a) keep it and make it aware of KNOWN stages; (b) use run_stage return codes only.
+- **Decision**: (b). Every stage 1 to 7 function returns 1 when its `*_FAILED` counter is non-zero, so the return code already carries the counter. A second check would disagree with a KNOWN stage. Unlisted failures are counted in UNLISTED_FAILURES, which decides the exit code.
+- **Why**: one decision point, and a listed failure can no longer be overridden by a counter.
+- **Supersedes / affects**: 10-03 Task 2 wording about the consistency check
