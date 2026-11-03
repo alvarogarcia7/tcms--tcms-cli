@@ -96,8 +96,8 @@ jobs:
         run: |
           ls -la dist/
           count=$(ls dist/*.zip | wc -l | tr -d ' ')
-          if [ "$count" -ne 4 ]; then
-            echo "Expected 4 archives, found $count"
+          if [ "$count" -ne 2 ]; then
+            echo "Expected 2 archives, found $count"
             exit 1
           fi
 
@@ -111,6 +111,6 @@ jobs:
             gh release create "$TAG" dist/*.zip \
               --verify-tag \
               --title "Release $TAG" \
-              --notes "Binary release of testcase-manager for $TAG (linux amd64, linux arm64, macos arm64, macos amd64)." \
+              --notes "Binary release of testcase-manager for $TAG (linux amd64, macos arm64)." \
               $prerelease
           fi
