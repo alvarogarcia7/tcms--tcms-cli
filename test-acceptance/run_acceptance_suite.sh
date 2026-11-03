@@ -68,7 +68,12 @@ SKIP_JIRA=0
 SKIP_REPORT_EXIT_CODES=0
 
 # Paths - Using numbered directory structure
-TEST_CASES_DIR="$SCRIPT_DIR/00_test_cases"
+# Overridable for the exit-contract test (test-acceptance/tests/test_suite_exit_contract.sh).
+# Defaults are the repository's own inputs and validators.
+TEST_CASES_DIR="${ACCEPTANCE_TEST_CASES_DIR:-$SCRIPT_DIR/00_test_cases}"
+GLOSSARY_VALIDATOR="${GLOSSARY_VALIDATOR:-$SCRIPT_DIR/validate_glossary_entities.sh}"
+JIRA_VALIDATOR="${JIRA_VALIDATOR:-$SCRIPT_DIR/validate_jira_integration.sh}"
+KNOWN_FAILURES_FILE="${KNOWN_FAILURES_FILE:-$SCRIPT_DIR/known_failures.txt}"
 SCRIPTS_DIR="$SCRIPT_DIR/05_scripts"
 TEST_RESULTS_DIR="$SCRIPT_DIR/10_test_results"
 EXECUTION_LOGS_DIR="$TEST_RESULTS_DIR/execution_logs"
@@ -107,6 +112,108 @@ declare -i DOCUMENTATION_PASSED=0
 declare -i DOCUMENTATION_FAILED=0
 declare -i CONSOLIDATED_DOC_PASSED=0
 declare -i CONSOLIDATED_DOC_FAILED=0
+
+# Stage results (TCMS-45 AC 2-3, decision D-45-3). Bash 3.2: no associative arrays.
+# STAGE_RESULTS holds "N:RESULT" pairs, RESULT is PASS, FAIL, KNOWN or SKIPPED.
+# KNOWN_ENTRIES holds "STAGE BACKLOG_ID reason" lines from KNOWN_FAILURES_FILE that passed the check.
+STAGE_RESULTS=""
+KNOWN_ENTRIES=""
+declare -i UNLISTED_FAILURES=0
+
+record_stage() {
+    STAGE_RESULTS="$STAGE_RESULTS $1:$2"
+}
+
+stage_result() {
+    local entry
+    for entry in $STAGE_RESULTS; do
+        case "$entry" in
+            "$1:"*) echo "${entry#*:}"; return 0 ;;
+        esac
+    done
+    echo "SKIPPED"
+}
+
+# Succeeds when a task file whose name starts with "ID - " exists in backlog/tasks (case-insensitive).
+backlog_task_exists() {
+    ls "$PROJECT_ROOT/backlog/tasks" 2>/dev/null | grep -qi "^$1 - "
+}
+
+# Reads KNOWN_FAILURES_FILE. An entry whose backlog id does not exist is an unlisted failure.
+load_known_failures() {
+    KNOWN_ENTRIES=""
+    [[ -f "$KNOWN_FAILURES_FILE" ]] || return 0
+    local stage id reason
+    while read -r stage id reason; do
+        case "$stage" in
+            ""|"#"*) continue ;;
+        esac
+        if ! backlog_task_exists "$id"; then
+            log_error "known_failures.txt: stage $stage lists $id, which is not in backlog/tasks"
+            UNLISTED_FAILURES=$((UNLISTED_FAILURES + 1))
+            continue
+        fi
+        KNOWN_ENTRIES="$KNOWN_ENTRIES
+$stage $id $reason"
+    done < "$KNOWN_FAILURES_FILE"
+}
+
+# Prints "BACKLOG_ID reason" when stage $1 is listed as a known failure; returns 1 otherwise.
+known_failure_reason() {
+    local s id reason
+    while read -r s id reason; do
+        if [[ "$s" == "$1" ]]; then
+            echo "$id $reason"
+            return 0
+        fi
+    done <<< "$KNOWN_ENTRIES"
+    return 1
+}
+
+# run_stage N LABEL COMMAND...: PASS on success; KNOWN when the failure is listed; otherwise FAIL.
+run_stage() {
+    local n="$1" label="$2"
+    shift 2
+    if "$@"; then
+        record_stage "$n" PASS
+        return 0
+    fi
+    local known
+    if known=$(known_failure_reason "$n"); then
+        record_stage "$n" KNOWN
+        log_warning "KNOWN FAILURE: Stage $n ($label) is listed in known_failures.txt: $known"
+        return 0
+    fi
+    record_stage "$n" FAIL
+    log_error "Stage $n ($label) failed"
+    UNLISTED_FAILURES=$((UNLISTED_FAILURES + 1))
+    return 1
+}
+
+# run_or_skip N LABEL SKIP_FLAG COMMAND...: records SKIPPED when the skip flag is 1
+run_or_skip() {
+    local n="$1" label="$2" skip="$3"
+    shift 3
+    if [[ $skip -eq 1 ]]; then
+        record_stage "$n" SKIPPED
+        return 0
+    fi
+    run_stage "$n" "$label" "$@"
+}
+
+# One line per stage 1 to 10 (used by the console output and the summary report)
+print_stage_lines() {
+    local n res known
+    for n in 1 2 3 4 5 6 7 8 9 10; do
+        res=$(stage_result "$n")
+        if [[ "$res" == "KNOWN" ]]; then
+            known=$(known_failure_reason "$n")
+            echo "Stage $n: KNOWN FAILURE (${known%% *})"
+        else
+            echo "Stage $n: $res"
+        fi
+    done
+}
 
 # Temporary files for tracking
 TEMP_DIR=$(mktemp -d)
@@ -1090,6 +1197,9 @@ generate_summary_report() {
         echo ""
         
         echo "========================================="
+        echo "--- Stage results (PASS, FAIL, KNOWN FAILURE or SKIPPED) ---"
+        print_stage_lines
+        echo ""
         echo "Overall Result:"
         
         local total_failures=$((VALIDATION_FAILED + GENERATION_FAILED + EXECUTION_FAILED + VERIFICATION_FAILED + CONTAINER_VALIDATION_FAILED + DOCUMENTATION_FAILED + CONSOLIDATED_DOC_FAILED))
@@ -1134,97 +1244,55 @@ main() {
     # Verify binaries
     verify_binaries
     
-    # Track overall success
-    local overall_success=0
     
-    # Stage 1: Validate test cases
-    if ! validate_test_cases; then
-        log_error "Stage 1 (Validation) failed"
-        overall_success=1
-    fi
-    
-    # Stage 2: Generate scripts
-    if ! generate_test_scripts; then
-        log_error "Stage 2 (Generation) failed"
-        overall_success=1
-    fi
-    
-    # Stage 3: Execute tests
-    if ! execute_test_scripts; then
-        log_error "Stage 3 (Execution) had failures"
-        overall_success=1
-    fi
-    
-    # Stage 4: Verify execution logs
-    if ! verify_execution_logs; then
-        log_error "Stage 4 (Verification) failed"
-        overall_success=1
-    fi
-    
-    # Stage 5: Validate container YAMLs
-    if ! validate_container_yamls; then
-        log_error "Stage 5 (Container Validation) failed"
-        overall_success=1
-    fi
-    
-    # Stage 6: Generate documentation
-    if ! generate_documentation; then
-        log_error "Stage 6 (Documentation) had failures"
-        overall_success=1
-    fi
-    
-    # Stage 7: Generate consolidated documentation
-    if ! generate_consolidated_documentation; then
-        log_error "Stage 7 (Consolidated Documentation) had failures"
-        overall_success=1
-    fi
-    
+    # Known failures are loaded first; an invalid entry counts as an unlisted failure
+    load_known_failures
+
+    # Stages 1 to 7 record PASS, KNOWN or FAIL through run_stage; the stage functions return 1 when
+    # their *_FAILED counter is non-zero, so the counters need no separate check.
+    run_stage 1 "YAML Validation" validate_test_cases
+    run_or_skip 2 "Script Generation" "$SKIP_GENERATION" generate_test_scripts
+    run_or_skip 3 "Test Execution" "$SKIP_EXECUTION" execute_test_scripts
+    run_or_skip 4 "Verification" "$SKIP_VERIFICATION" verify_execution_logs
+    run_stage 5 "Container Validation" validate_container_yamls
+    run_or_skip 6 "Documentation" "$SKIP_DOCUMENTATION" generate_documentation
+    run_or_skip 7 "Consolidated Documentation" "$SKIP_CONSOLIDATED_DOCS" generate_consolidated_documentation
+
     # Stage 8: Glossary entities (run metadata, traceability matrix, regression selection,
     # independence). Its own script reports its checks; it does not use the *_FAILED counters.
     if [[ $SKIP_GLOSSARY -eq 0 ]]; then
         section "Stage 8: Glossary Entities"
-        if ! "$SCRIPT_DIR/validate_glossary_entities.sh"; then
-            log_error "Stage 8 (Glossary Entities) failed"
-            overall_success=1
-        fi
     fi
+    run_or_skip 8 "Glossary Entities" "$SKIP_GLOSSARY" "$GLOSSARY_VALIDATOR"
 
     # Stage 9: Jira integration (TCMS-42). Its own script runs the real tcms binary against a
     # mock Jira it starts itself, and reports its checks; it does not use the *_FAILED counters.
     if [[ $SKIP_JIRA -eq 0 ]]; then
         section "Stage 9: Jira Integration"
-        if ! "$SCRIPT_DIR/validate_jira_integration.sh"; then
-            log_error "Stage 9 (Jira Integration) failed"
-            overall_success=1
-        fi
     fi
+    run_or_skip 9 "Jira Integration" "$SKIP_JIRA" "$JIRA_VALIDATOR"
 
     # Stage 10: report exit codes (plan 05-03). Its own script runs the real test-executor and
     # reports its checks; it does not use the *_FAILED counters.
     if [[ $SKIP_REPORT_EXIT_CODES -eq 0 ]]; then
         section "Stage 10: Report Exit Codes"
-        if ! "$SCRIPT_DIR/validate_report_exit_codes.sh"; then
-            log_error "Stage 10 (Report Exit Codes) failed"
-            overall_success=1
-        fi
     fi
+    run_or_skip 10 "Report Exit Codes" "$SKIP_REPORT_EXIT_CODES" "$SCRIPT_DIR/validate_report_exit_codes.sh"
+
+    section "Stage Results"
+    print_stage_lines
 
     # Generate final summary
     if ! generate_summary_report; then
+        UNLISTED_FAILURES=$((UNLISTED_FAILURES + 1))
+    fi
+
+    # Any failure that is not listed in known_failures.txt fails the suite (TCMS-45 AC 2)
+    local overall_success=0
+    if [[ $UNLISTED_FAILURES -ne 0 ]]; then
         overall_success=1
     fi
-    
-    # Ensure all *_FAILED variables are zero
-    if [[ $VALIDATION_FAILED -ne 0 ]] || \
-       [[ $GENERATION_FAILED -ne 0 ]] || \
-       [[ $EXECUTION_FAILED -ne 0 ]] || \
-       [[ $VERIFICATION_FAILED -ne 0 ]] || \
-       [[ $CONTAINER_VALIDATION_FAILED -ne 0 ]] || \
-       [[ $DOCUMENTATION_FAILED -ne 0 ]] || \
-       [[ $CONSOLIDATED_DOC_FAILED -ne 0 ]]; then
-        overall_success=1
-    fi
-    
+
     # Exit with appropriate code
     if [[ $overall_success -eq 0 ]]; then
         section "All Stages Completed Successfully"

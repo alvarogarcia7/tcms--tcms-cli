@@ -1,0 +1,4 @@
+# Known acceptance-suite failures (TCMS-45 AC 3, decision D-45-3).
+# One entry per line: STAGE_ID BACKLOG_ID reason
+# STAGE_ID is 1 to 10. BACKLOG_ID must match a file in backlog/tasks/ ("TCMS-XX - ..."), or the suite fails.
+# A listed failure is printed as KNOWN FAILURE. Any failure not listed here makes the suite exit 1.

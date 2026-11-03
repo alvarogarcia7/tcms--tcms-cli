@@ -867,6 +867,7 @@ acceptance-test: build-acceptance-binaries
 		echo "" | tee -a "$$LOG_FILE"; \
 		echo "Full execution log: $$LOG_FILE" | tee -a "$$LOG_FILE"; \
 		echo "Summary report: test-acceptance/reports/acceptance_suite_summary.txt" | tee -a "$$LOG_FILE"; \
+		echo "Known failures recorded (KNOWN FAILURE lines): $$(grep -c 'KNOWN FAILURE' "$$LOG_FILE" || true)"; \
 		exit 0; \
 	else \
 		echo "Suite exit status: $$SUITE_STATUS"; \
@@ -896,6 +897,7 @@ build-acceptance-binaries:
 	@cargo build --package test-executor
 	@cargo build --package verifier
 	@cargo build --package validate-yaml
+	@cargo build -p tcms -p jira-client --features mock
 	@echo "✓ All required binaries built successfully"
 	@echo ""
 .PHONY: build-acceptance-binaries
