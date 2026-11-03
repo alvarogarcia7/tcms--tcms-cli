@@ -1,0 +1,1 @@
+- vv_combine_cli: missing fixture per-case/execution_logs (09-01), 8 failures, found in 09-02

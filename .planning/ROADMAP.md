@@ -119,7 +119,7 @@ Plans:
 | 3. Summary, Gaps and Problem Reports | 0/0 | Not started | - |
 | 4. AsciiDoc and Machine-Readable Output | 0/0 | Not started | - |
 | 5. Pipeline Use: Exit Codes and E2E | 0/0 | Not started | - |
-| 9. TCMS-47 V&V metrics refinement | 0/3 | Not started | - |
+| 9. TCMS-47 V&V metrics refinement | 2/3 | In Progress|  |
 
 ### Phase 6: Requirement lookup: tcms requirements locate verifies that requirement IDs exist in the configured Jira backlog or StrictDoc export
 
@@ -170,10 +170,10 @@ Plans:
 **Goal**: The TCMS-47 family is finished in tcms-cli: the per-case results of a run are combined into one run record (TCMS-47.3), `tcms vv metrics` reads the per-product `vv-config.yaml` and a stability window (TCMS-47.2), and `tcms-vv-report` renders the metrics as Markdown or AsciiDoc without computing anything (TCMS-47.1). Acceptance criteria of the backlog tasks are the source of truth; context and open items are in `.planning/phases/09-tcms-47-vv-metrics-refinement/09-CONTEXT.md`.
 **Requirements**: TCMS-47.3, TCMS-47.2, TCMS-47.1, TCMS-47
 **Depends on:** Phase 8
-**Plans:** 3 plans
+**Plans:** 2/3 plans executed
 
 Plans:
-- [ ] 09-01-PLAN.md — TCMS-47.3 producer: `tcms vv combine` writes one test-run.yaml and verification-results.yaml from the per-case files, duplicate and verdict rules, validation before write, 63-file fixture (wave 1)
-- [ ] 09-02-PLAN.md — TCMS-47.2 consumer: vv-config.yaml reader, `--stability-window`, parameter sources in output, error cases, schema check via checkpoint (wave 2, depends on 09-01)
+- [x] 09-01-PLAN.md — TCMS-47.3 producer: `tcms vv combine` writes one test-run.yaml and verification-results.yaml from the per-case files, duplicate and verdict rules, validation before write, 63-file fixture (wave 1)
+- [x] 09-02-PLAN.md — TCMS-47.2 consumer: vv-config.yaml reader, `--stability-window`, parameter sources in output, error cases, schema check via checkpoint (wave 2, depends on 09-01)
 - [ ] 09-03-PLAN.md — TCMS-47.1 report: `tcms-vv-report` crate, Markdown and AsciiDoc, golden files for sut-1 and derived fixtures, exit codes, docs and DATA_FLOW 4.5 (wave 3, depends on 09-02)
 **Notes**: Open items (snake_case vs camelCase field, missing vv-config and verification-results schemas, combinator command name) are listed in 09-CONTEXT.md and resolved at the plan checkpoints.
