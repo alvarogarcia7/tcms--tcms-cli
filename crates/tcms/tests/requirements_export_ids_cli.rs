@@ -90,14 +90,16 @@ fn text(o: &Output) -> (String, String) {
     )
 }
 
-fn snapshot(dir: &Path) -> Vec<(String, String)> {
-    let mut out: Vec<(String, String)> = std::fs::read_dir(dir)
+/// Name and raw bytes of every entry in `dir`. Bytes, not text: a stray binary file must show up
+/// as a difference in the assertion, not as a panic inside this helper.
+fn snapshot(dir: &Path) -> Vec<(String, Vec<u8>)> {
+    let mut out: Vec<(String, Vec<u8>)> = std::fs::read_dir(dir)
         .unwrap()
         .map(|e| {
             let p = e.unwrap().path();
             (
                 p.file_name().unwrap().to_string_lossy().into_owned(),
-                std::fs::read_to_string(&p).unwrap(),
+                std::fs::read(&p).unwrap(),
             )
         })
         .collect();
