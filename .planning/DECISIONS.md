@@ -255,3 +255,11 @@ Entry format:
 - **Decision**: (a), which also amends the criterion. The combinator does not read the plan's case list, so a case with no per-case file is omitted. `not_executed` means a per-case file reporting no step executed. Change the Build rules line in RUN_RECORD_FORMAT.md to say exactly this, and reword AC 4 and the matching truth in 09-01-PLAN.md to "no execution recorded = not_executed; no per-case file = absent".
 - **Why**: the script emits no missing-run marker; the doc stays the single source of truth.
 - **Supersedes / affects**: 09-01 AC 4 and truth; open item on "missing run"
+
+## D-47-4: `stability_window_runs` in vv-config.yaml (AC 1-4, plan 09-02)
+- **Phase / stage**: 9 / execute (09-02 review)
+- **Question**: The vv-config.yaml reader refuses `stability_window_runs` as an unknown key. Should it accept it?
+- **Options considered**: (a) accept it (integer, at least 1), flag over file over default 12; (b) keep it refused and use the flag only.
+- **Decision**: (a). In `crates/tcms/src/vvconfig.rs` add key `stability_window_runs` (integer, at least 1, error names file and key), add it to the allowed-keys message, and resolve `parameters.stability_window_runs.source` as flag, file or default (default 12). Update docs/VV_METRICS.md line "has no file key", tests (precedence, bad type, 0) and 09-02-SUMMARY.md note 1.
+- **Why**: TCMS-47.2 "Why" says Verdict keeps the stability window in `vv-config.yaml` (D-M8-06); refusing it would make a valid Verdict file fail in the CLI. If the vendored vv-config schema lacks the key, add it there too.
+- **Supersedes / affects**: 09-02 note 1 (file key refused); docs/VV_METRICS.md

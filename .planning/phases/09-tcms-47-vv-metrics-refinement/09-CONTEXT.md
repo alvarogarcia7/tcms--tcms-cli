@@ -52,10 +52,8 @@ Out of scope (from the backlog, not to be added):
 Each open item is either decided in the plans below or blocks a named acceptance criterion. Blocking
 items are not silently dropped; the plan that owns them records the outcome.
 
-- Q1 (naming conflict, owner 09-02). TCMS-47.2 AC 2 asks for `parameters.stability_window_runs` (snake
-  case). TCMS-47 AC 10 requires camelCase JSON. Decision needed before 09-02 starts. Default in
-  09-02: keep the camelCase rule and name the field `parameters.stabilityWindowRuns`, and say so in the
-  summary. The literal AC text is then changed by the user's decision, not by the planner.
+- Q1 (naming, owner 09-02). TCMS-47.2 AC 2 names `parameters.stability_window_runs` (snake case), while
+  TCMS-47 AC 10 asks for camelCase JSON. 09-02 uses the literal TCMS-47.2 spelling `stability_window_runs`.
 - Q2 (missing schema, owner 09-02). `vv-config.schema.json` is not in the repo. `schemas/tcms-schemas/`
   has `tcms/test-run.schema.json` (used by 09-01) but no `vv-config` schema. TCMS-47.2 AC 7 is blocked
   until the schema is vendored. 09-02 Task 3 is a checkpoint for this.
@@ -74,7 +72,7 @@ items are not silently dropped; the plan that owns them records the outcome.
   change for data sets with more than 12 runs. The derived fixtures have fewer runs, so their expected
   figures do not change; SUT-1 has no flips, so it stays STABLE.
 - Q7 (dependency, owner 09-03). TCMS-47.1 lists no backlog dependencies. The phase makes 09-03 depend on
-  09-02 because the report shows the stability window and the parameter sources that 09-02 adds.
+  09-02 because the metrics JSON it reads gains the parameters block from 09-02.
 - Q8 (gate default, owner 09-02). `--gate` currently has `default_value_t = 90`, so a file value cannot be
   told apart from the default. 09-02 changes it to an optional flag, keeping the same effective default.
 

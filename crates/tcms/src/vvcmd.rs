@@ -139,51 +139,15 @@ pub fn run(ctx: &Context, cmd: VvCommand) -> Result<()> {
             };
             // Both documents are validated inside combine(); nothing is written when that fails.
             let combined = vvcombine::combine(&root, &meta, ctx.schemas_root())?;
-            // Both documents go to temporary files first; they are renamed into place only when both
-            // writes succeeded. A failed write removes the temporary files and leaves the run as it was.
+            // Both documents are replaced together or not at all (see write_all_atomic).
             let run_dir = root.join("runs").join(&run);
-            let targets = [
+            write_all_atomic(&[
                 (run_dir.join("test-run.yaml"), combined.test_run.as_bytes()),
                 (
                     run_dir.join("verification-results.yaml"),
                     combined.verification_results.as_bytes(),
                 ),
-            ];
-            let pid = std::process::id();
-            let temps: Vec<PathBuf> = targets
-                .iter()
-                .map(|(target, _)| {
-                    let mut name = target.file_name().unwrap_or_default().to_os_string();
-                    name.push(format!(".tmp-{pid}"));
-                    target.with_file_name(name)
-                })
-                .collect();
-            let remove_temps = || {
-                for tmp in &temps {
-                    let _ = fs::remove_file(tmp);
-                }
-            };
-            let staged = targets
-                .iter()
-                .zip(&temps)
-                .try_for_each(|((_, bytes), tmp)| {
-                    fs::write(tmp, bytes).with_context(|| format!("writing {}", tmp.display()))
-                });
-            if let Err(err) = staged {
-                remove_temps();
-                return Err(err);
-            }
-            let renamed = targets
-                .iter()
-                .zip(&temps)
-                .try_for_each(|((target, _), tmp)| {
-                    fs::rename(tmp, target)
-                        .with_context(|| format!("replacing {}", target.display()))
-                });
-            if let Err(err) = renamed {
-                remove_temps();
-                return Err(err);
-            }
+            ])?;
             println!(
                 "combined run {run}: {} cases, {} pass, {} fail, {} not_executed",
                 combined.cases, combined.pass, combined.fail, combined.not_executed
@@ -225,6 +189,91 @@ pub(crate) fn write_atomic(path: &Path, bytes: &[u8]) -> Result<()> {
     fs::write(&tmp, bytes).with_context(|| format!("writing {}", tmp.display()))?;
     fs::rename(&tmp, path).with_context(|| format!("replacing {}", path.display()))?;
     Ok(())
+}
+
+/// Replace every target with its new bytes, or leave every target as it was.
+///
+/// The original bytes of each target are kept in memory. The new bytes are written to temporary files next to
+/// the targets, and the targets are replaced only when every temporary file was written. If a rename fails,
+/// the targets already replaced get their original bytes back (a target that did not exist is removed), the
+/// temporary files are removed, and the error names the target that failed.
+fn write_all_atomic(targets: &[(PathBuf, &[u8])]) -> Result<()> {
+    // A target that is not a regular file (missing, or a directory that cannot be replaced) has no bytes to keep.
+    let originals: Vec<Option<Vec<u8>>> = targets
+        .iter()
+        .map(|(target, _)| {
+            if target.is_file() {
+                fs::read(target)
+                    .with_context(|| format!("reading {}", target.display()))
+                    .map(Some)
+            } else {
+                Ok(None)
+            }
+        })
+        .collect::<Result<_>>()?;
+
+    let pid = std::process::id();
+    let temps: Vec<PathBuf> = targets
+        .iter()
+        .map(|(target, _)| {
+            let mut name = target.file_name().unwrap_or_default().to_os_string();
+            name.push(format!(".tmp-{pid}"));
+            target.with_file_name(name)
+        })
+        .collect();
+    let remove_temps = |from: usize| {
+        for tmp in &temps[from..] {
+            let _ = fs::remove_file(tmp);
+        }
+    };
+
+    let staged = targets
+        .iter()
+        .zip(&temps)
+        .try_for_each(|((_, bytes), tmp)| {
+            fs::write(tmp, bytes).with_context(|| format!("writing {}", tmp.display()))
+        });
+    if let Err(err) = staged {
+        remove_temps(0);
+        return Err(err);
+    }
+
+    for (i, ((target, _), tmp)) in targets.iter().zip(&temps).enumerate() {
+        if let Err(err) = fs::rename(tmp, target) {
+            let problems = restore(&targets[..i], &originals[..i]);
+            remove_temps(i);
+            let context = if problems.is_empty() {
+                format!("replacing {}", target.display())
+            } else {
+                format!(
+                    "replacing {} (rollback incomplete: {})",
+                    target.display(),
+                    problems.join("; ")
+                )
+            };
+            return Err(anyhow::Error::new(err).context(context));
+        }
+    }
+    Ok(())
+}
+
+/// Put the original bytes back into the targets that were replaced; a target that did not exist is removed.
+/// Returns a description of each step that failed.
+fn restore(targets: &[(PathBuf, &[u8])], originals: &[Option<Vec<u8>>]) -> Vec<String> {
+    targets
+        .iter()
+        .zip(originals)
+        .rev()
+        .filter_map(|((target, _), original)| {
+            let result = match original {
+                Some(bytes) => fs::write(target, bytes),
+                None => fs::remove_file(target),
+            };
+            result
+                .err()
+                .map(|err| format!("{}: {err}", target.display()))
+        })
+        .collect()
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -820,5 +869,74 @@ mod tests {
         .unwrap();
         let err = load_runs(dir.path()).unwrap_err().to_string();
         assert!(err.contains("T1") && err.contains("maybe"), "{err}");
+    }
+
+    /// Leftover `.tmp-` files in a directory.
+    fn temp_leftovers(dir: &Path) -> Vec<String> {
+        fs::read_dir(dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .filter(|n| n.contains(".tmp-"))
+            .collect()
+    }
+
+    #[test]
+    fn failed_second_rename_restores_the_first_target() {
+        let dir = tempfile::tempdir().unwrap();
+        let first = dir.path().join("test-run.yaml");
+        let second = dir.path().join("verification-results.yaml");
+        fs::write(&first, "old first\n").unwrap();
+        // A file cannot replace a directory, so the second rename fails after the first one succeeded.
+        fs::create_dir(&second).unwrap();
+
+        let targets = [
+            (first.clone(), b"new first\n".as_slice()),
+            (second.clone(), b"new second\n".as_slice()),
+        ];
+        let err = write_all_atomic(&targets).unwrap_err().to_string();
+
+        assert!(err.contains("verification-results.yaml"), "{err}");
+        assert_eq!(fs::read_to_string(&first).unwrap(), "old first\n");
+        assert!(second.is_dir(), "the directory target is untouched");
+        assert!(temp_leftovers(dir.path()).is_empty());
+    }
+
+    #[test]
+    fn failed_second_rename_removes_a_first_target_that_did_not_exist() {
+        let dir = tempfile::tempdir().unwrap();
+        let first = dir.path().join("test-run.yaml");
+        let second = dir.path().join("verification-results.yaml");
+        fs::create_dir(&second).unwrap();
+
+        let targets = [
+            (first.clone(), b"new first\n".as_slice()),
+            (second.clone(), b"new second\n".as_slice()),
+        ];
+        assert!(write_all_atomic(&targets).is_err());
+
+        assert!(
+            !first.exists(),
+            "a file created by the failed write is removed"
+        );
+        assert!(second.is_dir());
+        assert!(temp_leftovers(dir.path()).is_empty());
+    }
+
+    #[test]
+    fn both_targets_are_replaced_when_every_rename_succeeds() {
+        let dir = tempfile::tempdir().unwrap();
+        let first = dir.path().join("test-run.yaml");
+        let second = dir.path().join("verification-results.yaml");
+        fs::write(&first, "old first\n").unwrap();
+
+        let targets = [
+            (first.clone(), b"new first\n".as_slice()),
+            (second.clone(), b"new second\n".as_slice()),
+        ];
+        write_all_atomic(&targets).unwrap();
+
+        assert_eq!(fs::read_to_string(&first).unwrap(), "new first\n");
+        assert_eq!(fs::read_to_string(&second).unwrap(), "new second\n");
+        assert!(temp_leftovers(dir.path()).is_empty());
     }
 }
