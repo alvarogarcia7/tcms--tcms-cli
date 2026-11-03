@@ -1197,7 +1197,7 @@ generate_summary_report() {
         echo ""
         
         echo "========================================="
-        echo "--- Stage results (PASS, FAIL, KNOWN FAILURE or SKIPPED) ---"
+        echo "--- Stage results (PASS, FAIL, KNOWN or SKIPPED) ---"
         print_stage_lines
         echo ""
         echo "Overall Result:"
