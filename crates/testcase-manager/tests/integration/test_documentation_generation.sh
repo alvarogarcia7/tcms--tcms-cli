@@ -24,6 +24,19 @@ source "$PROJECT_ROOT/scripts/lib/find-binary.sh" || exit 1
 source "$PROJECT_ROOT/scripts/lib/logger.sh" || exit 1
 source "$PROJECT_ROOT/scripts/lib/report_generator.sh" || exit 1
 
+# logger.sh's fail() only prints. Count failures here so the script's exit status reflects them (TCMS-46).
+FAILURE_COUNT=0
+fail() {
+    FAILURE_COUNT=$((FAILURE_COUNT + 1))
+    echo -e "${RED}✗${NC} $1" >&2
+}
+finish_run() {
+    if [[ $FAILURE_COUNT -gt 0 ]]; then
+        echo -e "${RED}✗${NC} $FAILURE_COUNT check(s) failed" >&2
+        exit 1
+    fi
+}
+
 # Find verifier binary using workspace-aware search
 cd "$PROJECT_ROOT"
 VERIFIER_BIN=$(find_binary "verifier")
@@ -392,6 +405,7 @@ if [[ $SKIP_DOC_GEN -eq 1 ]]; then
     info "✓ Conversion of verification output to result YAML (--single mode)"
     info "✓ Result YAML validation"
     echo ""
+    finish_run
     pass "All available tests passed (test-plan-doc-gen not available. Perhaps override the TEST_PLAN_DOC_GEN_DIR variable to point to a valid test-plan-doc-gen directory?)"
     exit 0
 fi
@@ -843,5 +857,6 @@ if [[ $SKIP_DOC_GEN -eq 0 ]]; then
 fi
 
 echo ""
+finish_run
 pass "All tests passed!"
 exit 0

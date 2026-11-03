@@ -213,24 +213,32 @@ fi
 
 log_verbose "Command: $VERIFIER_CMD"
 
-if eval "$VERIFIER_CMD" 2>&1 | while IFS= read -r line; do
-    log_verbose "$line"
-done; then
-    pass "Verifier completed successfully"
+VERIFIER_LOG="$OUTPUT_DIR/verification/batch_verifier.log"
+mkdir -p "$(dirname "$VERIFIER_LOG")"
+# Capture the verifier's own exit status (a pipeline would report the status of the loop instead).
+if eval "$VERIFIER_CMD" > "$VERIFIER_LOG" 2>&1; then
     VERIFIER_EXIT=0
 else
     VERIFIER_EXIT=$?
-    # Exit code 1 means some tests failed, which is expected
-    if [[ $VERIFIER_EXIT -eq 1 ]]; then
-        pass "Verifier completed (with test failures)"
-    else
-        fail "Verifier failed with exit code: $VERIFIER_EXIT"
-        exit 1
-    fi
+fi
+while IFS= read -r line; do
+    log_verbose "$line"
+done < "$VERIFIER_LOG"
+
+if [[ $VERIFIER_EXIT -eq 0 ]]; then
+    pass "Verifier completed successfully"
+elif [[ $VERIFIER_EXIT -eq 1 ]]; then
+    # Exit code 1 means some test cases failed, which is expected; the output check below decides
+    log_info "Verifier exit 1: some test cases failed (expected), checking output"
+else
+    fail "Verifier failed with exit code: $VERIFIER_EXIT"
+    tail -n 20 "$VERIFIER_LOG" >&2
+    exit 1
 fi
 
 if [[ ! -f "$VERIFICATION_OUTPUT" ]]; then
     fail "Verification output not generated: $VERIFICATION_OUTPUT"
+    tail -n 20 "$VERIFIER_LOG" >&2
     exit 1
 fi
 

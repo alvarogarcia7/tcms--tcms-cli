@@ -139,12 +139,13 @@ fi
 section "Step 2: Build Required Binaries"
 
 log_info "Building orchestrator..."
-if cargo build --release --bin test-orchestrator 2>&1 | while IFS= read -r line; do
-    log_verbose "$line"
-done; then
+# Capture cargo's own status (a pipeline would report the status of the loop, so build failures were hidden)
+ORCH_BUILD_LOG="$REPORTS_DIR/build_orchestrator.log"
+if cargo build --release -p test-orchestrator --bin test-orchestrator > "$ORCH_BUILD_LOG" 2>&1; then
     pass "Orchestrator binary built"
 else
-    fail "Failed to build orchestrator"
+    fail "Failed to build orchestrator (see $ORCH_BUILD_LOG)"
+    tail -n 20 "$ORCH_BUILD_LOG" >&2
     exit 1
 fi
 
@@ -249,27 +250,35 @@ if [[ $SKIP_VERIFICATION -eq 0 ]]; then
     log_info "Running verifier in folder mode..."
     log_verbose "Command: $VERIFIER_BIN --folder $SAMPLES_DIR --format json --output $VERIFICATION_OUTPUT_JSON"
     
-    # Run verifier (allow exit code 1 for test failures)
+    # Run verifier (exit code 1 means test failures; the output check below decides)
+    VERIFIER_LOG="$REPORTS_DIR/verification/batch_verifier.log"
+    mkdir -p "$(dirname "$VERIFIER_LOG")"
     if "$VERIFIER_BIN" \
         --folder "$SAMPLES_DIR" \
         --format json \
         --output "$VERIFICATION_OUTPUT_JSON" \
-        --test-case-dir "$SAMPLES_DIR" 2>&1 | while IFS= read -r line; do
-            log_verbose "$line"
-        done; then
-        pass "Verifier completed successfully (all tests passed)"
+        --test-case-dir "$SAMPLES_DIR" > "$VERIFIER_LOG" 2>&1; then
+        VERIFIER_EXIT=0
     else
         VERIFIER_EXIT=$?
-        if [[ $VERIFIER_EXIT -eq 1 ]]; then
-            pass "Verifier completed (some tests failed - expected)"
-        else
-            fail "Verifier failed with unexpected exit code: $VERIFIER_EXIT"
-            exit 1
-        fi
     fi
-    
+    while IFS= read -r line; do
+        log_verbose "$line"
+    done < "$VERIFIER_LOG"
+
+    if [[ $VERIFIER_EXIT -eq 0 ]]; then
+        pass "Verifier completed successfully (all tests passed)"
+    elif [[ $VERIFIER_EXIT -eq 1 ]]; then
+        log_info "Verifier exit 1: some test cases failed (expected), checking output"
+    else
+        fail "Verifier failed with unexpected exit code: $VERIFIER_EXIT"
+        tail -n 20 "$VERIFIER_LOG" >&2
+        exit 1
+    fi
+
     if [[ ! -f "$VERIFICATION_OUTPUT_JSON" ]]; then
         fail "Verification output not generated: $VERIFICATION_OUTPUT_JSON"
+        tail -n 20 "$VERIFIER_LOG" >&2
         exit 1
     fi
     

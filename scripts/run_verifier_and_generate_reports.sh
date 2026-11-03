@@ -79,6 +79,9 @@ echo "Project root: $PROJECT_ROOT"
 # Create output directory
 OUTPUT_DIR="$PROJECT_ROOT/reports/verifier_scenarios"
 mkdir -p "$OUTPUT_DIR"
+# Count of steps that failed for real (verifier error, missing output, doc generation failure).
+# Any non-zero count makes this script exit 1 (TCMS-46).
+FAILURES=0
 echo "Output directory: $OUTPUT_DIR"
 
 # Build verifier binary
@@ -175,13 +178,16 @@ for SCENARIO_ENTRY in "${SCENARIOS[@]}"; do
     
     # Build and execute command
     VERIFIER_CMD=$(build_verifier_cmd "$EXECUTION_LOG" "$TEST_CASE_ID" "$VERIFICATION_OUTPUT")
-    eval "$VERIFIER_CMD" 2>&1 | tail -20
-    
-    VERIFIER_EXIT=$?
+    VERIFIER_LOG="$OUTPUT_DIR/${TEST_CASE_ID}_verifier.log"
+    # 'set -e' is active: capture the verifier status without aborting the loop
+    VERIFIER_EXIT=0
+    eval "$VERIFIER_CMD" > "$VERIFIER_LOG" 2>&1 || VERIFIER_EXIT=$?
+    tail -20 "$VERIFIER_LOG"
     
     # Exit codes: 0 = all tests passed, 1 = some tests failed (expected for failure scenarios)
     if [ $VERIFIER_EXIT -ne 0 ] && [ $VERIFIER_EXIT -ne 1 ]; then
         echo "✗ Verifier failed with unexpected exit code: $VERIFIER_EXIT"
+        FAILURES=$((FAILURES + 1))
         continue
     fi
     
@@ -190,6 +196,7 @@ for SCENARIO_ENTRY in "${SCENARIOS[@]}"; do
         VERIFICATION_FILES+=("$VERIFICATION_OUTPUT")
     else
         echo "✗ Verification report not generated"
+        FAILURES=$((FAILURES + 1))
     fi
 done
 
@@ -307,20 +314,20 @@ if [ -f "$DOC_SCRIPT" ]; then
         DOC_CMD="$DOC_CMD --executor \"$EXECUTOR\""
     fi
     
-    eval "$DOC_CMD"
-    
-    if [ $? -eq 0 ]; then
+    if eval "$DOC_CMD"; then
         echo ""
         echo "✓ Documentation reports generated successfully"
     else
         echo ""
-        echo "⚠ Documentation report generation encountered issues"
+        echo "✗ Documentation report generation failed"
+        FAILURES=$((FAILURES + 1))
     fi
 else
-    echo "⚠ Documentation report generator not found: $DOC_SCRIPT"
+    echo "✗ Documentation report generator not found: $DOC_SCRIPT"
     echo ""
     echo "To generate documentation reports, ensure the script exists at:"
     echo "  $DOC_SCRIPT"
+    FAILURES=$((FAILURES + 1))
 fi
 
 echo ""
@@ -330,4 +337,8 @@ echo "======================================================================="
 echo ""
 echo "All verification reports are in: $OUTPUT_DIR"
 
+if [ "$FAILURES" -gt 0 ]; then
+    echo "✗ $FAILURES verifier/documentation step(s) failed"
+    exit 1
+fi
 exit 0
