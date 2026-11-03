@@ -34,10 +34,21 @@ check_eq() {
     fi
 }
 
-# Test A: the real tree yields 89 files, matching the on-disk count and the literal 89.
+# Test A: fixture with a known count. 4 test case files (3 .yml, 1 .yaml, one in a
+# subdirectory) plus one ignored .txt file; discovery must return exactly 4.
+FIX_A="$SCRATCH/a"
+mkdir -p "$FIX_A/sub"
+: > "$FIX_A/one.yml"
+: > "$FIX_A/two.yaml"
+: > "$FIX_A/four.yml"
+: > "$FIX_A/sub/three.yml"
+: > "$FIX_A/notes.txt"
+KNOWN_FIXTURE_COUNT=4
+collect "$FIX_A"
+check_eq "A1: discovered count equals the fixture's known count ($KNOWN_FIXTURE_COUNT)" "$KNOWN_FIXTURE_COUNT" "${#DISCOVERED[@]}"
+
+# Test A2/A3: the real tree yields 89 files, and the .yaml extension is present in none of them.
 collect "$TEST_CASES_DIR"
-ON_DISK=$(find "$TEST_CASES_DIR" -type f \( -name '*.yml' -o -name '*.yaml' \) | wc -l | tr -d ' ')
-check_eq "A1: discovery count equals on-disk count of *.yml and *.yaml" "$ON_DISK" "${#DISCOVERED[@]}"
 check_eq "A2: discovery count on current tree is 89" "89" "${#DISCOVERED[@]}"
 
 YAML_COUNT=0
@@ -97,6 +108,54 @@ mkdir -p "$FIX_E"
 collect "$FIX_E"
 check_eq "E1: fixture with a space in the name yields 1 file" "1" "${#DISCOVERED[@]}"
 check_eq "E2: space in name is preserved" "with space.yml" "$(basename "${DISCOVERED[0]}")"
+
+# Test S: Stage 1 through the suite's real code path. The suite runs main() when sourced,
+# so the validate_test_cases function is extracted from the suite source and run in a
+# subshell against a fixture tree. The stub validator is `true` (every file passes).
+SUITE="$PROJECT_ROOT/test-acceptance/run_acceptance_suite.sh"
+S_DIR="$SCRATCH/stage1"
+mkdir -p "$S_DIR/cases/sub" "$S_DIR/cases_empty" "$S_DIR/schemas/tcms-schemas/tcms" "$S_DIR/tmp"
+: > "$S_DIR/schemas/tcms-schemas/tcms/test-case-main.schema.json"
+: > "$S_DIR/cases/one.yml"
+: > "$S_DIR/cases/two.yaml"
+: > "$S_DIR/cases/sub/three.yaml"
+: > "$S_DIR/cases/four.yml"
+: > "$S_DIR/cases/readme.txt"
+S_KNOWN_COUNT=4
+
+# Prints "<return code> <TOTAL_TEST_CASES>" for validate_test_cases run on DIR.
+run_stage1() {
+    (
+        eval "$(awk '/^validate_test_cases\(\) \{/{p=1} p{print} p && /^\}/{exit}' "$SUITE")"
+        SCHEMA_DIR="$S_DIR/schemas"
+        TEST_CASES_DIR="$1"
+        VALIDATE_YAML=true
+        TEMP_DIR="$S_DIR/tmp"
+        VALIDATION_FAILURES="$S_DIR/tmp/failures.txt"
+        VALIDATION_PASSED=0
+        VALIDATION_FAILED=0
+        VERBOSE=0
+        TOTAL_TEST_CASES=0
+        validate_test_cases >"$S_DIR/stage1.log" 2>&1
+        echo "$? $TOTAL_TEST_CASES"
+    )
+}
+
+if ! grep -q '^validate_test_cases() {' "$SUITE"; then
+    fail "S0: validate_test_cases not found in $SUITE"
+    FAILED=$((FAILED + 1))
+else
+    read -r S_RC S_TOTAL <<EOF
+$(run_stage1 "$S_DIR/cases")
+EOF
+    check_eq "S1: Stage 1 discovers the fixture's known count ($S_KNOWN_COUNT)" "$S_KNOWN_COUNT" "$S_TOTAL"
+    check_eq "S2: Stage 1 passes on the fixture" "0" "$S_RC"
+
+    read -r S_RC S_TOTAL <<EOF
+$(run_stage1 "$S_DIR/cases_empty")
+EOF
+    check_eq "S3: Stage 1 fails when no test case files are discovered" "1" "$S_RC"
+fi
 
 if [ "$FAILED" -ne 0 ]; then
     log_error "Stage 1 discovery tests: $FAILED check(s) failed"

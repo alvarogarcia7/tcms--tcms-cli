@@ -353,6 +353,27 @@ generate_test_scripts() {
         yaml_files+=("$file")
     done < <(discover_test_case_files "$TEST_CASES_DIR")
 
+    # Scripts go to one flat directory named <stem>.sh, so files that differ only by
+    # extension (foo.yml and foo.yaml) would overwrite each other. Refuse before generating.
+    local stems=() stem
+    for yaml_file in "${yaml_files[@]}"; do
+        stem="$(basename "$yaml_file")"
+        stems+=("${stem%.*}")
+    done
+    local dup_count=0 a b n=${#yaml_files[@]}
+    for ((a = 0; a < n; a++)); do
+        for ((b = a + 1; b < n; b++)); do
+            if [[ "${stems[$a]}" == "${stems[$b]}" ]]; then
+                log_error "Duplicate test case basename '${stems[$a]}': ${yaml_files[$a]} and ${yaml_files[$b]} both map to ${stems[$a]}.sh"
+                dup_count=$((dup_count + 1))
+            fi
+        done
+    done
+    if [[ $dup_count -gt 0 ]]; then
+        log_error "$dup_count duplicate test case basename(s); no scripts generated"
+        return 1
+    fi
+
     for yaml_file in "${yaml_files[@]}"; do
         local basename=$(basename "$yaml_file")
         basename="${basename%.*}"

@@ -115,6 +115,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!test-acceptance/lib/
 lib64/
 parts/
 sdist/
