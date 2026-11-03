@@ -230,3 +230,11 @@ Entry format:
 - **Options considered**: (a) a new dedicated code (for example 3); (b) reuse 1, the existing input and validation error code.
 - **Decision**: (b). `INVALID_INPUT_FILES` = 1, consistent with D-05-1 and ROADMAP Phase 5 SC1. Valid inputs exit 0, or another documented non-zero code other than 1 (for example 2); invalid inputs (fail JSON schema validation) always exit 1. Verified by an equivalence test over a valid set and an invalid set through the real binary.
 - **Supersedes / affects**: 08-SPEC.md section 2.1 (TBD resolved); D-05-1 unchanged
+
+## D-47-1: combined run record format (quick decision, 2026-11-03)
+- **Phase / stage**: TCMS-47.3 / discuss
+- **Question**: what format does the combined per-case run take?
+- **Options considered**: (a) one run folder with test-run.yaml + verification-results.yaml; (b) keep 63 separate run folders; (c) a new container format
+- **Decision**: (a), as in docs/RUN_RECORD_FORMAT.md. Schema-validated, one folder per run.
+- **Why**: `tcms vv metrics` already reads that layout; the legacy Java path reads a folder as one run; (b) makes each case its own run; (c) adds a format nothing reads.
+- **Supersedes / affects**: TCMS-47.3, TCMS-47.2 (consumer)
