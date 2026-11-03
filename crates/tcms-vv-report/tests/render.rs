@@ -303,7 +303,13 @@ fn fail_verdict_exits_0_by_default() {
         "stderr: {}",
         String::from_utf8_lossy(&out.stderr)
     );
-    assert!(String::from_utf8_lossy(&out.stdout).contains("FAILED"));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout
+            .lines()
+            .any(|line| line.trim() == "| Verdict | FAILED |"),
+        "expected the exact verdict row in stdout: {stdout}"
+    );
 }
 
 #[test]
