@@ -76,7 +76,10 @@ fn tcms_in(dir: &Path, cfg: &Path, args: &[&str], token: Option<&str>) -> Output
         .args(["--config", &cfg.to_string_lossy()])
         .args(["--schemas-root", &format!("{}/schemas/", root().display())])
         .args(args)
-        .env_remove(ENV);
+        .env_remove(ENV)
+        // CI sets a relative LLVM_PROFILE_FILE under coverage builds, so the child writes its
+        // profile into the working directory this test snapshots. Send it to the temp dir.
+        .env("LLVM_PROFILE_FILE", std::env::temp_dir().join("tcms-%p-%m.profraw"));
     if let Some(t) = token {
         cmd.env(ENV, t);
     }
