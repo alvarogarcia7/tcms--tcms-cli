@@ -3,7 +3,11 @@
 # ============================================================================
 
 # Load local settings (gitignored). Lets .env set CARGO_BUILD_JOBS, among others.
--include .env
+# .env may also hold shell snippets (conditionals, source, export), which make cannot parse.
+# Only plain NAME=value lines are read; every other line is ignored (phase 10, D-10-1).
+ifneq ($(wildcard .env),)
+$(eval $(shell grep -E '^[A-Za-z_][A-Za-z0-9_]*=[^$$`]*$$' .env 2>/dev/null))
+endif
 
 # Parallel compile and link jobs for every cargo call. Linking many test binaries at once exhausted
 # memory and disk. Precedence: command line > .env > shell environment > default (4).
