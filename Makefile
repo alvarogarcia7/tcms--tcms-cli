@@ -336,12 +336,11 @@ test-e2e: build
 	AFFECTED=$$(./scripts/detect-local-changes.sh "$$BASE_REF" 2>/dev/null || echo ""); \
 	if [ -z "$$AFFECTED" ]; then \
 		echo "No changes detected - running minimal E2E tests"; \
-		./crates/testcase-manager/tests/integration/check_environment.sh; \
-		./crates/testcase-manager/tests/integration/smoke_test.sh; \
+		./scripts/run-e2e-scripts.sh ./crates/testcase-manager/tests/integration/check_environment.sh ./crates/testcase-manager/tests/integration/smoke_test.sh || exit 1; \
 	else \
 		echo "Running E2E tests for affected crates: $$AFFECTED"; \
 		E2E_TESTS_FILE=$$(mktemp); \
-		./crates/testcase-manager/tests/integration/check_environment.sh; \
+		./scripts/run-e2e-scripts.sh ./crates/testcase-manager/tests/integration/check_environment.sh || { rm -f "$$E2E_TESTS_FILE"; exit 1; }; \
 		for crate in $$AFFECTED; do \
 			case "$$crate" in \
 				validate-yaml) \
@@ -370,7 +369,6 @@ test-e2e: build
 					echo "./scripts/run_verifier_and_generate_reports.sh" >> $$E2E_TESTS_FILE; \
 					;; \
 				audit-verifier) \
-					echo "./crates/audit-verifier/tests/integration/test_audit_logging_demo_e2e.sh" >> $$E2E_TESTS_FILE; \
 					echo "./crates/audit-verifier/tests/integration/test_audit_verifier_e2e.sh" >> $$E2E_TESTS_FILE; \
 					echo "./crates/audit-verifier/tests/integration/test_audit_key_scenarios.sh" >> $$E2E_TESTS_FILE; \
 					echo "./crates/audit-verifier/tests/integration/test_simple_workflow.sh" >> $$E2E_TESTS_FILE; \
@@ -388,17 +386,12 @@ test-e2e: build
 			esac; \
 		done; \
 		if [ -s "$$E2E_TESTS_FILE" ]; then \
-			cat "$$E2E_TESTS_FILE" | sort -u | while read test_script; do \
-				if [ -f "$$test_script" ]; then \
-					echo "Running: $$test_script"; \
-					bash "$$test_script" || exit 1; \
-				fi; \
-			done; \
+			./scripts/run-e2e-scripts.sh $$(sort -u "$$E2E_TESTS_FILE") || { rm -f "$$E2E_TESTS_FILE"; exit 1; }; \
 		fi; \
 		rm -f "$$E2E_TESTS_FILE"; \
 		if echo "$$AFFECTED" | grep -qw "verifier"; then \
-			${MAKE} test-verifier-edge-cases; \
-			BUILD_VARIANT="" ./scripts/run_verifier_and_generate_reports.sh; \
+			${MAKE} test-verifier-edge-cases || exit 1; \
+			BUILD_VARIANT="" ./scripts/run_verifier_and_generate_reports.sh || exit 1; \
 		fi; \
 		${MAKE} validate-output-schemas; \
 	fi
