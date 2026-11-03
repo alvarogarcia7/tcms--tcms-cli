@@ -184,11 +184,9 @@ fn default_when_no_file_matches_previous_output() {
     );
 }
 
-#[test]
-fn stability_window_limits_the_history() {
-    let (_tmp, root) = sut1_root();
-    // SUT1_PASS_001 in the five earliest runs: pass, fail, pass, fail, pass; later runs pass.
-    // Four flips over all fourteen runs, two flips over the last twelve.
+/// SUT1_PASS_001 in the five earliest runs: pass, fail, pass, fail, pass; later runs pass.
+/// Four flips over all fourteen runs, two flips over the last twelve.
+fn set_pass_001_history(root: &Path) {
     for (run, verdict) in FIRST_FIVE_RUNS
         .iter()
         .zip(["pass", "fail", "pass", "fail", "pass"])
@@ -199,6 +197,57 @@ fn stability_window_limits_the_history() {
             verdict,
         );
     }
+}
+
+#[test]
+fn file_window_value_used_when_no_flag() {
+    let (_tmp, root) = sut1_root();
+    set_pass_001_history(&root);
+    use_config(&root, "window");
+    let v = report(&root, &[]);
+    assert_eq!(
+        v["parameters"]["stability_window_runs"],
+        json!({"value": 14, "source": "file"})
+    );
+    // The file's window of 14 covers all fourteen runs, so the four flips make the case FLAKY.
+    let c = stability_of(&v, "SUT1_PASS_001");
+    assert_eq!(
+        (c["stability"].as_str(), c["flips"].as_u64()),
+        (Some("FLAKY"), Some(4))
+    );
+}
+
+#[test]
+fn flag_overrides_file_window() {
+    let (_tmp, root) = sut1_root();
+    set_pass_001_history(&root);
+    use_config(&root, "window");
+    let v = report(&root, &["--stability-window", "12"]);
+    assert_eq!(
+        v["parameters"]["stability_window_runs"],
+        json!({"value": 12, "source": "flag"})
+    );
+    let c = stability_of(&v, "SUT1_PASS_001");
+    assert_eq!(
+        (c["stability"].as_str(), c["flips"].as_u64()),
+        (Some("STABLE"), Some(2))
+    );
+}
+
+#[test]
+fn window_below_one_in_file_is_refused() {
+    let (_tmp, root) = sut1_root();
+    use_config(&root, "window-zero");
+    let err = refused(&root, &[]);
+    assert!(err.contains("vv-config.yaml"), "{err}");
+    assert!(err.contains("stability_window_runs"), "{err}");
+    assert!(err.contains("at least 1"), "{err}");
+}
+
+#[test]
+fn stability_window_limits_the_history() {
+    let (_tmp, root) = sut1_root();
+    set_pass_001_history(&root);
 
     let default = report(&root, &[]);
     let c = stability_of(&default, "SUT1_PASS_001");

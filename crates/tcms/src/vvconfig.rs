@@ -18,6 +18,7 @@ pub const DEFAULT_WINDOW: u64 = 12;
 
 const KEY_GATE: &str = "gate_threshold_percent";
 const KEY_FLAKY: &str = "flaky_flip_threshold";
+const KEY_WINDOW: &str = "stability_window_runs";
 /// Metadata every project YAML carries (CLAUDE.md, "Required YAML Fields"). Accepted, not used.
 const METADATA_KEYS: [&str; 2] = ["type", "schema"];
 
@@ -26,6 +27,7 @@ const METADATA_KEYS: [&str; 2] = ["type", "schema"];
 pub struct VvConfig {
     pub gate_threshold_percent: Option<u64>,
     pub flaky_flip_threshold: Option<u64>,
+    pub stability_window_runs: Option<u64>,
 }
 
 /// Where a parameter value came from.
@@ -105,9 +107,13 @@ pub fn parse(path: &Path, text: &str) -> Result<VvConfig> {
                 cfg.flaky_flip_threshold =
                     Some(integer(path, name, value, 1, i64::MAX, "at least 1")?);
             }
+            KEY_WINDOW => {
+                cfg.stability_window_runs =
+                    Some(integer(path, name, value, 1, i64::MAX, "at least 1")?);
+            }
             known if METADATA_KEYS.contains(&known) => {}
             other => bail!(
-                "{shown}: unknown key '{other}' (allowed: {KEY_GATE}, {KEY_FLAKY}, type, schema)"
+                "{shown}: unknown key '{other}' (allowed: {KEY_GATE}, {KEY_FLAKY}, {KEY_WINDOW}, type, schema)"
             ),
         }
     }
@@ -135,7 +141,7 @@ fn integer(
 }
 
 /// Resolve the three parameters: flag over file over default. Flags are range-checked here, so a bad
-/// flag fails whether or not the file exists.
+/// flag fails whether or not the file exists. The window is also accepted in the file (D-47-4).
 pub fn resolve(cfg: Option<&VvConfig>, flags: Flags) -> Result<Resolved> {
     if let Some(g) = flags.gate {
         if !(50..=100).contains(&g) {
@@ -152,8 +158,7 @@ pub fn resolve(cfg: Option<&VvConfig>, flags: Flags) -> Result<Resolved> {
     Ok(Resolved {
         gate: pick(flags.gate, file.gate_threshold_percent, DEFAULT_GATE),
         flaky: pick(flags.flaky, file.flaky_flip_threshold, DEFAULT_FLAKY),
-        // The file has no window key (TCMS-47.2 reads the window from the flag only).
-        window: pick(flags.window, None, DEFAULT_WINDOW),
+        window: pick(flags.window, file.stability_window_runs, DEFAULT_WINDOW),
     })
 }
 
@@ -205,6 +210,20 @@ mod tests {
         let cfg = load(dir.path()).unwrap().unwrap();
         assert_eq!(cfg.gate_threshold_percent, Some(95));
         assert_eq!(cfg.flaky_flip_threshold, Some(3));
+    }
+
+    #[test]
+    fn window_below_one_is_rejected_naming_file_and_key() {
+        let err = error_of("stability_window_runs: 0\n");
+        assert!(err.contains("data/vv-config.yaml"), "{err}");
+        assert!(err.contains("stability_window_runs"), "{err}");
+        assert!(err.contains("at least 1"), "{err}");
+    }
+
+    #[test]
+    fn window_key_is_read() {
+        let cfg = parse_text("stability_window_runs: 14\n").unwrap();
+        assert_eq!(cfg.stability_window_runs, Some(14));
     }
 
     #[test]
@@ -280,6 +299,7 @@ mod tests {
         let cfg = VvConfig {
             gate_threshold_percent: Some(95),
             flaky_flip_threshold: Some(3),
+            stability_window_runs: Some(14),
         };
         let r = resolve(Some(&cfg), Flags::default()).unwrap();
         assert_eq!(
@@ -296,12 +316,11 @@ mod tests {
                 source: Source::File
             }
         );
-        // The window has no file key.
         assert_eq!(
             r.window,
             Param {
-                value: 12,
-                source: Source::Default
+                value: 14,
+                source: Source::File
             }
         );
     }
@@ -311,6 +330,7 @@ mod tests {
         let cfg = VvConfig {
             gate_threshold_percent: Some(95),
             flaky_flip_threshold: Some(3),
+            stability_window_runs: Some(14),
         };
         let flags = Flags {
             gate: Some(80),

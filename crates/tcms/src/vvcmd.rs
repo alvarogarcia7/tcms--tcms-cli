@@ -44,7 +44,8 @@ pub enum VvCommand {
         #[arg(long)]
         flaky_threshold: Option<u64>,
         /// Runs of history the stability rule looks at: the last N runs up to the selected run.
-        /// Default 12 (TCMS-47.2), at least 1
+        /// Default 12, or `stability_window_runs` of `<DATA_ROOT>/vv-config.yaml` (TCMS-47.2, D-47-4),
+        /// at least 1
         #[arg(long)]
         stability_window: Option<u64>,
         /// Write the JSON report to this file (parent directories are created) instead of stdout

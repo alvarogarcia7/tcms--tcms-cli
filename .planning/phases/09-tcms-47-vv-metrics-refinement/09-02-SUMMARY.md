@@ -39,9 +39,9 @@ Definition of done (backlog): `cargo test -p tcms` passes, `cargo fmt --check` a
 |-----------|------|------|---------|
 | gate (`gate_threshold_percent`, 50 to 100) | `--gate` | yes | 90 |
 | flaky (`flaky_flip_threshold`, at least 1) | `--flaky-threshold` | yes | 4 |
-| stability window (`stability_window_runs`, at least 1) | `--stability-window` | no | 12 |
+| stability window (`stability_window_runs`, at least 1) | `--stability-window` | yes (D-47-4) | 12 |
 
-Precedence: flag over file over default. The window has no file key, so only flag over default applies to it.
+Precedence: flag over file over default, for all three parameters. The window key is accepted in the file (D-47-4).
 
 ## Task record (test first)
 
@@ -68,9 +68,11 @@ Precedence: flag over file over default. The window has no file key, so only fla
 
 ## Notes and open questions for the user
 
-1. **`stability_window_runs` in the file is refused** as an unknown key. The backlog's "Why" section says Verdict keeps the
-   window in `vv-config.yaml`, but its "What" section lists only the gate and flaky keys, and the user's brief matches that.
-   If Verdict's real file has the window key, this must be decided before 09-03 or any CI use.
+1. **`stability_window_runs` in the file: resolved by D-47-4 (accepted).** The file key is an integer, at least 1, and
+   the flag overrides it. The reader accepts it and the `parameters.stability_window_runs.source` label reports `file`,
+   `flag` or `default`. The backlog's "Why" section says Verdict keeps the window in `vv-config.yaml`. Before D-47-4 the
+   file refused the key. The vendored vv-config schema is still absent from the repository, so it could not be updated
+   there (AC 7 stays BLOCKED).
 2. **No upper bound on the window.** tcms-web's `ReportService` has `MAX_WINDOW = 50`. The backlog gives only "at least 1", so none is enforced here.
 3. **The AC 2 reading.** The plan's shape puts the number under `value`. A literal reading of "the value appears in `parameters.stability_window_runs`" would put the number directly there. The two cannot both hold; I followed the plan.
 

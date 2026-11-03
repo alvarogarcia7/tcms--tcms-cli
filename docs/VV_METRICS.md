@@ -15,7 +15,7 @@ tcms vv metrics --root <DATA_ROOT> [--run <RUN_ID>] [--gate <PERCENT>] [--flaky-
 | `--plan` | all runs | Plan to report on: only runs whose `plan_id` equals it take part (selection, previous run, stability and `runsRecorded`). No such run is an error; `--run` must be a run of that plan |
 | `--gate` | `90`, or the file, see below | Quality-gate threshold in percent, `50` to `100` (D-89). Other values are refused |
 | `--flaky-threshold` | `4`, or the file, see below | Flips at or above which a case is `FLAKY` (D-97). Must be at least 1 |
-| `--stability-window` | `12` | Runs of history the stability rule looks at: the last N runs up to and including the selected run. Must be at least 1 (TCMS-47.2) |
+| `--stability-window` | `12`, or the file, see below | Runs of history the stability rule looks at: the last N runs up to and including the selected run. Must be at least 1. Overrides `stability_window_runs` of `vv-config.yaml` (TCMS-47.2, D-47-4) |
 | `--schemas-root` (global) | `$TCMS_SCHEMAS_ROOT` or `schemas/` | Used to validate the test case files |
 
 The formulas follow the decisions D-95 to D-97 and the tcms-web reference snapshot in
@@ -33,10 +33,12 @@ type: vv-config
 schema: tcms/vv-config.schema.v1.json
 gate_threshold_percent: 95   # integer 50 to 100
 flaky_flip_threshold: 3      # integer, at least 1
+stability_window_runs: 12    # integer, at least 1
 ```
 
 - **Precedence:** a flag over the file over the default. `--gate` overrides `gate_threshold_percent`,
-  `--flaky-threshold` overrides `flaky_flip_threshold`. `--stability-window` has no file key; its default is 12.
+  `--flaky-threshold` overrides `flaky_flip_threshold`, `--stability-window` overrides `stability_window_runs`.
+  The default is 12 for the window.
 - **Missing file:** the command behaves as without the file (defaults and flags only).
 - **Errors:** a file with a wrong type, an unknown key or an out-of-range value fails, and the message names the
   file and the key. `type` and `schema` are accepted and not used. A bad flag fails whether or not the file exists.
@@ -50,7 +52,8 @@ flaky_flip_threshold: 3      # integer, at least 1
 ## Stability window (TCMS-47.2)
 
 `--stability-window N` limits the stability history (D-97) to the last `N` runs up to and including the selected
-run. The default is 12.
+run. The default is 12. The value can also be set in `vv-config.yaml` as `stability_window_runs` (integer, at
+least 1); the flag overrides the file (D-47-4).
 
 **Behaviour change:** before this option, the history was every run up to the selected one. For a data set
 with more than 12 runs, a case's flip count and its `FLAKY`/`STABLE` status can differ from the earlier output.
