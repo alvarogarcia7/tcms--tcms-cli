@@ -238,3 +238,19 @@ Entry format:
 - **Decision**: (a), as in docs/RUN_RECORD_FORMAT.md. Schema-validated, one folder per run.
 - **Why**: `tcms vv metrics` already reads that layout; the legacy Java path reads a folder as one run; (b) makes each case its own run; (c) adds a format nothing reads.
 - **Supersedes / affects**: TCMS-47.3, TCMS-47.2 (consumer)
+
+## D-47-2: verification-results.yaml schema (AC 2, plan 09-01)
+- **Phase / stage**: 9 / execute (09-01 gate)
+- **Question**: AC 2 needs a schema for verification-results.yaml; none exists in schemas/ or schemas/tcms-schemas/tcms/.
+- **Options considered**: (a) add a minimal local schema and validate against it; (b) drop the schema requirement and validate in code.
+- **Decision**: (a). Add `schemas/tcms/verification-results.schema.json` (root `type`, `schema`, `run_id`, and `results` keyed by test_case_id, each requiring integer `total_steps` and `passed_steps`; step results optional). Document it in docs/RUN_RECORD_FORMAT.md (Files section) and make the combinator validate against it before writing, replacing the field-only `check_steps`. Set the file's `schema:` header to this schema's URI.
+- **Why**: keeps schema-validated output and the format doc as the single source of truth (D-47-1); code-only checks would hide the format.
+- **Supersedes / affects**: 09-01 AC 2, open item Q3; 09-01-SUMMARY.md
+
+## D-47-3: "missing run" verdict mapping (AC 4, plan 09-01)
+- **Phase / stage**: 9 / execute (09-01 gate)
+- **Question**: Must a case with no per-case file be emitted as not_executed?
+- **Options considered**: (a) restate the mapping in docs/RUN_RECORD_FORMAT.md; (b) amend the criterion only.
+- **Decision**: (a), which also amends the criterion. The combinator does not read the plan's case list, so a case with no per-case file is omitted. `not_executed` means a per-case file reporting no step executed. Change the Build rules line in RUN_RECORD_FORMAT.md to say exactly this, and reword AC 4 and the matching truth in 09-01-PLAN.md to "no execution recorded = not_executed; no per-case file = absent".
+- **Why**: the script emits no missing-run marker; the doc stays the single source of truth.
+- **Supersedes / affects**: 09-01 AC 4 and truth; open item on "missing run"
