@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Verification Results",
+  "description": "Step counts per test case of one run, written by tcms vv combine as runs/<RUN_ID>/verification-results.yaml (D-47-2)",
+  "type": "object",
+  "required": ["type", "schema", "run_id", "test_results"],
+  "properties": {
+    "type": {
+      "const": "test_results_container"
+    },
+    "schema": {
+      "const": "tcms/verification-results.schema.json"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Run the step counts belong to"
+    },
+    "test_results": {
+      "type": "array",
+      "description": "One entry per test case, keyed by test_case_id",
+      "items": {
+        "type": "object",
+        "required": ["test_case_id", "total_steps", "passed_steps"],
+        "properties": {
+          "test_case_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "total_steps": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "passed_steps": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

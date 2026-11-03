@@ -300,6 +300,44 @@ fn invalid_record_writes_nothing() {
 }
 
 #[test]
+fn steps_schema_failure_writes_nothing() {
+    let tmp = TempDir::new().unwrap();
+    let run_dir = stage_fixture(tmp.path());
+    // An empty test_case_id passes the test-run schema but fails verification-results.schema.json
+    // (minLength 1), so only the second validation can reject the run.
+    let path = run_dir.join("per-case").join("TC_FIX_003_result.yaml");
+    let text = fs::read_to_string(&path).unwrap();
+    fs::write(
+        &path,
+        text.replace("test_case_id: TC_FIX_003", "test_case_id: \"\""),
+    )
+    .unwrap();
+    let o = combine(tmp.path(), RUN_FLAGS);
+    assert!(!o.status.success());
+    let stderr = String::from_utf8_lossy(&o.stderr);
+    assert!(
+        stderr.contains("verification-results.yaml"),
+        "stderr names the failing document: {stderr}"
+    );
+    assert!(!run_file(tmp.path(), RUN, "test-run.yaml").exists());
+    assert!(!run_file(tmp.path(), RUN, "verification-results.yaml").exists());
+}
+
+#[test]
+fn valid_record_writes_both_files_with_the_schema_header() {
+    let tmp = TempDir::new().unwrap();
+    stage_fixture(tmp.path());
+    combine_ok(tmp.path());
+    assert!(run_file(tmp.path(), RUN, "test-run.yaml").is_file());
+    let steps = read_yaml(&run_file(tmp.path(), RUN, "verification-results.yaml"));
+    assert_eq!(
+        steps["schema"].as_str(),
+        Some("tcms/verification-results.schema.json")
+    );
+    assert_eq!(steps["run_id"].as_str(), Some(RUN));
+}
+
+#[test]
 fn unreadable_case_file_writes_nothing_and_names_the_file() {
     let tmp = TempDir::new().unwrap();
     let run_dir = stage_fixture(tmp.path());

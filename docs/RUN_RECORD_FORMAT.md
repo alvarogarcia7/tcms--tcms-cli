@@ -4,12 +4,14 @@ One run = one folder: `runs/<RUN_ID>/` under the data root.
 
 ## Files
 - `test-run.yaml` (required): follows the tcms-schemas test-run schema (`schemas/tcms/test-run.schema.json`). Keys used by `tcms vv metrics`: `run_id`, `plan_id`, `started_at`, `finished_at`, and `results:` with one entry per test case: `test_case_id`, `verdict` (pass | fail | not_executed | error), optional `problem_report_id`.
-- `verification-results.yaml` (optional): per test case step counts and step results, keyed by `test_case_id`.
+- `verification-results.yaml` (optional): per test case step counts and step results, keyed by `test_case_id`. Header `schema: tcms/verification-results.schema.json` (schema file `schemas/tcms/verification-results.schema.json`). Required keys: `type`, `schema`, `run_id`, and `test_results`, a list with one entry per test case. Each entry requires `test_case_id` (non-empty string), `total_steps` and `passed_steps` (integers >= 0). Step results are optional.
 
 ## Build rules (from the per-case `type: test_result` files)
 - `run_id`, `plan_id`: from the shared run metadata; one run per combine.
 - `started_at` = earliest case start; `finished_at` = latest case finish (execution logs under `10_test_results/execution_logs/`).
-- `overall_pass: true` -> `pass`; `false` -> `fail`; no execution -> `not_executed`.
+- `overall_pass: true` -> `pass`; `false` -> `fail`.
+- `not_executed` means a per-case file that reports no step executed (no execution recorded).
+- A case with no per-case file is absent from the record: it gets no entry and is not emitted as `not_executed`. The combinator does not read the plan's case list (D-47-3).
 - Duplicate `test_case_id`: latest `started_at` wins; `not_executed` never overrides an executed result.
 - Validate both files against their schemas before writing; on failure write nothing.
 

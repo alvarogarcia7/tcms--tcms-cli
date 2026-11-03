@@ -236,7 +236,7 @@ pub fn combine(root: &Path, meta: &RunMetadata, schemas_root: &str) -> Result<Co
     };
     let steps_doc = VerificationResultsDoc {
         kind: "test_results_container",
-        schema: "tcms/test-results-container.schema.v1.json",
+        schema: "tcms/verification-results.schema.json",
         run_id: meta.run_id,
         test_results: winners
             .iter()
@@ -252,15 +252,21 @@ pub fn combine(root: &Path, meta: &RunMetadata, schemas_root: &str) -> Result<Co
     let verification_results =
         serde_yaml::to_string(&steps_doc).context("rendering verification-results.yaml")?;
 
-    // The resolver maps `tcms/<name>` to `<dir>/tcms/<name>`, so the dir is the tcms-schemas root.
-    let schema_dir = format!("{}/tcms-schemas/", schemas_root.trim_end_matches('/'));
+    // The resolver maps `tcms/<name>` to `<dir>/tcms/<name>`. The test-run schema is vendored under
+    // `tcms-schemas/`; the verification-results schema lives in `schemas/tcms/` (D-47-2).
+    let test_run_dir = format!("{}/tcms-schemas/", schemas_root.trim_end_matches('/'));
     testcase_common::parse_and_validate_yaml_string::<serde_yaml::Value, _>(
         &test_run,
-        &schema_dir,
+        &test_run_dir,
         "test-run.yaml",
     )
     .context("test-run.yaml fails schema validation; nothing was written")?;
-    check_steps(&verification_results)?;
+    testcase_common::parse_and_validate_yaml_string::<serde_yaml::Value, _>(
+        &verification_results,
+        schemas_root,
+        "verification-results.yaml",
+    )
+    .context("verification-results.yaml fails schema validation; nothing was written")?;
 
     Ok(CombinedRun {
         test_run,
@@ -370,28 +376,6 @@ fn format_time(t: DateTime<Utc>) -> String {
     t.format("%Y-%m-%dT%H:%M:%SZ").to_string()
 }
 
-/// `verification-results.yaml` has no schema in the repository (TCMS-47.3 open item). The fields that
-/// `tcms vv metrics` reads are checked here instead.
-fn check_steps(text: &str) -> Result<()> {
-    let doc: serde_yaml::Value =
-        serde_yaml::from_str(text).context("verification-results.yaml does not parse")?;
-    let rows = doc
-        .get("test_results")
-        .and_then(|r| r.as_sequence())
-        .ok_or_else(|| anyhow!("verification-results.yaml: test_results must be a sequence"))?;
-    for row in rows {
-        if row.get("test_case_id").and_then(|v| v.as_str()).is_none() {
-            bail!("verification-results.yaml: test_results entry without test_case_id");
-        }
-        for key in ["total_steps", "passed_steps"] {
-            if row.get(key).and_then(|v| v.as_u64()).is_none() {
-                bail!("verification-results.yaml: test_results entry without {key}");
-            }
-        }
-    }
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -485,12 +469,33 @@ mod tests {
         assert!(format!("{err:#}").contains("no per-case results"));
     }
 
+    fn steps_doc(entry: &str) -> String {
+        format!(
+            "type: test_results_container\nschema: tcms/verification-results.schema.json\n\
+             run_id: RUN-1\ntest_results:\n{entry}"
+        )
+    }
+
+    fn validate_steps(text: &str) -> Result<serde_yaml::Value> {
+        let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../../schemas");
+        testcase_common::parse_and_validate_yaml_string(text, root, "verification-results.yaml")
+    }
+
     #[test]
-    fn steps_check_names_the_missing_field() {
-        let ok = "test_results:\n- test_case_id: A\n  total_steps: 2\n  passed_steps: 1\n";
-        assert!(check_steps(ok).is_ok());
-        let bad = "test_results:\n- test_case_id: A\n  total_steps: 2\n";
-        let err = check_steps(bad).unwrap_err();
-        assert!(err.to_string().contains("passed_steps"));
+    fn steps_schema_accepts_well_formed_counts() {
+        let ok = steps_doc("- test_case_id: A\n  total_steps: 2\n  passed_steps: 1\n");
+        assert!(validate_steps(&ok).is_ok());
+    }
+
+    #[test]
+    fn steps_schema_rejects_missing_passed_steps() {
+        let bad = steps_doc("- test_case_id: A\n  total_steps: 2\n");
+        assert!(validate_steps(&bad).is_err());
+    }
+
+    #[test]
+    fn steps_schema_rejects_non_integer_counts() {
+        let bad = steps_doc("- test_case_id: A\n  total_steps: '2'\n  passed_steps: 1\n");
+        assert!(validate_steps(&bad).is_err());
     }
 }

@@ -169,8 +169,8 @@ Rules (see `docs/RUN_RECORD_FORMAT.md`):
 - **Metadata:** `plan_id`, `build_id`, `environment` and `tester` come from the flags. The per-case files do
   not carry them. `build_id`, `environment` and `tester` are required by the test-run schema, so a missing one
   makes the command fail.
-- **Layout of `verification-results.yaml`:** there is no schema for it in the repository yet. The command
-  checks the fields that `tcms vv metrics` reads (`test_case_id`, `total_steps`, `passed_steps`) instead.
+- **Layout of `verification-results.yaml`:** validated against `schemas/tcms/verification-results.schema.json`
+  before writing. The list it carries is `test_results`, the key `tcms vv metrics` reads.
 
 ## Schema validation (deferred)
 
