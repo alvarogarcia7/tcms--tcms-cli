@@ -41,7 +41,7 @@ The report is deterministic: the same input gives byte-identical output. `genera
    cases, step coverage, passed and total steps.
 4. **Requirement coverage**: summary counts, then one row per requirement (coverage, executed of total, problem
    reports, open problem reports).
-5. **Stability**: flaky threshold and window with their sources, flaky count, then the cases whose stability is
+5. **Stability**: flaky threshold with its source, flaky count, then the cases whose stability is
    FLAKY or FAILING.
 6. **Load summary**: distinct cases, runs recorded, schema error count, and the first schema error only (file and
    error).

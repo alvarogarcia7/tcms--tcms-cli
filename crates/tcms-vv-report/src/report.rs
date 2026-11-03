@@ -40,6 +40,14 @@ fn two_column(rows: Vec<(&str, String)>) -> Block {
     }
 }
 
+/// A pipe is escaped (`\|`) and a line break becomes a space, so a cell stays on one table row.
+/// Shared by the Markdown and AsciiDoc table renderers.
+pub(crate) fn escape_cell(cell: &str) -> String {
+    cell.replace('|', "\\|")
+        .replace("\r\n", " ")
+        .replace(['\r', '\n'], " ")
+}
+
 fn header(m: &Metrics, out: &mut Vec<Block>) {
     let threshold = &m.parameters.gate_threshold_percent;
     out.push(Block::Heading("Run".into()));
@@ -165,7 +173,6 @@ fn requirements(m: &Metrics, out: &mut Vec<Block>) {
 
 fn stability(m: &Metrics, out: &mut Vec<Block>) {
     let s = &m.stability;
-    let window = &m.parameters.stability_window_runs;
     out.push(Block::Heading("Stability".into()));
     out.push(two_column(vec![
         (
@@ -174,10 +181,6 @@ fn stability(m: &Metrics, out: &mut Vec<Block>) {
                 "{} ({})",
                 s.flaky_threshold, m.parameters.flaky_threshold.source
             ),
-        ),
-        (
-            "Stability window (runs)",
-            format!("{} ({})", window.value, window.source),
         ),
         ("Flaky cases", s.flaky_count.to_string()),
     ]));

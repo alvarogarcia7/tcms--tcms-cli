@@ -192,8 +192,9 @@ fn assert_figures(name: &str, text: &str, m: &Value) {
         ("withDefect", "With problem report"),
         ("openDefects", "Open problem reports"),
     ] {
-        assert!(
-            row(text, label).contains(&reqs["summary"][key].to_string()),
+        assert_eq!(
+            cells(&row(text, label))[1],
+            reqs["summary"][key].to_string(),
             "{name}: requirement summary {label}"
         );
     }
@@ -212,8 +213,9 @@ fn assert_figures(name: &str, text: &str, m: &Value) {
     }
 
     let s = &m["stability"];
-    assert!(
-        row(text, "Flaky cases").contains(&s["flakyCount"].to_string()),
+    assert_eq!(
+        cells(&row(text, "Flaky cases"))[1],
+        s["flakyCount"].to_string(),
         "{name}: flaky count"
     );
     for case in s["cases"].as_array().unwrap() {
@@ -232,9 +234,21 @@ fn assert_figures(name: &str, text: &str, m: &Value) {
     }
 
     let load = &m["loadSummary"];
-    assert!(row(text, "Distinct cases").contains(&load["distinctCases"].to_string()));
-    assert!(row(text, "Runs recorded").contains(&load["runsRecorded"].to_string()));
-    assert!(row(text, "Schema errors").contains(&load["schemaErrorCount"].to_string()));
+    assert_eq!(
+        cells(&row(text, "Distinct cases"))[1],
+        load["distinctCases"].to_string(),
+        "{name}: distinct cases"
+    );
+    assert_eq!(
+        cells(&row(text, "Runs recorded"))[1],
+        load["runsRecorded"].to_string(),
+        "{name}: runs recorded"
+    );
+    assert_eq!(
+        cells(&row(text, "Schema errors"))[1],
+        load["schemaErrorCount"].to_string(),
+        "{name}: schema errors"
+    );
 }
 
 #[test]
@@ -326,6 +340,20 @@ fn no_data_with_fail_on_gate_exits_0() {
         "stderr: {}",
         String::from_utf8_lossy(&out.stderr)
     );
+    assert!(
+        out.stderr.is_empty(),
+        "stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&out.stdout),
+        render_fixture("no-data-run", Format::Markdown),
+        "stdout is not the no-data report"
+    );
+    assert!(
+        row(&String::from_utf8_lossy(&out.stdout), "Verdict").contains("NO_DATA"),
+        "verdict is not NO_DATA"
+    );
 }
 
 #[test]
@@ -357,6 +385,12 @@ fn output_is_identical_on_second_run() {
         let json = metrics_json(name);
         for format in [Format::Markdown, Format::AsciiDoc] {
             let first = render(&json, format).unwrap();
+            assert!(!first.is_empty(), "{name}: empty report");
+            assert_eq!(
+                first,
+                must_read(&report_path(name, format)),
+                "{name}: first run differs from golden"
+            );
             let second = render(&json, format).unwrap();
             assert_eq!(first.as_bytes(), second.as_bytes(), "{name}");
         }

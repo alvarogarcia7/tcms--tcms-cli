@@ -53,7 +53,6 @@
 | Measure | Value |
 | --- | --- |
 | Flaky threshold (flips) | 4 (default) |
-| Stability window (runs) | 12 (default) |
 | Flaky cases | 0 |
 
 No flaky or failing cases in the selected run.

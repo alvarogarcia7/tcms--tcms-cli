@@ -30,8 +30,6 @@ pub struct Parameters {
     pub gate_threshold_percent: Param,
     #[serde(rename = "flakyThreshold")]
     pub flaky_threshold: Param,
-    #[serde(rename = "stability_window_runs")]
-    pub stability_window_runs: Param,
 }
 
 #[derive(Debug, Deserialize)]

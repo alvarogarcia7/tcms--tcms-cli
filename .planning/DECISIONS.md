@@ -263,3 +263,11 @@ Entry format:
 - **Decision**: (a). In `crates/tcms/src/vvconfig.rs` add key `stability_window_runs` (integer, at least 1, error names file and key), add it to the allowed-keys message, and resolve `parameters.stability_window_runs.source` as flag, file or default (default 12). Update docs/VV_METRICS.md line "has no file key", tests (precedence, bad type, 0) and 09-02-SUMMARY.md note 1.
 - **Why**: TCMS-47.2 "Why" says Verdict keeps the stability window in `vv-config.yaml` (D-M8-06); refusing it would make a valid Verdict file fail in the CLI. If the vendored vv-config schema lacks the key, add it there too.
 - **Supersedes / affects**: 09-02 note 1 (file key refused); docs/VV_METRICS.md
+
+## D-47-5: AC 10 and the zero-test-cases fixture (plan 09-03)
+- **Phase / stage**: 9 / execute (09-03 gate)
+- **Question**: AC 10 asks for a golden report per derived fixture, but `tcms vv metrics` refuses a run with zero test cases, so the `zero-test-cases` fixture yields no JSON to render. What is correct?
+- **Options considered**: (a) the refusal is the correct behaviour; AC 10 is met by the refusal and the report crate has no zero-case output; (b) the report renders a zero-case document, which would contradict the metrics refusal and need a source change.
+- **Decision**: (a). No zero-case golden is made and no source is changed. The refusal is the specified behaviour: docs/VV_METRICS.md says a selected run with zero test case results is an error, exits non-zero, names the run, and is not reported as `NO_DATA`.
+- **Why**: TCMS-47 already specifies the refusal; rendering a document for it would contradict that and add an output no command produces.
+- **Supersedes / affects**: 09-03 AC 10 and the "Zero-test-cases" deviation; 09-03-SUMMARY.md

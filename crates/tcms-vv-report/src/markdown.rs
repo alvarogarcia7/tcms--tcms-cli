@@ -1,6 +1,6 @@
 //! Markdown rendering of the report blocks (GitHub-flavoured pipe tables).
 
-use crate::report::Block;
+use crate::report::{escape_cell, Block};
 
 pub fn render(blocks: &[Block]) -> String {
     let mut out = String::new();
@@ -23,13 +23,6 @@ pub fn render(blocks: &[Block]) -> String {
 }
 
 fn row(cells: &[String]) -> String {
-    let escaped: Vec<String> = cells.iter().map(|c| escape(c)).collect();
+    let escaped: Vec<String> = cells.iter().map(|c| escape_cell(c)).collect();
     format!("| {} |\n", escaped.join(" | "))
-}
-
-/// A pipe is escaped and a line break becomes a space, so a cell stays on one table row.
-pub fn escape(cell: &str) -> String {
-    cell.replace('|', "\\|")
-        .replace("\r\n", " ")
-        .replace(['\r', '\n'], " ")
 }
