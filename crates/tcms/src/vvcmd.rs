@@ -16,6 +16,7 @@ use testcase_common::load_and_validate_yaml;
 
 use crate::refcmd::Context;
 use crate::vvcombine;
+use crate::vvconfig;
 use crate::vvmetrics::{self, Coverage, Ratio, Stability, Status};
 
 /// At most this many case files with schema errors are listed (as VvLoadSummarizer.MAX_ERRORS).
@@ -35,11 +36,14 @@ pub enum VvCommand {
         #[arg(long)]
         plan: Option<String>,
         /// Quality-gate threshold in percent, 50 to 100 (D-89)
-        #[arg(long, default_value_t = 90)]
-        gate: u64,
+        #[arg(long)]
+        gate: Option<u64>,
         /// Flips (changes between neighbouring kept results) at or above which a case is Flaky (D-97)
-        #[arg(long, default_value_t = 4)]
-        flaky_threshold: u64,
+        #[arg(long)]
+        flaky_threshold: Option<u64>,
+        /// Number of most recent runs (up to the selected run) the stability history covers (default 12, at least 1)
+        #[arg(long)]
+        stability_window: Option<u64>,
         /// Write the JSON report to this file (parent directories are created) instead of stdout
         #[arg(long)]
         out: Option<PathBuf>,
@@ -80,15 +84,19 @@ pub fn run(ctx: &Context, cmd: VvCommand) -> Result<()> {
             plan,
             gate,
             flaky_threshold,
+            stability_window,
             out,
             now,
         } => {
-            if !(50..=100).contains(&gate) {
-                bail!("--gate must be between 50 and 100, got {gate}");
-            }
-            if flaky_threshold == 0 {
-                bail!("--flaky-threshold must be at least 1");
-            }
+            let cfg = vvconfig::load(&root)?;
+            let params = vvconfig::resolve(
+                cfg.as_ref(),
+                vvconfig::Flags {
+                    gate,
+                    flaky: flaky_threshold,
+                    window: stability_window,
+                },
+            )?;
             let generated_at =
                 resolve_now(now.as_deref(), std::env::var("TCMS_NOW").ok().as_deref())?;
             let data = load(&root, ctx.schemas_root())?;
@@ -96,8 +104,7 @@ pub fn run(ctx: &Context, cmd: VvCommand) -> Result<()> {
                 &data,
                 run.as_deref(),
                 plan.as_deref(),
-                gate,
-                flaky_threshold,
+                &params,
                 &generated_at,
             )?;
             let text = format!("{}\n", serde_json::to_string_pretty(&report)?);
@@ -437,10 +444,11 @@ fn build_report(
     all: &VvData,
     run_id: Option<&str>,
     plan: Option<&str>,
-    gate: u64,
-    flaky: u64,
+    params: &vvconfig::Resolved,
     generated_at: &str,
 ) -> Result<Json> {
+    let gate = params.gate.0;
+    let flaky = params.flaky.0;
     if all.runs.is_empty() {
         bail!("no recorded V&V runs (runs/*/test-run.yaml) under the data root");
     }
@@ -519,7 +527,7 @@ fn build_report(
     let step_coverage = Ratio::new(passed_steps, total_steps);
 
     let requirements = requirement_coverage(data, run);
-    let stability = stability_section(data, sel, flaky);
+    let stability = stability_section(data, sel, flaky, params.window.0);
 
     let provisional = run.finished_at.is_none();
     let schema_errors: Vec<Json> = data
@@ -535,6 +543,11 @@ fn build_report(
 
     Ok(json!({
         "generatedAt": generated_at,
+        "parameters": {
+            "gateThresholdPercent": { "value": params.gate.0, "source": params.gate.1.as_str() },
+            "flakyThreshold": { "value": params.flaky.0, "source": params.flaky.1.as_str() },
+            "stability_window_runs": { "value": params.window.0, "source": params.window.1.as_str() },
+        },
         "run": {
             "runId": run.run_id,
             "startedAt": run.started_at,
@@ -657,14 +670,20 @@ fn requirement_coverage(data: &VvData, run: &RecordedRun) -> Json {
     })
 }
 
-/// Stability (D-97) of every case in the selected run, over the runs up to and including it.
-fn stability_section(data: &VvData, sel: usize, flaky: u64) -> Json {
+/// Stability (D-97) of every case in the selected run, over the last `window` runs up to and
+/// including it.
+///
+/// Behaviour change (phase 09 CONTEXT Q6): the history used to be all runs up to the selected one;
+/// it is now limited to `window` runs (default 12), so flips older than the window no longer count.
+fn stability_section(data: &VvData, sel: usize, flaky: u64, window: u64) -> Json {
+    let count = usize::try_from(window).unwrap_or(usize::MAX).min(sel + 1);
+    let start = sel + 1 - count;
     let run = &data.runs[sel];
     let case_ids: BTreeSet<&str> = run.results.iter().map(|r| r.case_id.as_str()).collect();
     let mut flaky_count = 0u64;
     let mut cases = Vec::new();
     for id in case_ids {
-        let history: Vec<Status> = data.runs[..=sel]
+        let history: Vec<Status> = data.runs[start..=sel]
             .iter()
             .flat_map(|r| r.results.iter())
             .filter(|r| r.case_id == id)
@@ -731,9 +750,15 @@ mod tests {
             schema_errors: Vec::new(),
             requirement_ids: Vec::new(),
         };
-        let err = build_report(&data, None, None, 90, 4, "2026-01-02T00:00:00Z")
-            .unwrap_err()
-            .to_string();
+        let err = build_report(
+            &data,
+            None,
+            None,
+            &vvconfig::resolve(None, vvconfig::Flags::default()).unwrap(),
+            "2026-01-02T00:00:00Z",
+        )
+        .unwrap_err()
+        .to_string();
         assert!(
             err.contains("R-EMPTY") && err.contains("zero test cases"),
             "{err}"
