@@ -1,0 +1,4 @@
+type: vv-config
+schema: tcms/vv-config.schema.v1.json
+gate_threshold_percent: 95
+gate_threshold_pct: 95

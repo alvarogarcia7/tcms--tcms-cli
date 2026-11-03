@@ -16,6 +16,7 @@ use testcase_common::load_and_validate_yaml;
 
 use crate::refcmd::Context;
 use crate::vvcombine;
+use crate::vvconfig::{self, Flags, Resolved};
 use crate::vvmetrics::{self, Coverage, Ratio, Stability, Status};
 
 /// At most this many case files with schema errors are listed (as VvLoadSummarizer.MAX_ERRORS).
@@ -34,12 +35,18 @@ pub enum VvCommand {
         /// Plan to report on: only the runs whose `plan_id` is this plan. Error when no run has it.
         #[arg(long)]
         plan: Option<String>,
-        /// Quality-gate threshold in percent, 50 to 100 (D-89)
-        #[arg(long, default_value_t = 90)]
-        gate: u64,
-        /// Flips (changes between neighbouring kept results) at or above which a case is Flaky (D-97)
-        #[arg(long, default_value_t = 4)]
-        flaky_threshold: u64,
+        /// Quality-gate threshold in percent, 50 to 100 (D-89). Default 90, or `gate_threshold_percent`
+        /// of `<DATA_ROOT>/vv-config.yaml`
+        #[arg(long)]
+        gate: Option<u64>,
+        /// Flips (changes between neighbouring kept results) at or above which a case is Flaky (D-97).
+        /// Default 4, or `flaky_flip_threshold` of `<DATA_ROOT>/vv-config.yaml`
+        #[arg(long)]
+        flaky_threshold: Option<u64>,
+        /// Runs of history the stability rule looks at: the last N runs up to the selected run.
+        /// Default 12 (TCMS-47.2), at least 1
+        #[arg(long)]
+        stability_window: Option<u64>,
         /// Write the JSON report to this file (parent directories are created) instead of stdout
         #[arg(long)]
         out: Option<PathBuf>,
@@ -80,15 +87,20 @@ pub fn run(ctx: &Context, cmd: VvCommand) -> Result<()> {
             plan,
             gate,
             flaky_threshold,
+            stability_window,
             out,
             now,
         } => {
-            if !(50..=100).contains(&gate) {
-                bail!("--gate must be between 50 and 100, got {gate}");
-            }
-            if flaky_threshold == 0 {
-                bail!("--flaky-threshold must be at least 1");
-            }
+            // File first, then the flags over it. Flags are range-checked in resolve().
+            let cfg = vvconfig::load(&root)?;
+            let params = vvconfig::resolve(
+                cfg.as_ref(),
+                Flags {
+                    gate,
+                    flaky: flaky_threshold,
+                    window: stability_window,
+                },
+            )?;
             let generated_at =
                 resolve_now(now.as_deref(), std::env::var("TCMS_NOW").ok().as_deref())?;
             let data = load(&root, ctx.schemas_root())?;
@@ -96,8 +108,7 @@ pub fn run(ctx: &Context, cmd: VvCommand) -> Result<()> {
                 &data,
                 run.as_deref(),
                 plan.as_deref(),
-                gate,
-                flaky_threshold,
+                &params,
                 &generated_at,
             )?;
             let text = format!("{}\n", serde_json::to_string_pretty(&report)?);
@@ -476,10 +487,12 @@ fn build_report(
     all: &VvData,
     run_id: Option<&str>,
     plan: Option<&str>,
-    gate: u64,
-    flaky: u64,
+    params: &Resolved,
     generated_at: &str,
 ) -> Result<Json> {
+    let gate = params.gate.value;
+    let flaky = params.flaky.value;
+    let window = params.window.value;
     if all.runs.is_empty() {
         bail!("no recorded V&V runs (runs/*/test-run.yaml) under the data root");
     }
@@ -558,7 +571,7 @@ fn build_report(
     let step_coverage = Ratio::new(passed_steps, total_steps);
 
     let requirements = requirement_coverage(data, run);
-    let stability = stability_section(data, sel, flaky);
+    let stability = stability_section(data, sel, flaky, window);
 
     let provisional = run.finished_at.is_none();
     let schema_errors: Vec<Json> = data
@@ -574,6 +587,7 @@ fn build_report(
 
     Ok(json!({
         "generatedAt": generated_at,
+        "parameters": parameters_json(params),
         "run": {
             "runId": run.run_id,
             "startedAt": run.started_at,
@@ -613,6 +627,16 @@ fn build_report(
             "runsRecorded": data.runs.len(),
         },
     }))
+}
+
+/// The parameters with their values and sources (file, flag or default).
+fn parameters_json(params: &Resolved) -> Json {
+    let one = |p: vvconfig::Param| json!({ "value": p.value, "source": p.source.as_str() });
+    json!({
+        "gateThresholdPercent": one(params.gate),
+        "flakyThreshold": one(params.flaky),
+        "stability_window_runs": one(params.window),
+    })
 }
 
 /// Requirement coverage in the selected run (D-116.3). Requirements are those listed in
@@ -696,14 +720,17 @@ fn requirement_coverage(data: &VvData, run: &RecordedRun) -> Json {
     })
 }
 
-/// Stability (D-97) of every case in the selected run, over the runs up to and including it.
-fn stability_section(data: &VvData, sel: usize, flaky: u64) -> Json {
+/// Stability (D-97) of every case in the selected run. The history is the last `window` runs up to and
+/// including the selected run (TCMS-47.2). Before the window option the history was every run up to the
+/// selected one; a data set with more runs than the window can therefore show different flaky counts now.
+fn stability_section(data: &VvData, sel: usize, flaky: u64, window: u64) -> Json {
     let run = &data.runs[sel];
+    let first = (sel + 1).saturating_sub(usize::try_from(window).unwrap_or(usize::MAX));
     let case_ids: BTreeSet<&str> = run.results.iter().map(|r| r.case_id.as_str()).collect();
     let mut flaky_count = 0u64;
     let mut cases = Vec::new();
     for id in case_ids {
-        let history: Vec<Status> = data.runs[..=sel]
+        let history: Vec<Status> = data.runs[first..=sel]
             .iter()
             .flat_map(|r| r.results.iter())
             .filter(|r| r.case_id == id)
@@ -770,7 +797,8 @@ mod tests {
             schema_errors: Vec::new(),
             requirement_ids: Vec::new(),
         };
-        let err = build_report(&data, None, None, 90, 4, "2026-01-02T00:00:00Z")
+        let params = vvconfig::resolve(None, Flags::default()).unwrap();
+        let err = build_report(&data, None, None, &params, "2026-01-02T00:00:00Z")
             .unwrap_err()
             .to_string();
         assert!(

@@ -10,6 +10,7 @@ mod reqcmd;
 mod synccmd;
 mod vvcmd;
 mod vvcombine;
+mod vvconfig;
 mod vvmetrics;
 
 use anyhow::Result;
