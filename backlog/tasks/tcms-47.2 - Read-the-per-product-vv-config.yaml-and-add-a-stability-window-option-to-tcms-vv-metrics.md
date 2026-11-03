@@ -9,7 +9,8 @@ updated_date: '2026-11-03T00:00:00Z'
 labels:
   - vv-metrics
   - tcms-web-migration
-dependencies: []
+dependencies:
+  - TCMS-47.3
 references:
   - TCMS-47 - Compute-VV-metrics-and-quality-gate-verdict-in-tcms-cli.md
   - docs/VV_METRICS.md
