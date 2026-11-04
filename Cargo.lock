@@ -809,6 +809,7 @@ dependencies = [
  "anyhow",
  "clap 4.6.0",
  "ignore",
+ "jsonschema",
  "serde",
  "serde_json",
  "serde_yaml",
