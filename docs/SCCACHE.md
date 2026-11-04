@@ -30,12 +30,16 @@ See [Troubleshooting](#issue-compilation-failures-with-sccache-exit-status-254) 
 
 ### Global Cache Configuration (This Project)
 
-**This project uses a global cache directory** shared across all worktrees and git checkouts. This is configured in `.cargo/config.toml`:
+**This project uses a global cache directory** shared across all worktrees and git checkouts. It is exported by `scripts/enable-sccache.sh`:
 
-```toml
-[env]
-SCCACHE_DIR = { value = "$HOME/.cache/sccache/testcase-manager", force = true, relative = false }
+```bash
+export SCCACHE_DIR="$HOME/.cache/sccache/testcase-manager"
 ```
+
+> **Why not `.cargo/config.toml`?** Cargo's `[env]` table performs no shell or
+> variable expansion, so a value such as `"$HOME/.cache/sccache/testcase-manager"`
+> is passed to sccache literally and makes it create a directory *named* `$HOME`
+> in the build working directory. Set `SCCACHE_DIR` from the shell instead.
 
 **Location**: `~/.cache/sccache/testcase-manager`
 
@@ -60,7 +64,7 @@ cd ~/projects/tcms-hotfix
 cargo build --release  # Takes 30 seconds (partial cache hit)
 ```
 
-**Override if Needed**: Set `SCCACHE_DIR` environment variable to use a different location (overrides `.cargo/config.toml`).
+**Override if Needed**: Set `SCCACHE_DIR` before sourcing `scripts/enable-sccache.sh` to use a different location; the script honours an existing value.
 
 **⚠️ IMPORTANT - sccache Must Be Enabled**:
 The global cache directory will remain empty until sccache is enabled. After installation, you must set `RUSTC_WRAPPER=sccache`:
@@ -218,11 +222,10 @@ sccache can be configured using environment variables to customize cache behavio
 
 #### Cache Directory
 
-**This project uses a global cache directory** configured in `.cargo/config.toml` to enable cache sharing across multiple worktrees:
+**This project uses a global cache directory**, exported by `scripts/enable-sccache.sh`, to enable cache sharing across multiple worktrees:
 
-```toml
-[env]
-SCCACHE_DIR = { value = "$HOME/.cache/sccache/testcase-manager", force = true, relative = false }
+```bash
+export SCCACHE_DIR="$HOME/.cache/sccache/testcase-manager"
 ```
 
 **Global Cache Location**: `~/.cache/sccache/testcase-manager`
@@ -241,11 +244,12 @@ SCCACHE_DIR = { value = "$HOME/.cache/sccache/testcase-manager", force = true, r
 **Override global configuration** (if needed):
 
 ```bash
-# Override .cargo/config.toml setting
+# Set before sourcing scripts/enable-sccache.sh
 export SCCACHE_DIR=/my/custom/cache
+source ./scripts/enable-sccache.sh
 ```
 
-**Note**: Environment variables override `.cargo/config.toml` settings.
+**Note**: `scripts/enable-sccache.sh` respects a pre-existing `SCCACHE_DIR`.
 
 #### Cache Size
 
@@ -715,8 +719,8 @@ sccache can be integrated into CI/CD pipelines to speed up builds across multipl
 The simplest approach uses local disk caching on CI runners.
 
 **Local Development vs CI**:
-- **Local Development**: Uses global cache at `~/.cache/sccache/testcase-manager` (configured in `.cargo/config.toml`)
-- **CI/CD**: Uses project directory cache at `$CI_PROJECT_DIR/.sccache` (configured via environment variable override)
+- **Local Development**: Uses global cache at `~/.cache/sccache/testcase-manager` (exported by `scripts/enable-sccache.sh`)
+- **CI/CD**: Uses project directory cache at `$CI_PROJECT_DIR/.sccache` (set directly in the CI configuration)
 
 #### GitLab CI
 
@@ -725,7 +729,7 @@ This project's GitLab CI configuration (`.gitlab-ci.yml`):
 ```yaml
 variables:
   RUSTC_WRAPPER: sccache
-  # Override .cargo/config.toml for CI compatibility
+  # Project-directory cache for CI compatibility (cacheable by GitLab)
   SCCACHE_DIR: $CI_PROJECT_DIR/.sccache
   SCCACHE_CACHE_SIZE: 5G
 
