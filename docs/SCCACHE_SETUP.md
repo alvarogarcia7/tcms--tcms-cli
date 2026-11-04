@@ -234,7 +234,7 @@ For comprehensive documentation, see:
 
 ## Summary
 
-**Key Point**: The cache directory configured in `.cargo/config.toml` only specifies WHERE the cache will be stored. For sccache to actually cache compilations, you must:
+**Key Point**: The cache directory exported by `scripts/enable-sccache.sh` only specifies WHERE the cache will be stored. For sccache to actually cache compilations, you must:
 
 1. Install sccache: `make install-sccache`
 2. Enable it: `source ./scripts/enable-sccache.sh`

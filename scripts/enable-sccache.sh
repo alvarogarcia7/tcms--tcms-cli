@@ -20,6 +20,12 @@
 # Get the script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Global sccache cache directory, shared across all worktrees and git checkouts
+# of this repository. Set here rather than in .cargo/config.toml because Cargo's
+# [env] table performs no variable expansion ("$HOME/..." would be taken literally).
+# Respects a pre-existing SCCACHE_DIR so users can override the location.
+SCCACHE_CACHE_DIR="${SCCACHE_DIR:-$HOME/.cache/sccache/testcase-manager}"
+
 # Source logger library
 if [ -f "$SCRIPT_DIR/lib/logger.sh" ]; then
     source "$SCRIPT_DIR/lib/logger.sh"
@@ -58,7 +64,7 @@ NOTES:
     - This script must be sourced (not executed) to affect the current shell
     - sccache must be installed first (run: make install-sccache)
     - The global cache directory is: ~/.cache/sccache/testcase-manager
-    - Cache directory is configured in .cargo/config.toml
+    - This script exports SCCACHE_DIR; override it by setting SCCACHE_DIR first
 
 EOF
 }
@@ -100,12 +106,17 @@ check_configuration() {
     fi
     
     # Check cache directory configuration
-    log_info "Cache directory: ~/.cache/sccache/testcase-manager (configured in .cargo/config.toml)"
+    if [ -n "$SCCACHE_DIR" ]; then
+        log_info "Cache directory: $SCCACHE_DIR (from SCCACHE_DIR)"
+    else
+        log_warning "SCCACHE_DIR is not set; sccache would use its own default"
+        log_info "Run: source ./scripts/enable-sccache.sh  (sets SCCACHE_DIR to $SCCACHE_CACHE_DIR)"
+    fi
     
     # Check if cache directory exists
-    if [ -d "$HOME/.cache/sccache/testcase-manager" ]; then
+    if [ -d "$SCCACHE_CACHE_DIR" ]; then
         local cache_size
-        cache_size=$(du -sh "$HOME/.cache/sccache/testcase-manager" 2>/dev/null | cut -f1)
+        cache_size=$(du -sh "$SCCACHE_CACHE_DIR" 2>/dev/null | cut -f1)
         log_info "Cache directory exists (size: $cache_size)"
     else
         log_info "Cache directory does not exist yet (will be created on first build)"
@@ -138,6 +149,7 @@ add_to_profile() {
     else
         log_warning "Unknown shell. Please manually add to your profile:"
         log_info "  export RUSTC_WRAPPER=sccache"
+        log_info "  export SCCACHE_DIR=\"$SCCACHE_CACHE_DIR\""
         return 1
     fi
     
@@ -145,12 +157,17 @@ add_to_profile() {
         log_error "Could not determine shell profile file"
         log_info "Please manually add to your profile:"
         log_info "  export RUSTC_WRAPPER=sccache"
+        log_info "  export SCCACHE_DIR=\"$SCCACHE_CACHE_DIR\""
         return 1
     fi
     
     # Check if already in profile
     if grep -q "^export RUSTC_WRAPPER=sccache" "$profile_file" 2>/dev/null; then
         log_info "RUSTC_WRAPPER=sccache already in $profile_file"
+        if ! grep -q "^export SCCACHE_DIR=" "$profile_file" 2>/dev/null; then
+            echo "export SCCACHE_DIR=\"$SCCACHE_CACHE_DIR\"" >> "$profile_file"
+            pass "Added SCCACHE_DIR to $profile_file"
+        fi
         return 0
     fi
     
@@ -158,8 +175,9 @@ add_to_profile() {
     echo "" >> "$profile_file"
     echo "# Enable sccache for Rust compilation (testcase-manager)" >> "$profile_file"
     echo "export RUSTC_WRAPPER=sccache" >> "$profile_file"
+    echo "export SCCACHE_DIR=\"$SCCACHE_CACHE_DIR\"" >> "$profile_file"
     
-    pass "Added RUSTC_WRAPPER=sccache to $profile_file"
+    pass "Added RUSTC_WRAPPER=sccache and SCCACHE_DIR to $profile_file"
     log_info "Reload your shell or run: source $profile_file"
 }
 
@@ -211,9 +229,11 @@ main() {
         return 1
     fi
     
-    # Set RUSTC_WRAPPER for current session
+    # Set RUSTC_WRAPPER and SCCACHE_DIR for current session
     export RUSTC_WRAPPER=sccache
     pass "RUSTC_WRAPPER set to 'sccache' for current session"
+    export SCCACHE_DIR="$SCCACHE_CACHE_DIR"
+    pass "SCCACHE_DIR set to '$SCCACHE_DIR' for current session"
     
     # Add to profile if requested
     if [ "$permanent" = true ]; then
@@ -223,12 +243,14 @@ main() {
         fi
     else
         log_info "To make this permanent, run: source $0 --permanent"
-        log_info "Or manually add to your shell profile: export RUSTC_WRAPPER=sccache"
+        log_info "Or manually add to your shell profile:"
+        log_info "  export RUSTC_WRAPPER=sccache"
+        log_info "  export SCCACHE_DIR=\"$SCCACHE_CACHE_DIR\""
     fi
     
     echo
     log_info "sccache is now enabled!"
-    log_info "Cache directory: ~/.cache/sccache/testcase-manager"
+    log_info "Cache directory: $SCCACHE_DIR"
     log_info ""
     log_info "Next steps:"
     log_info "  1. Build your project: cargo build"

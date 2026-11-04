@@ -1187,11 +1187,15 @@ The project uses **sccache** (Shared Compilation Cache) to accelerate Rust compi
 - **Disk Efficiency**: Single cache location instead of per-worktree caches
 
 **Configuration**:
-The cache directory is configured in `.cargo/config.toml`:
-```toml
-[env]
-SCCACHE_DIR = { value = "$HOME/.cache/sccache/testcase-manager", force = true, relative = false }
+The cache directory is exported by `scripts/enable-sccache.sh`:
+```bash
+export SCCACHE_DIR="$HOME/.cache/sccache/testcase-manager"
 ```
+
+It is deliberately **not** set in `.cargo/config.toml`: Cargo's `[env]` table
+performs no shell or variable expansion, so `"$HOME/.cache/sccache/..."` reaches
+sccache literally and makes it create a directory *named* `$HOME` in the build
+working directory.
 
 **Setup (Required for sccache to work)**:
 ```bash
@@ -1244,9 +1248,10 @@ See [docs/SCCACHE_SETUP.md](docs/SCCACHE_SETUP.md) for detailed troubleshooting.
 In Docker builds, sccache uses `/root/.cache/sccache/testcase-manager` as the cache directory. This can be persisted across builds using Docker cache mounts.
 
 **Manual Override**:
-To use a custom cache location, set the `SCCACHE_DIR` environment variable (overrides `.cargo/config.toml`):
+To use a custom cache location, set `SCCACHE_DIR` before sourcing the enable script (it honours an existing value):
 ```bash
 export SCCACHE_DIR=/my/custom/cache
+source ./scripts/enable-sccache.sh
 ```
 
 ### Report Generation

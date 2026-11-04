@@ -4,21 +4,37 @@
 # Require llvm-tools-preview component for coverage instrumentation
 rustflags = []
 
+# Shared build directory: reuse compiled dependency artifacts across worktrees
+#
+# Intermediate artifacts (dependency .rlib/.rmeta, incremental data) are written
+# to a single directory under CARGO_HOME instead of <worktree>/target, so every
+# worktree and checkout of this repository compiles each dependency only once.
+# Final artifacts (binaries, test executables) still land in <worktree>/target.
+#
+# {cargo-cache-home} expands to CARGO_HOME (default ~/.cargo), keeping the path
+# portable across machines, users, and CI images. Requires Cargo 1.91+.
+#
+# Caveat: Cargo takes an exclusive lock on the build directory, so concurrent
+# builds in two worktrees serialize ("Blocking waiting for file lock on build
+# directory") rather than running in parallel.
+build-dir = "{cargo-cache-home}/build/testcase-manager"
+
 # sccache configuration for build caching
 #
-# Global cache directory: Share compilation cache across multiple worktrees
-# This is set in the user's home directory to enable cache reuse between different
-# git worktrees and checkouts of this repository
+# SCCACHE_DIR is deliberately NOT set here. Cargo's [env] table does no shell or
+# variable expansion, so a value like "$HOME/.cache/sccache/..." is passed through
+# literally and makes sccache create a directory named '$HOME' in the build cwd.
+# The global cache directory (~/.cache/sccache/testcase-manager, shared across all
+# worktrees and checkouts) is exported by scripts/enable-sccache.sh instead, where
+# $HOME expands correctly.
 #
 # To enable sccache for local development:
 #   1. Install sccache: make install-sccache
-#   2. Set RUSTC_WRAPPER environment variable: export RUSTC_WRAPPER=sccache
-#   3. Add to shell profile (~/.bashrc, ~/.zshrc): echo 'export RUSTC_WRAPPER=sccache' >> ~/.bashrc
+#   2. Enable for this shell: source ./scripts/enable-sccache.sh
+#   3. Enable permanently:    source ./scripts/enable-sccache.sh --permanent
 #
-# CI environments (GitLab CI) set RUSTC_WRAPPER in their configuration
+# CI environments (GitLab CI) set RUSTC_WRAPPER and SCCACHE_DIR in their configuration
 # GitHub Actions uses RustCrypto/actions/cargo-cache instead
-[env]
-SCCACHE_DIR = { value = "$HOME/.cache/sccache/testcase-manager", force = true, relative = false }
 
 [target.'cfg(all())']
 # Set default RUSTFLAGS for coverage builds with instrument-coverage flag
