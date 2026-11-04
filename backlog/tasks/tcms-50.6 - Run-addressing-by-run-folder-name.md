@@ -1,10 +1,11 @@
 ---
 id: TCMS-50.6
 title: Address a run by its run folder name in every tcms vv command
-status: To Do
-assignee: []
+status: In Review
+assignee:
+  - Claude
 created_date: '2026-11-04T00:00:00Z'
-updated_date: '2026-11-04T09:51:00Z'
+updated_date: '2026-11-04T10:15:00Z'
 labels:
   - vv-metrics
   - decision
@@ -29,13 +30,36 @@ Error behaviour: an unknown --run fails and the message lists the valid run ids 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 docs/VV_METRICS.md names the run folder name as the only --run contract, with the reason
-- [ ] #2 tcms vv metrics --run <folder name> returns the metrics of that run; a test uses the derived fixture
-- [ ] #3 Every command that takes --run uses the same resolver; a test covers each command that takes --run as it exists when this task is done
-- [ ] #4 An unknown --run value fails and the message lists the valid run ids (folder names)
+- [x] #1 docs/VV_METRICS.md names the run folder name as the only --run contract, with the reason
+- [x] #2 tcms vv metrics --run <folder name> returns the metrics of that run; a test uses the derived fixture
+- [x] #3 Every command that takes --run uses the same resolver; a test covers each command that takes --run as it exists when this task is done
+- [x] #4 An unknown --run value fails and the message lists the valid run ids (folder names)
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
 - [ ] #1 All tests are passing. Run make test
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. vvcmd.rs load_runs: the run id used for --run and in output is the run folder name (confirmed contract).
+2. build_report: unknown --run lists the valid folder names in the error.
+3. Tests with a derived fixture: --run with a folder name differing from the run_id inside test-run.yaml; unknown id lists the valid ids.
+4. docs/VV_METRICS.md states the contract.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+load_runs uses the run folder name as the run id (the run_id inside test-run.yaml is ignored for lookup). Unknown --run errors list the valid folder names. Test: run_is_addressed_by_its_folder_name_not_by_the_run_id_inside (vv_trends_history_cli.rs).
+
+AC 3: the commands that take --run are metrics only (history takes --case, trends takes --runs N, combine writes a folder), so one resolver covers all of them.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+--run now takes the run folder name only, and the output reports that folder name as runId. An unknown --run fails and lists the valid folder names. Documented in docs/VV_METRICS.md. Tested with a fixture whose run_id inside the record differs from its folder.
+<!-- SECTION:FINAL_SUMMARY:END -->

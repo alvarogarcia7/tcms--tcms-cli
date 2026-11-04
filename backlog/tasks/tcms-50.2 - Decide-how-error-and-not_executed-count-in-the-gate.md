@@ -1,10 +1,11 @@
 ---
 id: TCMS-50.2
 title: Decide how error and not_executed count in the quality gate
-status: To Do
-assignee: []
+status: In Review
+assignee:
+  - Claude
 created_date: '2026-11-04T00:00:00Z'
-updated_date: '2026-11-04T09:56:00Z'
+updated_date: '2026-11-04T10:15:00Z'
 labels:
   - vv-metrics
   - decision
@@ -40,10 +41,10 @@ Follow-up outside this repo (noted in the MR, not changed here): tcms-web's reco
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 docs/VV_METRICS.md states the gate bucket of error (FAILED) and of not_executed (NOT EXECUTED, in the denominator, not passed, not FAILED) with the reason, and its verdict vocabulary table is updated to match
-- [ ] #2 tcms vv metrics counts error in Failed and not_executed in its own count inside the gate denominator; tests cover each verdict and check the pass rate with a not_executed case
-- [ ] #3 skipped stays outside the gate denominator; a test covers it
-- [ ] #4 TCMS-47.4 AC #3 is amended to match this decision
+- [x] #1 docs/VV_METRICS.md states the gate bucket of error (FAILED) and of not_executed (NOT EXECUTED, in the denominator, not passed, not FAILED) with the reason, and its verdict vocabulary table is updated to match
+- [x] #2 tcms vv metrics counts error in Failed and not_executed in its own count inside the gate denominator; tests cover each verdict and check the pass rate with a not_executed case
+- [x] #3 skipped stays outside the gate denominator; a test covers it
+- [x] #4 TCMS-47.4 AC #3 is amended to match this decision
 - [ ] #5 The tcms-web recorded-run service and the Verdict shim are noted in the MR as follow-up, moving not_executed to the same bucket
 <!-- AC:END -->
 
@@ -51,3 +52,23 @@ Follow-up outside this repo (noted in the MR, not changed here): tcms-web's reco
 <!-- DOD:BEGIN -->
 - [ ] #1 All tests are passing. Run make test
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Implemented by TCMS-47.4's bucket change: error counts as Failed, not_executed counts in the denominator as not passed with its own count, skipped stays outside. Work here: tests per verdict and a pass-rate test with a not_executed case, docs/VV_METRICS.md verdict table and gate section updated.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Gate tests in vvmetrics (not_executed in the denominator as not passed; skipped outside; not_executed-only is FAILED not NO_DATA). Integration: vv_trends_history_cli.rs not_executed_is_in_the_denominator_as_not_passed_and_never_failed; derived fixture not-executed-run; testcases/tcms-vv/TC_TCMS_VV_C5_001.yml updated to FAILED over 2 cases.
+
+AC 5 OPEN: tcms-web recorded-run service (SKIPPED) and the Verdict shim (UNTESTED) still need to move to NOT EXECUTED in the tcms-web change set. Not in this repository.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented the TCMS-50.2 buckets in the CLI: error counts as Failed; not_executed counts in the gate denominator as not passed, with its own count; skipped stays outside. Documented in docs/VV_METRICS.md and tested per verdict and with a not_executed pass-rate case. The tcms-web follow-up is still open.
+<!-- SECTION:FINAL_SUMMARY:END -->
