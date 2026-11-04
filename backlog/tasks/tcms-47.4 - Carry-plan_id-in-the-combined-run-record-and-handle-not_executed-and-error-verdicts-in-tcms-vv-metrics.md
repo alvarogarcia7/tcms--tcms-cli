@@ -1,17 +1,20 @@
 ---
 id: TCMS-47.4
 title: >-
-  Carry plan_id in the combined run record and handle not_executed and error verdicts in tcms vv metrics
+  Carry plan_id in the combined run record and handle not_executed and error
+  verdicts in tcms vv metrics
 status: To Do
 assignee: []
 created_date: '2026-11-03T06:30:00Z'
-updated_date: '2026-11-03T06:30:00Z'
+updated_date: '2026-11-04T09:57:00Z'
 labels:
   - vv-metrics
   - tcms-web-migration
 dependencies: []
 references:
-  - TCMS-47.3 - Combine per-case results into one run record (docs/RUN_RECORD_FORMAT.md, decision D-47-1)
+  - >-
+    TCMS-47.3 - Combine per-case results into one run record
+    (docs/RUN_RECORD_FORMAT.md, decision D-47-1)
   - docs/RUN_RECORD_FORMAT.md
   - docs/VV_METRICS.md
   - crates/tcms/src/vvcmd.rs
@@ -34,7 +37,7 @@ Two gaps were found when Verdict (tcms-web) connected to `tcms vv metrics` throu
 ## What
 
 - The combined run record written by TCMS-47.3 carries `plan_id` in `test-run.yaml` (from the shared run metadata). When the run has no plan, the key is written with an explicit null, so a reader can tell a missing plan from a missing key.
-- `tcms vv metrics` accepts all four verdicts, selects runs by `plan_id` with `--plan`, and counts `not_executed` and `error` outside the gate denominator, as skipped and untested are counted today, and reports them in the counts.
+- `tcms vv metrics` accepts all four verdicts and selects runs by `plan_id` with `--plan`. Gate buckets follow TCMS-50.2: `error` counts as Failed and `not_executed` counts as Not executed, both inside the gate denominator; `not_executed` is never counted as Failed. Skipped stays outside the denominator as today. Both new verdicts appear in the counts.
 - A verdict outside the four is an error that names the file, the test case and the value.
 <!-- SECTION:DESCRIPTION:END -->
 
@@ -42,7 +45,7 @@ Two gaps were found when Verdict (tcms-web) connected to `tcms vv metrics` throu
 <!-- AC:BEGIN -->
 - [ ] #1 The combined run record carries plan_id in test-run.yaml, and an explicit null when the run has no plan
 - [ ] #2 tcms vv metrics --plan <ID> selects only the runs whose plan_id is that plan
-- [ ] #3 not_executed and error verdicts are accepted; both are outside the gate denominator and appear in the counts
+- [ ] #3 error counts as Failed and not_executed counts as Not executed, both inside the gate denominator (per TCMS-50.2); both appear in the counts, and not_executed is never counted as Failed
 - [ ] #4 A verdict outside pass, fail, not_executed and error is an error that names the file, the test case and the value
 - [ ] #5 Tests cover a run with plan_id, a run without plan (null), each new verdict, and the unknown-verdict error
 - [ ] #6 docs/RUN_RECORD_FORMAT.md and docs/VV_METRICS.md describe plan_id and the four verdicts
