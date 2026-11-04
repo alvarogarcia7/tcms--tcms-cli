@@ -164,3 +164,27 @@ fn a_missing_schemas_root_is_an_error() {
     assert_eq!(out.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&out.stderr).contains("cannot read tcms-schemas"));
 }
+
+#[test]
+fn jsonl_output_validates_against_the_published_schema() {
+    let (_dir, repo, schemas) = fixture();
+    let out = run(&repo, &schemas, &["--output=jsonl"]);
+    assert!(out.status.success());
+
+    let schema_text = fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("schema")
+            .join("find-files-by-schema-match.schema.json"),
+    )
+    .unwrap();
+    let schema: serde_json::Value = serde_json::from_str(&schema_text).unwrap();
+    let compiled = jsonschema::JSONSchema::compile(&schema).expect("schema compiles");
+
+    let mut checked = 0;
+    for line in stdout(&out).lines() {
+        let instance: serde_json::Value = serde_json::from_str(line).unwrap();
+        assert!(compiled.is_valid(&instance), "invalid line: {line}");
+        checked += 1;
+    }
+    assert_eq!(checked, 3);
+}

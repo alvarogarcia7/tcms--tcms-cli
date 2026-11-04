@@ -39,7 +39,7 @@ JSONL, one object per match (`type` is `null` when the document has none):
 {"path":"cases/tc.yaml","schema":"tcms/test-case-main.schema.json","type":"test-case"}
 ```
 
-Matches are sorted by path. Diagnostics (malformed files) go to stderr as `warning:` lines and never to stdout.
+Matches are sorted by path. The JSONL shape is published as JSON Schema (draft-07) in [`schema/find-files-by-schema-match.schema.json`](schema/find-files-by-schema-match.schema.json); the test suite validates the binary's output against it. Diagnostics (malformed files) go to stderr as `warning:` lines and never to stdout.
 
 ## Exit codes
 
