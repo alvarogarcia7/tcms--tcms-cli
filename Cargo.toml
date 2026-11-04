@@ -4,6 +4,7 @@ members = [
     "crates/audit-verifier",
     "crates/bash-eval",
     "crates/editor",
+    "crates/find-files-by-schema",
     "crates/id-resolver",
     "crates/jira-client",
     "crates/json-escape",
@@ -92,6 +93,7 @@ toml = "0.9.11"
 tempfile = "3.8"
 notify = "8.2"
 walkdir = "2.4"
+ignore = "0.4"
 
 # XML processing
 roxmltree = "0.20"
