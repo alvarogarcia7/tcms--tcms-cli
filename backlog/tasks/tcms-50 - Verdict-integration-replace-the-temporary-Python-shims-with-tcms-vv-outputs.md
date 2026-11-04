@@ -4,6 +4,7 @@ title: Verdict integration - replace the temporary Python shims with tcms vv out
 status: To Do
 assignee: []
 created_date: '2026-11-04T00:00:00Z'
+updated_date: '2026-11-04T09:54:00Z'
 labels:
   - vv-metrics
   - tcms-web-migration
@@ -19,7 +20,7 @@ references:
     Verdict shims that stand in for this work until it lands:
     scripts/vv/shim/vv_config.py, vv_dedupe.py, vv_metrics_file.py,
     vv_history.py, vv_views_file.py, vv_report.py, jira_figures.py
-  - 'docs/VV_CASE_HISTORY_GAP.md and VV_BUSINESS_LOGIC_REPLACEMENT.md in tcms-web'
+  - docs/VV_CASE_HISTORY_GAP.md and VV_BUSINESS_LOGIC_REPLACEMENT.md in tcms-web
 priority: high
 type: feature
 ---
@@ -43,3 +44,9 @@ Why: two implementations of one rule (Java and Python) drifted apart in the audi
 <!-- DOD:BEGIN -->
 - [ ] #1 All tests are passing. Run make test
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Constraint: keep the tcms-web change set as small as possible. Per child, tcms-web changes are limited to deleting the matching shim, switching Verdict to the CLI output, and updating expected values in parity fixtures. No rewrite of Java logic that the CLI replaces unless the switch cannot work without it.
+<!-- SECTION:NOTES:END -->

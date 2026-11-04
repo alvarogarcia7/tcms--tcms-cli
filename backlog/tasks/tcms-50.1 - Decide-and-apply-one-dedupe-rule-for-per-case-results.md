@@ -4,7 +4,7 @@ title: Decide and apply one dedupe rule for per-case results
 status: To Do
 assignee: []
 created_date: '2026-11-04T00:00:00Z'
-updated_date: '2026-11-04T08:35:00Z'
+updated_date: '2026-11-04T09:54:00Z'
 labels:
   - vv-metrics
   - decision
@@ -18,29 +18,30 @@ type: feature
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Two rules choose the one result per test case when a run has duplicates:
+Verdict (tcms-web) and the CLI pick one result per test case when a case has several results, and they disagree:
 - TCMS-47.3 AC #3: the latest started_at wins; not_executed never overrides an executed result.
-- Verdict (tcms-web, D-M8-25 shim scripts/vv/shim/vv_dedupe.py): the result with the detail flag wins, then the newest date, then the path.
+- Verdict (scripts/vv/shim/vv_dedupe.py): the result with the detail flag wins, then the newest date, then the path.
 
-They disagree on which result wins when the detail flags differ. Pick one, record it as a decision, and apply it in the CLI. Verdict then drops its Python dedupe.
+The two disagree when detail flags differ. This task records one rule, applies it in the CLI, and removes Verdict's Python dedupe.
 
---- 
+Decision (supersedes the duplicate rule in TCMS-47.3 AC #3, which TCMS-47.3 now points here for, and the "Duplicates" paragraph in docs/VV_METRICS.md once applied):
+- Order: attempts and runs are sorted by started_at, oldest first. Equal started_at is broken by the path (run folder name, then file path), greater path counts as later. "Last" means latest in this order.
+- Walk from the last one back to the first, for one test case:
+  1. The first pass, fail or error decides the case. pass gives PASSED; fail and error both give FAILED.
+  2. not_executed and skipped never decide; go to the previous one.
+  3. If nothing decides (only not_executed or skipped, or no result), the case has no decided result and is reported as not_executed.
+- Reason: one rule removes the drift between the Java and Python implementations that the parent task describes, and it matches the "latest verdict by started_at" statement in docs/JIRA_INTEGRATION.md. error counts as a failure per TCMS-50.2.
 
-Decision:
-The rule should be:
-1. Read from the last run back to the first one, until we have results for all test cases
-2. If it's passing, then all good. No need to find more information for this test case.
-3. if it is failing, then keep that result. No need to find more information for this test case.
-4. If it skipped, go to the next one.
-5. If it is error, consider it failing. No need to find more information for this test case.
+Note for the change set (keep tcms-web changes minimal): only the expected values in the tcms-web parity fixture are regenerated from this rule. The Java parser logic is not rewritten for this; the Verdict switch to the CLI output is the only tcms-web change needed for dedupe.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A decision entry states the one rule, with the reason, in docs/VV_METRICS.md
-- [ ] #2 tcms vv metrics applies that rule to the legacy duplicates fixture and returns the same result per case that the tcms-web Java parser returned on the same fixture
-- [ ] #3 not_executed never overrides an executed result (a test covers it)
-- [ ] #4 A test covers the tie cases: same date, and same date with a different path
+- [ ] #1 docs/VV_METRICS.md states the single rule, the order (started_at, then path), the reason, and that it replaces the rule in TCMS-47.3 AC #3; TCMS-47.3 points to it (done in 47.3)
+- [ ] #2 tcms vv metrics applies the rule to the legacy duplicates fixture; the expected per-case results of that fixture are regenerated from the rule, and the tcms-web parity expectations (TcmsCliLegacyParityTest) are updated in the same change set with no change to the Java parser logic
+- [ ] #3 A test covers not_executed and skipped never overriding a pass, fail or error result
+- [ ] #4 A test covers error counting as FAILED
+- [ ] #5 A test covers the tie cases: equal started_at with different paths (greater path wins), and a case with no decided result reported as not_executed
 <!-- AC:END -->
 
 ## Definition of Done
