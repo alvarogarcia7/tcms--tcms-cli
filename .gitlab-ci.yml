@@ -684,7 +684,7 @@ check:testcase-files:
 
 # Acceptance suite (make acceptance-test): all stages, including the documentation stages that need the
 # test-plan-documentation-generator (TPDG). The TPDG release is downloaded by scripts/download-tpdg.sh
-# (version: TPDG_VERSION, default v0.1.0-rc.1). It needs access to the TPDG project (id 350): either
+# (version: TPDG_VERSION, set in this job's variables; make download-tpdg reads the same value). It needs access to the TPDG project (id 350): either
 #   - add this project to the TPDG project's job token allowlist (Settings > CI/CD > Job token
 #     permissions), then the job's CI_JOB_TOKEN is enough; or
 #   - set a masked CI/CD variable TPDG_TOKEN (a token with read_api on the TPDG project).
@@ -701,7 +701,7 @@ acceptance:test:
     - when: on_success
   allow_failure: true
   variables:
-    TPDG_VERSION: "v0.1.0-rc.1"
+    TPDG_VERSION: "v0.1.0-rc.3_2026-11-02"
   before_script:
     - rustc --version
     - cargo --version

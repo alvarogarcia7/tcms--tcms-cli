@@ -814,12 +814,16 @@ test-container-compat:
 	./scripts/test_container_yaml_compatibility.sh
 .PHONY: test-container-compat
 
+# TPDG release version, read from the TPDG_VERSION variable of the acceptance job in .gitlab-ci.yml
+# so that CI and local downloads use the same version. Override on the command line if needed.
+TPDG_VERSION ?= $(shell grep '^ *TPDG_VERSION:' .gitlab-ci.yml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+
 # Download the test-plan-documentation-generator (TPDG) release used by the acceptance suite into
 # tools/tpdg/tpdg (linux-amd64 only). Needs a GitLab token with read_api on the TPDG project:
-#   TPDG_TOKEN=glpat-... make download-tpdg [TPDG_VERSION=v0.1.0-rc.1]
+#   TPDG_TOKEN=glpat-... make download-tpdg [TPDG_VERSION=v0.1.0-rc.3_2026-11-02]
 # acceptance-test uses tools/tpdg/tpdg automatically when TEST_PLAN_DOC_GEN is not set.
 download-tpdg:
-	@TPDG_VERSION="$(or $(TPDG_VERSION),v0.1.0-rc.1)" ./scripts/download-tpdg.sh
+	@TPDG_VERSION="$(TPDG_VERSION)" ./scripts/download-tpdg.sh
 .PHONY: download-tpdg
 
 acceptance-test: build-acceptance-binaries
@@ -939,9 +943,14 @@ test-rest:
 	-mv .test-failing-tmp .test-failing
 .PHONY: test-rest
 
+# Create or update .env from the variables in .gitlab-ci.yml. Lines not defined there are kept.
+gen-env:
+	uv run python3.14 scripts/gen_env.py --ci .gitlab-ci.yml --env .env
+.PHONY: gen-env
+
 # V&V metrics of tcms (TCMS-47): unit and integration tests, the end-to-end suite on the binary,
 # and the reliability loop (repeated runs, identical report hashes).
-test-vv-metrics:
+test-vv-metrics: gen-env
 	cargo test -p tcms --bins --test vv_metrics_cli --test vv_plan_cli --test vv_test_cases
 	./scripts/vv/test_vv_metrics.sh
 .PHONY: test-vv-metrics

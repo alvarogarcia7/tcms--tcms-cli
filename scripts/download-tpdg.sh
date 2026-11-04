@@ -15,7 +15,7 @@
 #                    that works only if the TPDG project allows this project's job token
 #                    (Settings > CI/CD > Job token permissions); otherwise set TPDG_TOKEN as a
 #                    masked CI/CD variable.
-#   TPDG_VERSION     Release tag (default v0.1.0-rc.1)
+#   TPDG_VERSION     Release tag (required; `make download-tpdg` reads it from .gitlab-ci.yml)
 #   TPDG_DIR         Install directory (default tools/tpdg)
 #   TPDG_HOST        GitLab host (default gitlab.crypto.tii.ae)
 #   TPDG_PROJECT_ID  Project id of the TPDG project (default 350)
@@ -28,7 +28,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/logger.sh" || exit 1
 
-TPDG_VERSION="${TPDG_VERSION:-v0.1.0-rc.1}"
+TPDG_VERSION="${TPDG_VERSION:-}"
 TPDG_DIR="${TPDG_DIR:-tools/tpdg}"
 TPDG_HOST="${TPDG_HOST:-gitlab.crypto.tii.ae}"
 TPDG_PROJECT_ID="${TPDG_PROJECT_ID:-350}"
@@ -41,6 +41,11 @@ while [ $# -gt 0 ]; do
         *) log_error "unknown argument: $1"; exit 1 ;;
     esac
 done
+
+if [ -z "$TPDG_VERSION" ]; then
+    log_error "TPDG_VERSION is not set (use make download-tpdg, or --version vX.Y.Z)"
+    exit 1
+fi
 
 if [ -n "${TPDG_TOKEN:-}" ]; then
     AUTH_HEADER="PRIVATE-TOKEN: $TPDG_TOKEN"
