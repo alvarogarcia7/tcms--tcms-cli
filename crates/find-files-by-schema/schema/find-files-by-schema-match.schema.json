@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tcms.local/schemas/find-files-by-schema-match.schema.json",
+  "title": "find-files-by-schema match",
+  "description": "One line of `find-files-by-schema --output=jsonl`: a repo file whose schema: URI resolves to a tcms-schemas type. Each stdout line is one JSON object of this shape. The verified and errors fields appear only with --verify.",
+  "type": "object",
+  "required": [
+    "path",
+    "schema",
+    "type"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "File path relative to the scan root (--root), with '/' separators."
+    },
+    "schema": {
+      "type": "string",
+      "pattern": "^tcms/[^/]+\\.schema\\.json$",
+      "description": "Vendored schema file the file's schema: URI resolves to, relative to schemas/tcms-schemas/, for example tcms/test-run.schema.json."
+    },
+    "type": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Value of the document's top-level type: field, or null when the document has none."
+    },
+    "verified": {
+      "type": "boolean",
+      "description": "Present only with --verify: true when the document's content validates against its declared schema."
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Present only with --verify: one '<pointer>: <message>' per violation; empty when verified is true. The pointer is '(root)' for the document root."
+    }
+  }
+}
