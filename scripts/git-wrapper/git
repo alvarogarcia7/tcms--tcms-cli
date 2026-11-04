@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# git wrapper:
+#   - author/committer identity comes from the repo's .env (falls back to env vars)
+#   - Co-Authored-By trailers are removed from commit messages
+# Installed by scripts/install-git-wrapper.sh, which fills in the __REAL_GIT__
+# and __HOOK_DIR__ placeholders.
+
+REAL_GIT="${GIT_WRAP_REAL:-__REAL_GIT__}"
+HOOK_DIR="${GIT_WRAP_HOOK_DIR:-__HOOK_DIR__}"
+
+# Honour a leading `-C <dir>` when locating .env.
+work_dir="."
+if [ "$1" = "-C" ] && [ -n "$2" ]; then
+	work_dir="$2"
+fi
+
+repo_root="$(cd "$work_dir" 2>/dev/null && "$REAL_GIT" rev-parse --show-toplevel 2>/dev/null)"
+env_file=""
+if [ -n "$repo_root" ] && [ -f "$repo_root/.env" ]; then
+	env_file="$repo_root/.env"
+fi
+
+# Print the last KEY=VALUE assignment for KEY in FILE, without quotes.
+env_file_value() {
+	sed -n "s/^[[:space:]]*$2[[:space:]]*=[[:space:]]*//p" "$1" \
+		| tail -n 1 \
+		| sed -e 's/\r$//' -e 's/[[:space:]]*$//' -e 's/^"\(.*\)"$/\1/' -e "s/^'\(.*\)'\$/\1/"
+}
+
+# .env wins; the environment variable is used only when .env does not set the key.
+resolve() {
+	local value=""
+	if [ -n "$env_file" ]; then
+		value="$(env_file_value "$env_file" "$1")"
+	fi
+	if [ -z "$value" ]; then
+		value="${!1}"
+	fi
+	printf '%s' "$value"
+}
+
+author_name="$(resolve GIT_AUTHOR_NAME)"
+author_email="$(resolve GIT_AUTHOR_EMAIL)"
+committer_name="$(resolve GIT_COMMITTER_NAME)"
+committer_email="$(resolve GIT_COMMITTER_EMAIL)"
+[ -z "$committer_name" ] && committer_name="$author_name"
+[ -z "$committer_email" ] && committer_email="$author_email"
+
+[ -n "$author_name" ] && export GIT_AUTHOR_NAME="$author_name"
+[ -n "$author_email" ] && export GIT_AUTHOR_EMAIL="$author_email"
+[ -n "$committer_name" ] && export GIT_COMMITTER_NAME="$committer_name"
+[ -n "$committer_email" ] && export GIT_COMMITTER_EMAIL="$committer_email"
+
+# Find the subcommand, skipping global options.
+subcommand=""
+skip_next=0
+for arg in "$@"; do
+	if [ "$skip_next" -eq 1 ]; then
+		skip_next=0
+		continue
+	fi
+	case "$arg" in
+		-C|-c|--git-dir|--work-tree|--namespace) skip_next=1 ;;
+		-*) ;;
+		*) subcommand="$arg"; break ;;
+	esac
+done
+
+# Only commits run the commit-msg hook, so only commits get the trailer filter.
+if [ "$subcommand" = "commit" ]; then
+	set -- -c "core.hooksPath=$HOOK_DIR" "$@"
+fi
+
+exec "$REAL_GIT" "$@"

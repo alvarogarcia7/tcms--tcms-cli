@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# pre-push: rejects a push that contains commits from an author not listed in
+# .commit-policy, or commits carrying a Co-Authored-By trailer.
+# Enable once per clone with: git config core.hooksPath scripts/git-hooks
+
+repo_root="$(git rev-parse --show-toplevel)" || exit 2
+# exec so git's ref lines on stdin reach the policy script.
+exec python3 "$repo_root/scripts/commit_policy.py" pre-push "$1"

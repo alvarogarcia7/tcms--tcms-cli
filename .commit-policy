@@ -1,0 +1,4 @@
+# Author emails allowed on commits pushed to this repository.
+# One per line; lowercase comparison. Checked by scripts/commit_policy.py.
+alvaro.garcia@tii.ae
+alvarogarcia7@users.noreply.github.com

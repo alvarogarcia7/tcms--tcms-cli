@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# commit-msg hook installed by scripts/install-git-wrapper.sh:
+#   - removes Co-Authored-By trailers from the commit message
+#   - then runs the repository's own commit-msg hook, if it has one,
+#     because core.hooksPath replaces the repository's hooks directory
+# The __REAL_GIT__ placeholder is filled in by the installer.
+
+msg_file="$1"
+tmp_file="$msg_file.tmp.$$"
+
+awk 'tolower($0) !~ /^[ \t]*co-authored-by:/' "$msg_file" > "$tmp_file" \
+	&& mv "$tmp_file" "$msg_file"
+
+repo_hook="$(__REAL_GIT__ rev-parse --git-dir 2>/dev/null)/hooks/commit-msg"
+if [ -x "$repo_hook" ]; then
+	exec "$repo_hook" "$@"
+fi
+
+exit 0
