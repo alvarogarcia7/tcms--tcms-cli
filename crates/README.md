@@ -467,6 +467,24 @@ validate-json --schema <SCHEMA> <FILE>
 
 ### Utility Tools
 
+#### `find-files-by-schema`
+**Binary**: `find-files-by-schema`
+
+**Purpose**: List the YAML and JSON files in a repo that declare a tcms-schemas type (matched by the `schema:` URI, reported with the declared `type:`)
+
+**Key Features**:
+- Honours `.gitignore`, also outside a git repository
+- `--only <TYPE>` (repeatable) restricts matches to named types
+- `--output=plaintext` (default) for humans, `--output=jsonl` for agents
+- Malformed files are skipped with a warning on stderr
+
+**Dependencies**: `testcase-common`, `ignore`, `clap`, `serde_json`, `serde_yaml`, `anyhow`
+
+**Usage**:
+```bash
+find-files-by-schema [--root DIR] [--schemas-root DIR] [--only TYPE]... [--output=plaintext|jsonl]
+```
+
 #### `script-cleanup`
 **Binary**: `script-cleanup`
 
