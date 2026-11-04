@@ -14,8 +14,20 @@ fn fixture() -> (TempDir, std::path::PathBuf, std::path::PathBuf) {
     let schemas = dir.path().join("schemas");
     let vendored = schemas.join("tcms-schemas").join("tcms");
     fs::create_dir_all(&vendored).unwrap();
-    for name in ["test-run", "test-case-main", "trace-matrix"] {
-        fs::write(vendored.join(format!("{name}.schema.json")), "{}").unwrap();
+    // Real constraints, so that --verify has something to check.
+    let schema_bodies = [
+        (
+            "test-run",
+            r#"{"type":"object","required":["run_id"],"properties":{"run_id":{"type":"string"}}}"#,
+        ),
+        (
+            "test-case-main",
+            r#"{"type":"object","required":["test_case_id"],"properties":{"test_case_id":{"type":"string"}}}"#,
+        ),
+        ("trace-matrix", r#"{"type":"object","required":["id"]}"#),
+    ];
+    for (name, body) in schema_bodies {
+        fs::write(vendored.join(format!("{name}.schema.json")), body).unwrap();
     }
     let repo = dir.path().join("repo");
     fs::create_dir_all(repo.join("runs")).unwrap();
@@ -187,4 +199,148 @@ fn jsonl_output_validates_against_the_published_schema() {
         checked += 1;
     }
     assert_eq!(checked, 3);
+}
+
+fn verify_lines(out: &Output) -> Vec<serde_json::Value> {
+    stdout(out)
+        .lines()
+        .map(|l| serde_json::from_str(l).expect("each stdout line is JSON"))
+        .collect()
+}
+
+#[test]
+fn without_verify_the_output_has_no_verification_fields() {
+    let (_dir, repo, schemas) = fixture();
+    let out = run(&repo, &schemas, &["--output=jsonl"]);
+    for line in verify_lines(&out) {
+        assert!(line.get("verified").is_none(), "{line}");
+        assert!(line.get("errors").is_none(), "{line}");
+    }
+    assert_eq!(out.status.code(), Some(0));
+}
+
+#[test]
+fn verify_reports_a_valid_document_as_verified_with_no_errors() {
+    let (_dir, repo, schemas) = fixture();
+    fs::write(
+        repo.join("runs/only-valid.yaml"),
+        "schema: tcms/test-run.schema.json\nrun_id: R2\n",
+    )
+    .unwrap();
+    let out = run(
+        &repo,
+        &schemas,
+        &["--verify", "--output=jsonl", "--only", "test-run"],
+    );
+    let lines = verify_lines(&out);
+    let valid = lines
+        .iter()
+        .find(|l| l["path"] == "runs/only-valid.yaml")
+        .unwrap();
+    assert_eq!(valid["verified"], true);
+    assert_eq!(valid["errors"], serde_json::json!([]));
+}
+
+#[test]
+fn verify_reports_error_pointers_and_root_violations() {
+    let (_dir, repo, schemas) = fixture();
+    fs::write(
+        repo.join("runs/bad-run.yaml"),
+        "schema: tcms/test-run.schema.json\nrun_id: 42\n",
+    )
+    .unwrap();
+    let out = run(&repo, &schemas, &["--verify", "--output=jsonl"]);
+    let lines = verify_lines(&out);
+
+    let bad = lines
+        .iter()
+        .find(|l| l["path"] == "runs/bad-run.yaml")
+        .unwrap();
+    assert_eq!(bad["verified"], false);
+    let errors = bad["errors"].as_array().unwrap();
+    assert_eq!(errors.len(), 1);
+    assert!(
+        errors[0].as_str().unwrap().starts_with("/run_id: "),
+        "{errors:?}"
+    );
+
+    // trace-matrix.json has no `id`: the violation is at the document root.
+    let matrix = lines.iter().find(|l| l["path"] == "matrix.json").unwrap();
+    assert_eq!(matrix["verified"], false);
+    assert!(matrix["errors"][0]
+        .as_str()
+        .unwrap()
+        .starts_with("(root): "));
+}
+
+#[test]
+fn verify_failure_exits_3_and_still_lists_every_match() {
+    let (_dir, repo, schemas) = fixture();
+    let out = run(&repo, &schemas, &["--verify", "--output=jsonl"]);
+    assert_eq!(out.status.code(), Some(3));
+    assert_eq!(verify_lines(&out).len(), 3);
+}
+
+#[test]
+fn verify_with_only_valid_matches_exits_0() {
+    let (_dir, repo, schemas) = fixture();
+    let out = run(
+        &repo,
+        &schemas,
+        &["--verify", "--output=jsonl", "--only", "test-run"],
+    );
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
+
+#[test]
+fn verify_plaintext_shows_status_and_indented_errors() {
+    let (_dir, repo, schemas) = fixture();
+    let out = run(&repo, &schemas, &["--verify"]);
+    let text = stdout(&out);
+    assert!(
+        text.contains(
+            "runs/test-run.yaml  type: test_run  schema: tcms/test-run.schema.json  verified: ok\n"
+        ),
+        "{text}"
+    );
+    assert!(text.contains("matrix.json  type: -  schema: tcms/trace-matrix.schema.json  verified: FAILED (1 errors)\n    (root): "), "{text}");
+}
+
+#[test]
+fn a_schema_that_fails_to_compile_is_an_error_naming_the_file() {
+    let (_dir, repo, schemas) = fixture();
+    let vendored = schemas.join("tcms-schemas").join("tcms");
+    fs::write(vendored.join("bad.schema.json"), r#"{"type": 12}"#).unwrap();
+    fs::write(repo.join("bad.yaml"), "schema: tcms/bad.schema.json\n").unwrap();
+    let out = run(&repo, &schemas, &["--verify"]);
+    assert_eq!(out.status.code(), Some(1));
+    let err = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        err.contains("cannot compile schema") && err.contains("bad.schema.json"),
+        "{err}"
+    );
+}
+
+#[test]
+fn verified_jsonl_validates_against_the_published_schema() {
+    let (_dir, repo, schemas) = fixture();
+    let out = run(&repo, &schemas, &["--verify", "--output=jsonl"]);
+    let schema_text = fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("schema")
+            .join("find-files-by-schema-match.schema.json"),
+    )
+    .unwrap();
+    let schema: serde_json::Value = serde_json::from_str(&schema_text).unwrap();
+    let compiled = jsonschema::JSONSchema::compile(&schema).expect("schema compiles");
+    let lines = verify_lines(&out);
+    assert_eq!(lines.len(), 3);
+    for line in &lines {
+        assert!(compiled.is_valid(line), "invalid line: {line}");
+    }
 }

@@ -5,6 +5,7 @@
 //! `tcms/test-case.schema.v1.json`) resolve through `testcase_common::envelope::vendored_alias`.
 //! The declared `type:` value is reported alongside the match.
 
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -35,6 +36,8 @@ pub struct SchemaType {
 #[derive(Debug, Clone)]
 pub struct Catalog {
     types: Vec<SchemaType>,
+    /// `<schemas-root>/tcms-schemas`; `SchemaType::file` is relative to it.
+    vendored_root: PathBuf,
 }
 
 impl Catalog {
@@ -62,7 +65,10 @@ impl Catalog {
         if types.is_empty() {
             bail!("no tcms-schemas types found in {}", dir.display());
         }
-        Ok(Self { types })
+        Ok(Self {
+            types,
+            vendored_root: schemas_root.join(VENDORED_SCHEMAS_DIR),
+        })
     }
 
     /// All types, sorted by name.
@@ -101,6 +107,21 @@ pub struct Match {
     /// Declared `type:` value, or `None` when absent.
     #[serde(rename = "type")]
     pub doc_type: Option<String>,
+    /// Set only with `--verify`: whether the content validates against the declared schema.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub verified: Option<bool>,
+    /// Set only with `--verify`: one `<pointer>: <message>` per violation (empty when valid).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub errors: Option<Vec<String>>,
+}
+
+/// Options of a scan.
+#[derive(Debug, Clone, Default)]
+pub struct ScanOptions {
+    /// Restrict matches to these type names; empty matches every type.
+    pub only: Vec<String>,
+    /// Validate each matched document's content against its declared schema.
+    pub verify: bool,
 }
 
 /// The result of a scan: the matches (sorted by path) and warnings for skipped files.
@@ -110,15 +131,27 @@ pub struct Report {
     pub warnings: Vec<String>,
 }
 
+impl Report {
+    /// Number of matches whose content failed verification (always 0 without `--verify`).
+    pub fn verification_failures(&self) -> usize {
+        self.matches
+            .iter()
+            .filter(|m| m.verified == Some(false))
+            .count()
+    }
+}
+
 /// Scan `root` for files whose `schema:` resolves to a type in `catalog`.
 ///
-/// `only` restricts matches to the named types; an empty slice matches every type.
-/// Files that are ignored by `.gitignore` are not scanned, even outside a git repository.
-pub fn scan(root: &Path, catalog: &Catalog, only: &[String]) -> Result<Report> {
+/// `options.only` restricts matches to the named types. With `options.verify`, the content of
+/// each match is validated against its declared schema. Files that are ignored by `.gitignore`
+/// are not scanned, even outside a git repository.
+pub fn scan(root: &Path, catalog: &Catalog, options: &ScanOptions) -> Result<Report> {
     if !root.is_dir() {
         bail!("scan root {} is not a directory", root.display());
     }
     let mut report = Report::default();
+    let mut compiled: HashMap<String, jsonschema::JSONSchema> = HashMap::new();
     let walker = ignore::WalkBuilder::new(root).require_git(false).build();
     for entry in walker {
         let entry = match entry {
@@ -153,9 +186,19 @@ pub fn scan(root: &Path, catalog: &Catalog, only: &[String]) -> Result<Report> {
         let Some(schema_type) = catalog.resolve(schema_uri) else {
             continue;
         };
-        if !only.is_empty() && !only.contains(&schema_type.name) {
+        if !options.only.is_empty() && !options.only.contains(&schema_type.name) {
             continue;
         }
+        let (verified, errors) = if options.verify {
+            if !compiled.contains_key(&schema_type.file) {
+                let schema = compile_schema(&catalog.vendored_root, &schema_type.file)?;
+                compiled.insert(schema_type.file.clone(), schema);
+            }
+            let errors = validation_errors(&compiled[&schema_type.file], &document);
+            (Some(errors.is_empty()), Some(errors))
+        } else {
+            (None, None)
+        };
         report.matches.push(Match {
             path: relative_display(root, path),
             schema: schema_type.file.clone(),
@@ -163,10 +206,41 @@ pub fn scan(root: &Path, catalog: &Catalog, only: &[String]) -> Result<Report> {
                 .get("type")
                 .and_then(Value::as_str)
                 .map(str::to_string),
+            verified,
+            errors,
         });
     }
     report.matches.sort_by(|a, b| a.path.cmp(&b.path));
     Ok(report)
+}
+
+/// Compile the schema file `file` (relative to `vendored_root`).
+fn compile_schema(vendored_root: &Path, file: &str) -> Result<jsonschema::JSONSchema> {
+    let path = vendored_root.join(file);
+    let text = fs::read_to_string(&path)
+        .with_context(|| format!("cannot read schema {}", path.display()))?;
+    let value: Value = serde_json::from_str(&text)
+        .with_context(|| format!("schema {} is not JSON", path.display()))?;
+    jsonschema::JSONSchema::compile(&value)
+        .map_err(|err| anyhow::anyhow!("cannot compile schema {}: {err}", path.display()))
+}
+
+/// Violations of `document` against `schema`, one `<pointer>: <message>` each.
+fn validation_errors(schema: &jsonschema::JSONSchema, document: &Value) -> Vec<String> {
+    match schema.validate(document) {
+        Ok(()) => Vec::new(),
+        Err(errors) => errors
+            .map(|err| {
+                let pointer = err.instance_path.to_string();
+                let pointer = if pointer.is_empty() {
+                    "(root)".to_string()
+                } else {
+                    pointer
+                };
+                format!("{pointer}: {err}")
+            })
+            .collect(),
+    }
 }
 
 fn parse_document(path: &Path, ext: &str) -> Result<Value> {
@@ -192,11 +266,22 @@ pub fn render_plaintext(matches: &[Match]) -> String {
     let mut out = String::new();
     for m in matches {
         out.push_str(&format!(
-            "{}  type: {}  schema: {}\n",
+            "{}  type: {}  schema: {}",
             m.path,
             m.doc_type.as_deref().unwrap_or("-"),
             m.schema
         ));
+        match (m.verified, &m.errors) {
+            (Some(true), _) => out.push_str("  verified: ok"),
+            (Some(false), Some(errors)) => {
+                out.push_str(&format!("  verified: FAILED ({} errors)", errors.len()));
+                for error in errors {
+                    out.push_str(&format!("\n    {error}"));
+                }
+            }
+            _ => {}
+        }
+        out.push('\n');
     }
     out
 }

@@ -5,7 +5,7 @@ use std::process::ExitCode;
 
 use clap::{Parser, ValueEnum};
 
-use find_files_by_schema::{render_jsonl, render_plaintext, scan, Catalog};
+use find_files_by_schema::{render_jsonl, render_plaintext, scan, Catalog, ScanOptions};
 
 #[derive(Parser, Debug)]
 #[command(
@@ -29,6 +29,10 @@ struct Cli {
     /// Output format
     #[arg(long, value_enum, default_value_t = Output::Plaintext)]
     output: Output,
+
+    /// Validate each matched document against the schema it declares; exit 3 if any fails
+    #[arg(long)]
+    verify: bool,
 }
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -39,10 +43,17 @@ enum Output {
     Jsonl,
 }
 
-fn run(cli: &Cli) -> anyhow::Result<()> {
+/// Exit code when `--verify` finds at least one document that fails its schema.
+const EXIT_VERIFICATION_FAILED: u8 = 3;
+
+fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
     let catalog = Catalog::load(&cli.schemas_root)?;
     catalog.validate_only(&cli.only)?;
-    let report = scan(&cli.root, &catalog, &cli.only)?;
+    let options = ScanOptions {
+        only: cli.only.clone(),
+        verify: cli.verify,
+    };
+    let report = scan(&cli.root, &catalog, &options)?;
     for warning in &report.warnings {
         eprintln!("warning: {warning}");
     }
@@ -51,13 +62,18 @@ fn run(cli: &Cli) -> anyhow::Result<()> {
         Output::Jsonl => render_jsonl(&report.matches)?,
     };
     print!("{stdout}");
-    Ok(())
+    let failures = report.verification_failures();
+    if failures > 0 {
+        eprintln!("error: {failures} document(s) failed verification");
+        return Ok(ExitCode::from(EXIT_VERIFICATION_FAILED));
+    }
+    Ok(ExitCode::SUCCESS)
 }
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
     match run(&cli) {
-        Ok(()) => ExitCode::SUCCESS,
+        Ok(code) => code,
         Err(err) => {
             eprintln!("error: {err:#}");
             ExitCode::from(1)

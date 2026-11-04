@@ -476,13 +476,14 @@ validate-json --schema <SCHEMA> <FILE>
 - Honours `.gitignore`, also outside a git repository
 - `--only <TYPE>` (repeatable) restricts matches to named types
 - `--output=plaintext` (default) for humans, `--output=jsonl` for agents
+- `--verify` (off by default) validates each match's content against its declared schema
 - Malformed files are skipped with a warning on stderr
 
-**Dependencies**: `testcase-common`, `ignore`, `clap`, `serde_json`, `serde_yaml`, `anyhow`
+**Dependencies**: `testcase-common`, `ignore`, `jsonschema`, `clap`, `serde_json`, `serde_yaml`, `anyhow`
 
 **Usage**:
 ```bash
-find-files-by-schema [--root DIR] [--schemas-root DIR] [--only TYPE]... [--output=plaintext|jsonl]
+find-files-by-schema [--root DIR] [--schemas-root DIR] [--only TYPE]... [--output=plaintext|jsonl] [--verify]
 ```
 
 #### `script-cleanup`
