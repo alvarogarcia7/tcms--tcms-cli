@@ -119,16 +119,30 @@ def generate(dest):
         " overall_pass: false, passed_steps: 2, failed_steps: 1 (total_steps stays 3). Step_results are not edited.",
     ])
 
-    # 2. Untested and skipped results only, zero steps.
+    # 2. Skipped results only, zero steps: NO_DATA (skipped is outside the denominator, TCMS-50.2).
     f = base(dest, "no-data-run")
     make_run(f, "RUN-DERIVED-NODATA-01",
-             {"SUT1_PASS_001": "not_executed", "SUT1_CALC_001": "skipped"},
+             {"SUT1_PASS_001": "skipped", "SUT1_CALC_001": "skipped"},
              {"SUT1_PASS_001": NOT_PASS_SUBS + ALL_STEPS_ZERO,
               "SUT1_CALC_001": NOT_PASS_SUBS + ALL_STEPS_ZERO})
     derived_from(f, "RUN-DERIVED-NODATA-01", [
         f"runs/RUN-DERIVED-NODATA-01/test-run.yaml: run_id, started_at and finished_at set to {DERIVED_STARTED};"
-        " verdict of SUT1_PASS_001 changed from pass to not_executed (untested), of SUT1_CALC_001 from pass to skipped.",
+        " verdict of SUT1_PASS_001 and of SUT1_CALC_001 changed from pass to skipped, so every result is outside the gate denominator and the gate is NO_DATA.",
         "runs/RUN-DERIVED-NODATA-01/verification-results.yaml: both cases get overall_pass: false,"
+        " passed_steps: 0, not_executed_steps: 3 for SUT1_PASS_001, and all four step counters set to 0 for both cases.",
+    ])
+
+    # 2b. One not_executed result (in the denominator as not passed) and one skipped result.
+    f = base(dest, "not-executed-run")
+    make_run(f, "RUN-DERIVED-NOTEXEC-01",
+             {"SUT1_PASS_001": "not_executed", "SUT1_CALC_001": "skipped"},
+             {"SUT1_PASS_001": NOT_PASS_SUBS + ALL_STEPS_ZERO,
+              "SUT1_CALC_001": NOT_PASS_SUBS + ALL_STEPS_ZERO})
+    derived_from(f, "RUN-DERIVED-NOTEXEC-01", [
+        f"runs/RUN-DERIVED-NOTEXEC-01/test-run.yaml: run_id, started_at and finished_at set to {DERIVED_STARTED};"
+        " verdict of SUT1_PASS_001 changed from pass to not_executed, of SUT1_CALC_001 from pass to skipped."
+        " The not_executed case is in the gate denominator as not passed (TCMS-50.2).",
+        "runs/RUN-DERIVED-NOTEXEC-01/verification-results.yaml: both cases get overall_pass: false,"
         " passed_steps: 0, not_executed_steps: 3 for SUT1_PASS_001, and all four step counters set to 0 for both cases.",
     ])
 

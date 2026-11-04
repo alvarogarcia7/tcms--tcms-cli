@@ -17,6 +17,7 @@ const FIXTURES: &[&str] = &[
     "failing-run",
     "no-data-run",
     "blocked-only-run",
+    "not-executed-run",
     "skipped-outside-denominator",
     "uncovered-requirement",
     "missing-case-result",
@@ -125,21 +126,17 @@ fn assert_figures(name: &str, text: &str, m: &Value) {
         "{name}: verdict"
     );
     assert!(
-        row(text, "Denominator (passed + failed + blocked)")
+        row(text, "Denominator (passed + failed + not executed)")
             .contains(&gate["denominator"].to_string()),
         "{name}: denominator"
     );
     let c = &gate["counts"];
     let counts = format!(
-        "{} / {} / {} / {} / {}",
-        c["passed"], c["failed"], c["blocked"], c["skipped"], c["untested"]
+        "{} / {} / {} / {}",
+        c["passed"], c["failed"], c["notExecuted"], c["skipped"]
     );
     assert!(
-        row(
-            text,
-            "Counts: passed / failed / blocked / skipped / untested"
-        )
-        .contains(&counts),
+        row(text, "Counts: passed / failed / not executed / skipped").contains(&counts),
         "{name}: counts"
     );
     let delta_row = row(text, "Delta from previous run");

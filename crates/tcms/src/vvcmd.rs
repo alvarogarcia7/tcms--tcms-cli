@@ -78,6 +78,45 @@ pub enum VvCommand {
         #[arg(long)]
         tester: Option<String>,
     },
+    /// The status of one test case in every recorded run, oldest first (TCMS-50.4). A run without
+    /// a result for the case is `null`
+    History {
+        /// Root of the recorded V&V data
+        #[arg(long)]
+        root: PathBuf,
+        /// Test case id
+        #[arg(long)]
+        case: String,
+        /// Only the runs of this plan
+        #[arg(long)]
+        plan: Option<String>,
+    },
+    /// Gate figure of the last N runs, oldest first, and the stability label of each case of the
+    /// selected run over the window (TCMS-50.5)
+    Trends {
+        /// Root of the recorded V&V data
+        #[arg(long)]
+        root: PathBuf,
+        /// Number of runs to show, from the newest back. Default 12
+        #[arg(long, default_value_t = 12)]
+        runs: usize,
+        /// Only the runs of this plan
+        #[arg(long)]
+        plan: Option<String>,
+        /// Quality-gate threshold in percent, 50 to 100. Default 90, or `gate_threshold_percent` of
+        /// `<DATA_ROOT>/vv-config.yaml`
+        #[arg(long)]
+        gate: Option<u64>,
+        /// Flaky threshold. Default 4, or `flaky_flip_threshold` of `<DATA_ROOT>/vv-config.yaml`
+        #[arg(long)]
+        flaky_threshold: Option<u64>,
+        /// Stability window in runs. Default 12, or `stability_window_runs` of `<DATA_ROOT>/vv-config.yaml`
+        #[arg(long)]
+        stability_window: Option<u64>,
+        /// Write the JSON report to this file instead of stdout
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
 }
 
 pub fn run(ctx: &Context, cmd: VvCommand) -> Result<()> {
@@ -152,6 +191,47 @@ pub fn run(ctx: &Context, cmd: VvCommand) -> Result<()> {
                 "combined run {run}: {} cases, {} pass, {} fail, {} not_executed",
                 combined.cases, combined.pass, combined.fail, combined.not_executed
             );
+            Ok(())
+        }
+        VvCommand::History { root, case, plan } => {
+            let data = load(&root, ctx.schemas_root())?;
+            let rows: Vec<Json> = scoped_runs(&data, plan.as_deref())?
+                .into_iter()
+                .map(|r| {
+                    json!({
+                        "runId": r.run_id,
+                        "status": status_of(r, &case).map(Status::as_str),
+                    })
+                })
+                .collect();
+            println!("{}", serde_json::to_string_pretty(&rows)?);
+            Ok(())
+        }
+        VvCommand::Trends {
+            root,
+            runs,
+            plan,
+            gate,
+            flaky_threshold,
+            stability_window,
+            out,
+        } => {
+            let cfg = vvconfig::load(&root)?;
+            let params = vvconfig::resolve(
+                cfg.as_ref(),
+                Flags {
+                    gate,
+                    flaky: flaky_threshold,
+                    window: stability_window,
+                },
+            )?;
+            let data = load(&root, ctx.schemas_root())?;
+            let report = build_trends(&data, plan.as_deref(), runs, &params)?;
+            let text = format!("{}\n", serde_json::to_string_pretty(&report)?);
+            match out {
+                Some(path) => write_atomic(&path, text.as_bytes())?,
+                None => print!("{text}"),
+            }
             Ok(())
         }
     }
@@ -376,11 +456,12 @@ fn load_runs(root: &Path) -> Result<Vec<RecordedRun>> {
             continue;
         }
         let doc = load_yaml(&record)?;
-        let dir_name = dir
+        // The run id is the run folder name (TCMS-50.6): the only id `--run` accepts. A `run_id`
+        // written inside test-run.yaml is not used for lookup.
+        let run_id = dir
             .file_name()
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_default();
-        let run_id = str_field(&doc, "run_id").unwrap_or(dir_name);
         let mut results = Vec::new();
         for item in doc
             .get("results")
@@ -568,14 +649,22 @@ fn build_report(
         }
         None => all,
     };
+    let valid_ids = data
+        .runs
+        .iter()
+        .map(|r| r.run_id.as_str())
+        .collect::<Vec<_>>()
+        .join(", ");
     let sel = match run_id {
         Some(id) => data
             .runs
             .iter()
             .position(|r| r.run_id == id)
             .ok_or_else(|| match plan {
-                Some(p) => anyhow!("run {id} is not a run of plan {p}"),
-                None => anyhow!("run {id} is not among the recorded runs"),
+                Some(p) => anyhow!("run {id} is not a run of plan {p}; valid run ids: {valid_ids}"),
+                None => {
+                    anyhow!("run {id} is not among the recorded runs; valid run ids: {valid_ids}")
+                }
             })?,
         None => data.runs.len() - 1,
     };
@@ -622,6 +711,7 @@ fn build_report(
 
     let requirements = requirement_coverage(data, run);
     let stability = stability_section(data, sel, flaky, window);
+    let failing_cases = failing_cases(data, sel);
 
     let provisional = run.finished_at.is_none();
     let schema_errors: Vec<Json> = data
@@ -650,9 +740,8 @@ fn build_report(
             "counts": {
                 "passed": counts.passed,
                 "failed": counts.failed,
-                "blocked": counts.blocked,
+                "notExecuted": counts.not_executed,
                 "skipped": counts.skipped,
-                "untested": counts.untested,
             },
             "passRate": percent_json(gate_result.pass_rate, Ratio::floor_percent),
             "verdict": gate_result.verdict.as_str(),
@@ -670,6 +759,7 @@ fn build_report(
         },
         "requirements": requirements,
         "stability": stability,
+        "failingCases": failing_cases,
         "loadSummary": {
             "distinctCases": distinct.len(),
             "schemaErrorCount": data.schema_errors.len(),
@@ -801,6 +891,114 @@ fn stability_section(data: &VvData, sel: usize, flaky: u64, window: u64) -> Json
         "flakyCount": flaky_count,
         "cases": cases,
     })
+}
+
+/// The runs that take part: all of them, or only those of `plan`. Error when a plan has no run.
+fn scoped_runs<'a>(data: &'a VvData, plan: Option<&str>) -> Result<Vec<&'a RecordedRun>> {
+    let runs: Vec<&RecordedRun> = data
+        .runs
+        .iter()
+        .filter(|r| plan.is_none_or(|p| r.plan_id.as_deref() == Some(p)))
+        .collect();
+    if let (Some(p), true) = (plan, runs.is_empty()) {
+        bail!("no recorded run for plan {p} (no run has plan_id {p})");
+    }
+    Ok(runs)
+}
+
+/// Status of one case in one run; `None` when the run has no result for it (absent).
+fn status_of(run: &RecordedRun, case_id: &str) -> Option<Status> {
+    run.results
+        .iter()
+        .find(|r| r.case_id == case_id)
+        .map(|r| r.status)
+}
+
+/// Index (into `runs`) of the run where the failure of `case_id` that is failing at `sel` started
+/// (TCMS-50.4, D-98): the oldest run of the consecutive FAILED streak that ends at `sel`. A PASSED
+/// run ends the streak; SKIPPED, NOT_EXECUTED and absent runs are passed over.
+fn failure_start(runs: &[&RecordedRun], sel: usize, case_id: &str) -> usize {
+    let mut start = sel;
+    for j in (0..=sel).rev() {
+        match status_of(runs[j], case_id) {
+            Some(Status::Failed) => start = j,
+            Some(Status::Passed) => break,
+            _ => {}
+        }
+    }
+    start
+}
+
+/// Every case that is FAILED in the selected run, sorted by case id, with the run its failure started.
+fn failing_cases(data: &VvData, sel: usize) -> Json {
+    let runs: Vec<&RecordedRun> = data.runs.iter().collect();
+    let mut ids: Vec<&str> = runs[sel]
+        .results
+        .iter()
+        .filter(|r| r.status == Status::Failed)
+        .map(|r| r.case_id.as_str())
+        .collect();
+    ids.sort_unstable();
+    ids.dedup();
+    Json::Array(
+        ids.into_iter()
+            .map(|id| {
+                let start = failure_start(&runs, sel, id);
+                json!({ "caseId": id, "failureStartRunId": runs[start].run_id })
+            })
+            .collect(),
+    )
+}
+
+/// `tcms vv trends`: the gate figure of the last `runs_n` runs, oldest first, and the stability
+/// label of each case of the newest run over the window (TCMS-50.5).
+fn build_trends(
+    all: &VvData,
+    plan: Option<&str>,
+    runs_n: usize,
+    params: &Resolved,
+) -> Result<Json> {
+    let gate = params.gate.value;
+    let flaky = params.flaky.value;
+    let window = params.window.value;
+    let scoped = scoped_runs(all, plan)?;
+    if scoped.is_empty() {
+        bail!("no recorded V&V runs (runs/*/test-run.yaml) under the data root");
+    }
+    let first = scoped.len().saturating_sub(runs_n.max(1));
+    let trend: Vec<Json> = scoped[first..]
+        .iter()
+        .map(|r| {
+            let g = vvmetrics::gate(counts_of(r), gate);
+            json!({
+                "runId": r.run_id,
+                "startedAt": r.started_at,
+                "passRate": percent_json(g.pass_rate, Ratio::floor_percent),
+                "verdict": g.verdict.as_str(),
+            })
+        })
+        .collect();
+    let owned = VvData {
+        runs: scoped.iter().map(|r| (*r).clone()).collect(),
+        cases: all.cases.clone(),
+        schema_errors: Vec::new(),
+        requirement_ids: Vec::new(),
+    };
+    let newest = owned.runs.len() - 1;
+    Ok(json!({
+        "parameters": parameters_json(params),
+        "runs": trend,
+        "heatmap": stability_section(&owned, newest, flaky, window),
+    }))
+}
+
+/// Number of results per status in one run.
+fn counts_of(run: &RecordedRun) -> vvmetrics::Counts {
+    let mut c = vvmetrics::Counts::default();
+    for r in &run.results {
+        c.add(r.status);
+    }
+    c
 }
 
 #[cfg(test)]
@@ -938,5 +1136,150 @@ mod tests {
         assert_eq!(fs::read_to_string(&first).unwrap(), "new first\n");
         assert_eq!(fs::read_to_string(&second).unwrap(), "new second\n");
         assert!(temp_leftovers(dir.path()).is_empty());
+    }
+}
+
+#[cfg(test)]
+mod streak_tests {
+    use super::*;
+
+    fn run(id: &str, case: &str, status: Option<Status>) -> RecordedRun {
+        RecordedRun {
+            run_id: id.to_string(),
+            plan_id: None,
+            started_at: String::new(),
+            finished_at: None,
+            results: status
+                .map(|s| {
+                    vec![CaseResult {
+                        case_id: case.to_string(),
+                        status: s,
+                        problem_report: None,
+                    }]
+                })
+                .unwrap_or_default(),
+            steps: BTreeMap::new(),
+            verified_case_ids: BTreeSet::new(),
+        }
+    }
+
+    fn refs(runs: &[RecordedRun]) -> Vec<&RecordedRun> {
+        runs.iter().collect()
+    }
+
+    #[test]
+    fn failure_starts_at_the_oldest_run_of_the_failed_streak() {
+        let runs = [
+            run("r1", "C", Some(Status::Passed)),
+            run("r2", "C", Some(Status::Failed)),
+            run("r3", "C", Some(Status::Failed)),
+        ];
+        assert_eq!(failure_start(&refs(&runs), 2, "C"), 1);
+    }
+
+    #[test]
+    fn a_pass_ends_the_streak() {
+        // PASSED, FAILED, PASSED, FAILED: the streak that ends at the selected run starts at the last FAILED.
+        let runs = [
+            run("r1", "C", Some(Status::Failed)),
+            run("r2", "C", Some(Status::Passed)),
+            run("r3", "C", Some(Status::Failed)),
+            run("r4", "C", Some(Status::Passed)),
+            run("r5", "C", Some(Status::Failed)),
+        ];
+        assert_eq!(failure_start(&refs(&runs), 4, "C"), 4);
+    }
+
+    #[test]
+    fn skipped_not_executed_and_absent_runs_are_passed_over() {
+        let runs = [
+            run("r1", "C", Some(Status::Passed)),
+            run("r2", "C", Some(Status::Failed)),
+            run("r3", "C", Some(Status::Skipped)),
+            run("r4", "C", Some(Status::NotExecuted)),
+            run("r5", "C", None),
+            run("r6", "C", Some(Status::Failed)),
+        ];
+        assert_eq!(failure_start(&refs(&runs), 5, "C"), 1);
+    }
+
+    #[test]
+    fn error_is_a_failure_so_it_extends_the_streak() {
+        // error maps to Failed (TCMS-50.2), so an error run is part of the streak.
+        let error = Status::from_verdict("error").unwrap();
+        let runs = [
+            run("r1", "C", Some(Status::Passed)),
+            run("r2", "C", Some(error)),
+            run("r3", "C", Some(Status::Failed)),
+        ];
+        assert_eq!(failure_start(&refs(&runs), 2, "C"), 1);
+    }
+
+    #[test]
+    fn failing_cases_are_sorted_by_case_id() {
+        let mut data = VvData {
+            runs: vec![RecordedRun {
+                results: vec![
+                    CaseResult {
+                        case_id: "B".into(),
+                        status: Status::Failed,
+                        problem_report: None,
+                    },
+                    CaseResult {
+                        case_id: "A".into(),
+                        status: Status::Failed,
+                        problem_report: None,
+                    },
+                    CaseResult {
+                        case_id: "C".into(),
+                        status: Status::Passed,
+                        problem_report: None,
+                    },
+                ],
+                ..run("r1", "X", None)
+            }],
+            cases: Vec::new(),
+            schema_errors: Vec::new(),
+            requirement_ids: Vec::new(),
+        };
+        let out = failing_cases(&data, 0);
+        let ids: Vec<&str> = out
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|c| c["caseId"].as_str().unwrap())
+            .collect();
+        assert_eq!(ids, ["A", "B"]);
+        data.runs.clear();
+    }
+}
+
+#[cfg(test)]
+mod skipped_only_tests {
+    use super::*;
+
+    #[test]
+    fn a_case_skipped_in_every_run_is_not_a_failing_case() {
+        let run = |id: &str, status: Status| RecordedRun {
+            run_id: id.to_string(),
+            plan_id: None,
+            started_at: String::new(),
+            finished_at: None,
+            results: vec![CaseResult {
+                case_id: "C".to_string(),
+                status,
+                problem_report: None,
+            }],
+            steps: BTreeMap::new(),
+            verified_case_ids: BTreeSet::new(),
+        };
+        let data = VvData {
+            runs: vec![run("r1", Status::Skipped), run("r2", Status::Skipped)],
+            cases: Vec::new(),
+            schema_errors: Vec::new(),
+            requirement_ids: Vec::new(),
+        };
+        assert_eq!(failing_cases(&data, 1), Json::Array(Vec::new()));
+        assert_eq!(status_of(&data.runs[1], "C"), Some(Status::Skipped));
     }
 }

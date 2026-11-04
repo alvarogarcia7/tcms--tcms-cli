@@ -17,8 +17,8 @@
 | --- | --- |
 | Verdict | FAILED |
 | Gate pass rate | 50% (exact 50.0%) |
-| Denominator (passed + failed + blocked) | 2 |
-| Counts: passed / failed / blocked / skipped / untested | 1 / 1 / 0 / 0 / 0 |
+| Denominator (passed + failed + not executed) | 2 |
+| Counts: passed / failed / not executed / skipped | 1 / 1 / 0 / 0 |
 | Delta from previous run | -50 |
 | Previous run | RUN-32921 |
 

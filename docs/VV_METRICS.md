@@ -6,12 +6,14 @@ prints one JSON document on stdout.
 
 ```bash
 tcms vv metrics --root <DATA_ROOT> [--run <RUN_ID>] [--gate <PERCENT>] [--flaky-threshold <N>] [--stability-window <N>]
+tcms vv history --root <DATA_ROOT> --case <CASE_ID> [--plan <PLAN_ID>]
+tcms vv trends  --root <DATA_ROOT> [--runs <N>] [--plan <PLAN_ID>] [--gate ...] [--flaky-threshold ...] [--stability-window ...]
 ```
 
 | Option | Default | Meaning |
 |--------|---------|---------|
 | `--root` | (required) | Directory with `runs/<RUN_ID>/test-run.yaml`, the test case files and `requirements.json` |
-| `--run` | last recorded run | Run to report. Runs are ordered by `started_at`, then run id |
+| `--run` | last recorded run | Run to report. The run **folder name** under `runs/` is the only id accepted (TCMS-50.6); the `run_id` written inside `test-run.yaml` is not used for lookup. An unknown id fails and the message lists the valid folder names. Runs are ordered by `started_at`, then folder name |
 | `--plan` | all runs | Plan to report on: only runs whose `plan_id` equals it take part (selection, previous run, stability and `runsRecorded`). No such run is an error; `--run` must be a run of that plan |
 | `--gate` | `90`, or the file, see below | Quality-gate threshold in percent, `50` to `100` (D-89). Other values are refused |
 | `--flaky-threshold` | `4`, or the file, see below | Flips at or above which a case is `FLAKY` (D-97). Must be at least 1 |
@@ -71,25 +73,30 @@ Data sets of 12 runs or fewer are unchanged. To reproduce the earlier figures fo
 - `requirements.json` (optional): `{"requirements": [{"id": ...}]}`. Requirements cited by a case file (`requirement:`)
   are included as well.
 
-### Verdict vocabulary
+### Verdict vocabulary (TCMS-50.2)
 
-| `verdict` in test-run | Status |
-|-----------------------|--------|
-| `pass` | PASSED |
-| `fail` | FAILED |
-| `error`, `blocked` | BLOCKED |
-| `skipped` | SKIPPED |
-| `not_executed`, `untested` | UNTESTED |
+| `verdict` in test-run | Status | In the gate denominator |
+|-----------------------|--------|-------------------------|
+| `pass` | PASSED | yes, passed |
+| `fail` | FAILED | yes, failed |
+| `error` | FAILED | yes, failed |
+| `not_executed` | NOT_EXECUTED | yes, not passed (its own count, never FAILED) |
+| `skipped` | SKIPPED | no |
+| `blocked` (legacy) | FAILED | yes, failed |
+| `untested` (legacy) | NOT_EXECUTED | yes, not passed |
 
-Any other value is an error that names the test case. `error` is mapped to BLOCKED because the test could not
-reach a verdict; this mapping is a decision of this command, not of the test-run schema.
+Any other value is an error that names the test case. The bucket of `error` and `not_executed` follows Kiwi TCMS,
+where failing statuses count against the pass ratio and the not-run state stays in the denominator as not passed.
+`skipped` is kept as a value outside the denominator, as before. The test-run schema enum lists only `pass`,
+`fail`, `not_executed` and `error`; `skipped`, `blocked` and `untested` are accepted so existing tcms-web data
+still loads.
 
 ## Gate and pass rate (D-95)
 
 Counts are taken from the selected run. A selected run with zero test case results is an error (the command
 exits non-zero and names the run); it is not reported as `NO_DATA`.
 
-- `denominator` = Passed + Failed + Blocked. Skipped and Untested are outside it.
+- `denominator` = Passed + Failed + NotExecuted. Skipped is outside it (TCMS-50.2).
 - `passRate.exact` = Passed / denominator × 100, not rounded.
 - `passRate.display` = the exact value rounded **down** (integer). A badge never reads "90% FAILED".
 - `verdict` = `PASSED` when `passed × 100 ≥ gateThresholdPercent × denominator` (exact integer arithmetic, no
@@ -98,8 +105,9 @@ exits non-zero and names the run); it is not reported as `NO_DATA`.
 
 ## Delta from the previous run (D-96)
 
-- `deltaFromPrevious` = the exact pass rate of this run minus the previous run's, in percentage points, rounded to
-  an integer with halves rounded up (`-12.5` gives `-12`).
+- `deltaFromPrevious` = the printed gate pass rate of this run (floored) minus the printed rate of the previous run
+  (floored), an integer (TCMS-50.3, option a). A move from 0 to 12.5 percent prints 0 and 12 and gives `+12`; the
+  reverse gives `-12`. Every printed delta equals the difference of the printed rates.
 - The previous run is the one before the selected run in the ordering above. The same threshold applies.
 - `null` when there is no previous run, or when either run's denominator is 0 (`NO_DATA`).
 
@@ -124,9 +132,9 @@ Each requirement is classified from the statuses of its linked case files in the
 | `NO_CASES` | No linked case file |
 | `FAILING` | Any linked case is FAILED |
 | `COVERED` | Every linked case is PASSED |
-| `NOT_RUN` | Anything else: a case is untested, blocked, skipped, or not in the run |
+| `NOT_RUN` | Anything else: a case is not executed, skipped, or not in the run |
 
-`executed` counts the linked cases that have a result other than UNTESTED; `total` is the number of linked cases.
+`executed` counts the linked cases that have a result other than NOT_EXECUTED; `total` is the number of linked cases.
 
 `summary` counts: `covered`, `failing`, `notRun`, `noCases`, `withDefect`, `openDefects`.
 
@@ -142,7 +150,8 @@ pass; the tracker's closed state is not read. The reference counts defects from 
 For each case in the selected run, over the last `--stability-window` runs (default 12) up to and including the
 selected run, oldest first:
 
-- Only PASSED and FAILED results count. BLOCKED, SKIPPED, UNTESTED and absent results are ignored.
+- Only PASSED and FAILED results count; `error` and `blocked` count as FAILED. NOT_EXECUTED, SKIPPED and absent
+  results are ignored.
 - A flip is a change between two neighbouring kept results.
 - `FLAKY` when flips ≥ `--flaky-threshold` (default 4; a parameter, not a constant). `FLAKY` outranks `FAILING`.
 - Otherwise `FAILING` when the last kept result is FAILED, otherwise `STABLE` (including no kept results).
@@ -159,7 +168,7 @@ All field names are camelCase. Nullable fields are `null` as described.
   "parameters":   { "gateThresholdPercent": {"value", "source"}, "flakyThreshold": {"value", "source"},
                     "stability_window_runs": {"value", "source"} },
   "run":          { "runId", "startedAt", "finishedAt" (null while in progress), "provisional" },
-  "gate":         { "gateThresholdPercent", "denominator", "counts": {passed, failed, blocked, skipped, untested},
+  "gate":         { "gateThresholdPercent", "denominator", "counts": {passed, failed, notExecuted, skipped},
                     "passRate": {"display", "exact"} | null, "verdict": PASSED|FAILED|NO_DATA,
                     "provisional", "deltaFromPrevious": int | null, "previousRunId": string | null },
   "vvRun":        { "totalTestCases", "passedTestCases", "vvPassRate": {"display","exact"} | null,
@@ -168,6 +177,7 @@ All field names are camelCase. Nullable fields are `null` as described.
                     "items": [ {id, coverage, executed, total, cases: [{caseId, status|null}],
                                 problemReports, openProblemReports} ] },
   "stability":    { "flakyThreshold", "flakyCount", "cases": [ {caseId, stability, flips} ] },
+  "failingCases": [ {caseId, failureStartRunId} ],   // sorted by caseId (TCMS-50.4)
   "loadSummary":  { "distinctCases", "schemaErrorCount", "schemaErrors": [{file, error}] (at most 20),
                     "runsRecorded" }
 }
@@ -205,14 +215,59 @@ Rules (see `docs/RUN_RECORD_FORMAT.md`):
 
 - **Verdict:** a case with steps and none executed is `not_executed`. Otherwise `overall_pass: true` gives
   `pass` and `false` gives `fail`.
-- **Duplicates:** when a test case id has several attempts, the executed attempt with the latest start wins.
-  A `not_executed` attempt never replaces an executed one; it counts only when no attempt was executed.
+- **Duplicates (TCMS-50.1):** when a test case id has several attempts, they are ordered by `started_at` (oldest
+  first), and equal `started_at` is broken by the attempt file key (the greater key is later). Walking from the
+  newest back, the first `pass`, `fail` or `error` decides the case. `not_executed` and `skipped` never decide. When
+  nothing decides, the case is `not_executed`. For the verdicts `combine` reads (`pass`, `fail`, `not_executed`) this
+  gives the same result as the earlier rule of TCMS-47.3 AC 3; the rule is now stated once, here, and the `error`
+  and `skipped` cases are defined by it.
 - **Run times:** `started_at` is the earliest and `finished_at` the latest case timestamp of the run.
 - **Metadata:** `plan_id`, `build_id`, `environment` and `tester` come from the flags. The per-case files do
   not carry them. `build_id`, `environment` and `tester` are required by the test-run schema, so a missing one
   makes the command fail.
 - **Layout of `verification-results.yaml`:** validated against `schemas/tcms/verification-results.schema.json`
   before writing. The list it carries is `test_results`, the key `tcms vv metrics` reads.
+
+## Case history and failing cases (`tcms vv history`, TCMS-50.4)
+
+```bash
+tcms vv history --root <DATA_ROOT> --case <CASE_ID> [--plan <PLAN_ID>]
+```
+
+Prints a JSON array with one row per recorded run, oldest first (runs ordered as above, scoped by `--plan`):
+`[{"runId": "RUN-32386", "status": "PASSED"}, {"runId": "...", "status": null}]`. `status` is `PASSED`, `FAILED`,
+`NOT_EXECUTED` or `SKIPPED` from the run's result for the case, and `null` when the run has no result for it.
+
+`failingCases` in `tcms vv metrics` lists every case that is `FAILED` in the selected run, sorted by case id. Each
+entry has `failureStartRunId`: the oldest run of the consecutive `FAILED` streak that ends at the selected run
+(D-98). A `PASSED` run ends the streak; `SKIPPED`, `NOT_EXECUTED` and absent runs are passed over and neither end nor
+extend it. `error` and `blocked` count as `FAILED`.
+
+## Trends and heatmap (`tcms vv trends`, TCMS-50.5)
+
+```bash
+tcms vv trends --root <DATA_ROOT> [--runs <N>] [--plan <PLAN_ID>] [--gate ...] [--flaky-threshold ...] [--stability-window ...]
+```
+
+- `runs`: the gate figure of the last `N` runs (default 12), oldest first. Each row has `runId`, `startedAt`, `passRate`
+  (`{display, exact}`, or `null` for a run with no data) and `verdict`. The figure is the one `tcms vv metrics`
+  prints for that run.
+- `heatmap`: the stability label of each case of the newest run over the stability window (D-97): `FLAKY`,
+  `FAILING` or `STABLE`. The window and the flaky threshold come from `vv-config.yaml` and the flags, with the
+  precedence of TCMS-47.2.
+
+## Decisions recorded for TCMS-50
+
+- **Gate buckets (TCMS-50.2):** `error` counts as FAILED and `not_executed` as NOT_EXECUTED, both in the gate
+  denominator. `not_executed` is never counted as FAILED. Reason: Kiwi TCMS (checked against its source) counts
+  failing statuses against the pass ratio and keeps the idle, not-run state in the denominator as not passed.
+  `skipped` stays outside the denominator.
+- **Duplicates (TCMS-50.1):** see "Combining per-case results" above.
+- **Delta (TCMS-50.3):** the difference of the two printed (floored) rates.
+- **`--run` contract (TCMS-50.6):** the run folder name, and nothing else.
+- **`plan_id` (TCMS-47.4 AC 1):** when no plan is given, `combine` writes `plan_id: ""` (an empty string). The
+  test-run schema types `plan_id` as a string, so `null` fails the validation that `combine` runs before writing, and
+  an omitted key cannot be told apart from a missing one. `--plan ""` selects nothing.
 
 ## Report (tcms-vv-report)
 

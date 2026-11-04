@@ -130,8 +130,9 @@ fn no_data_run_has_null_pass_rate_delta_and_step_coverage() {
     assert!(v["gate"]["passRate"].is_null());
     assert!(v["gate"]["deltaFromPrevious"].is_null());
     assert_eq!(v["gate"]["denominator"], 0);
-    assert_eq!(v["gate"]["counts"]["skipped"], 1);
-    assert_eq!(v["gate"]["counts"]["untested"], 1);
+    // Both results are skipped (outside the denominator): NO_DATA, not a failure.
+    assert_eq!(v["gate"]["counts"]["skipped"], 2);
+    assert_eq!(v["gate"]["counts"]["notExecuted"], 0);
     // Zero steps: no step coverage, not 0 percent.
     assert_eq!(v["vvRun"]["totalSteps"], 0);
     assert!(v["vvRun"]["stepCoverage"].is_null());
@@ -145,7 +146,8 @@ fn blocked_only_run_is_failed_with_display_zero() {
     assert_eq!(v["gate"]["verdict"], "FAILED");
     assert_eq!(v["gate"]["passRate"]["display"], 0);
     assert_eq!(v["gate"]["denominator"], 2);
-    assert_eq!(v["gate"]["counts"]["blocked"], 2);
+    // Legacy `blocked` counts as a failure (TCMS-50.2, as in Kiwi TCMS).
+    assert_eq!(v["gate"]["counts"]["failed"], 2);
     assert_eq!(v["gate"]["deltaFromPrevious"], -100);
     assert_eq!(v["vvRun"]["vvPassRate"]["display"], 0);
 }

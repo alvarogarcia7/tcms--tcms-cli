@@ -102,10 +102,11 @@ section "1. Output files for every fixture"
 FIXTURE_TABLE='sut-1|RUN-32921|PASSED|100|0|100|100
 derived/failing-run|RUN-DERIVED-FAIL-01|FAILED|50|-50|50|83
 derived/no-data-run|RUN-DERIVED-NODATA-01|NO_DATA|null|null|0|null
+derived/not-executed-run|RUN-DERIVED-NOTEXEC-01|FAILED|0|-100|0|null
 derived/blocked-only-run|RUN-DERIVED-BLOCKED-01|FAILED|0|-100|0|0
 derived/skipped-outside-denominator|RUN-DERIVED-SKIP-01|PASSED|100|0|50|50
 derived/uncovered-requirement|RUN-DERIVED-UNCOVERED-01|PASSED|100|0|100|100
-derived/missing-case-result|RUN-DERIVED-MISSING-01|PASSED|100|0|50|50'
+derived/missing-case-result|RUN-DERIVED-MISSING-01|FAILED|50|-50|50|50'
 
 while IFS='|' read -r rel run verdict pass delta vv steps; do
     name="${rel//\//_}"
