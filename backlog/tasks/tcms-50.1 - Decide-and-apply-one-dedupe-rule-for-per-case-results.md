@@ -4,6 +4,7 @@ title: Decide and apply one dedupe rule for per-case results
 status: To Do
 assignee: []
 created_date: '2026-11-04T00:00:00Z'
+updated_date: '2026-11-04T08:35:00Z'
 labels:
   - vv-metrics
   - decision
@@ -22,6 +23,16 @@ Two rules choose the one result per test case when a run has duplicates:
 - Verdict (tcms-web, D-M8-25 shim scripts/vv/shim/vv_dedupe.py): the result with the detail flag wins, then the newest date, then the path.
 
 They disagree on which result wins when the detail flags differ. Pick one, record it as a decision, and apply it in the CLI. Verdict then drops its Python dedupe.
+
+--- 
+
+Decision:
+The rule should be:
+1. Read from the last run back to the first one, until we have results for all test cases
+2. If it's passing, then all good. No need to find more information for this test case.
+3. if it is failing, then keep that result. No need to find more information for this test case.
+4. If it skipped, go to the next one.
+5. If it is error, consider it failing. No need to find more information for this test case.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

@@ -4,6 +4,7 @@ title: Decide how error and not_executed count in the quality gate
 status: To Do
 assignee: []
 created_date: '2026-11-04T00:00:00Z'
+updated_date: '2026-11-04T08:36:00Z'
 labels:
   - vv-metrics
   - decision
@@ -22,6 +23,12 @@ The verdict vocabulary disagrees between tools:
 - not_executed: the derived fixtures say UNTESTED; tcms-web's recorded-run service counts it as SKIPPED.
 
 Decide the bucket for each and make tcms vv metrics follow it. TCMS-47.4 already defines the four verdicts; this task fixes their gate bucket.
+
+--- 
+
+Decision:
+- Error = Failed
+- not_executed = SKIPPED
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
