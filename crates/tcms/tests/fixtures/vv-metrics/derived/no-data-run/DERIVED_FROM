@@ -1,5 +1,5 @@
 Derived from SUT-1 run RUN-32921 (copied unchanged into runs/RUN-32921).
 Added run RUN-DERIVED-NODATA-01, copied from RUN-32921 with these edits:
-- runs/RUN-DERIVED-NODATA-01/test-run.yaml: run_id, started_at and finished_at set to 2026-10-30T12:00:00Z; verdict of SUT1_PASS_001 changed from pass to not_executed (untested), of SUT1_CALC_001 from pass to skipped.
+- runs/RUN-DERIVED-NODATA-01/test-run.yaml: run_id, started_at and finished_at set to 2026-10-30T12:00:00Z; verdict of SUT1_PASS_001 and of SUT1_CALC_001 changed from pass to skipped, so every result is outside the gate denominator and the gate is NO_DATA.
 - runs/RUN-DERIVED-NODATA-01/verification-results.yaml: both cases get overall_pass: false, passed_steps: 0, not_executed_steps: 3 for SUT1_PASS_001, and all four step counters set to 0 for both cases.
 Requirements and case files are unchanged copies.

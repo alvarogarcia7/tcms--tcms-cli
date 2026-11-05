@@ -1,0 +1,19 @@
+type: test_results_container
+schema: tcms/verification-results.schema.json
+run_id: RUN-FIX-1
+test_results:
+- test_case_id: TC_N0
+  total_steps: 3
+  passed_steps: 0
+- test_case_id: TC_N1
+  total_steps: 3
+  passed_steps: 0
+- test_case_id: TC_N2
+  total_steps: 3
+  passed_steps: 0
+- test_case_id: TC_N3
+  total_steps: 3
+  passed_steps: 0
+- test_case_id: TC_N4
+  total_steps: 3
+  passed_steps: 0

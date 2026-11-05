@@ -1,0 +1,89 @@
+type: test_run
+schema: tcms/test-run.schema.json
+run_id: RUN-A
+build_id: b-1
+environment: Bench A
+tester: tester-1
+started_at: "2026-10-01T10:00:00Z"
+finished_at: "2026-10-01T11:00:00Z"
+results:
+- test_case_id: TC_001
+  verdict: pass
+- test_case_id: TC_002
+  verdict: fail
+- test_case_id: TC_003
+  verdict: fail
+- test_case_id: TC_004
+  verdict: fail
+- test_case_id: TC_005
+  verdict: fail
+- test_case_id: TC_006
+  verdict: fail
+- test_case_id: TC_007
+  verdict: fail
+- test_case_id: TC_008
+  verdict: fail
+- test_case_id: TC_009
+  verdict: fail
+- test_case_id: TC_010
+  verdict: fail
+- test_case_id: TC_011
+  verdict: fail
+- test_case_id: TC_012
+  verdict: fail
+- test_case_id: TC_013
+  verdict: fail
+- test_case_id: TC_014
+  verdict: fail
+- test_case_id: TC_015
+  verdict: fail
+- test_case_id: TC_016
+  verdict: fail
+- test_case_id: TC_017
+  verdict: fail
+- test_case_id: TC_018
+  verdict: fail
+- test_case_id: TC_019
+  verdict: fail
+- test_case_id: TC_020
+  verdict: fail
+- test_case_id: TC_021
+  verdict: fail
+- test_case_id: TC_022
+  verdict: fail
+- test_case_id: TC_023
+  verdict: fail
+- test_case_id: TC_024
+  verdict: fail
+- test_case_id: TC_025
+  verdict: fail
+- test_case_id: TC_026
+  verdict: fail
+- test_case_id: TC_027
+  verdict: fail
+- test_case_id: TC_028
+  verdict: fail
+- test_case_id: TC_029
+  verdict: fail
+- test_case_id: TC_030
+  verdict: fail
+- test_case_id: TC_031
+  verdict: fail
+- test_case_id: TC_032
+  verdict: fail
+- test_case_id: TC_033
+  verdict: fail
+- test_case_id: TC_034
+  verdict: fail
+- test_case_id: TC_035
+  verdict: fail
+- test_case_id: TC_036
+  verdict: fail
+- test_case_id: TC_037
+  verdict: fail
+- test_case_id: TC_038
+  verdict: fail
+- test_case_id: TC_039
+  verdict: fail
+- test_case_id: TC_040
+  verdict: fail

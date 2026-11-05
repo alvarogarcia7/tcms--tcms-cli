@@ -1,0 +1,15 @@
+{
+  "binary": "report",
+  "args": [
+    "--metrics",
+    "metrics.json",
+    "--fail-on-gate"
+  ],
+  "expect_exit": 0,
+  "expect": null,
+  "contains": [
+    "NO_DATA"
+  ],
+  "absent": [],
+  "expect_files": []
+}

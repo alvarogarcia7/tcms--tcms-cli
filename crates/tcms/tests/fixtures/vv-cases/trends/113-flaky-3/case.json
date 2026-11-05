@@ -1,0 +1,80 @@
+{
+  "args": [
+    "--flaky-threshold",
+    "3"
+  ],
+  "binary": "trends",
+  "expect": {
+    "heatmap": {
+      "cases": {
+        "TC_0": {
+          "flips": 4,
+          "stability": "FLAKY"
+        },
+        "TC_1": {
+          "flips": 3,
+          "stability": "FLAKY"
+        }
+      },
+      "flakyCount": 2,
+      "flakyThreshold": 3
+    },
+    "runs": {
+      "RUN-01": {
+        "passRate": {
+          "display": 50,
+          "exact": 50.0
+        },
+        "runId": "RUN-01",
+        "startedAt": "2026-10-01T10:00:00Z",
+        "verdict": "FAILED"
+      },
+      "RUN-02": {
+        "passRate": {
+          "display": 0,
+          "exact": 0.0
+        },
+        "runId": "RUN-02",
+        "startedAt": "2026-10-02T10:00:00Z",
+        "verdict": "FAILED"
+      },
+      "RUN-03": {
+        "passRate": {
+          "display": 100,
+          "exact": 100.0
+        },
+        "runId": "RUN-03",
+        "startedAt": "2026-10-03T10:00:00Z",
+        "verdict": "PASSED"
+      },
+      "RUN-04": {
+        "passRate": {
+          "display": 50,
+          "exact": 50.0
+        },
+        "runId": "RUN-04",
+        "startedAt": "2026-10-04T10:00:00Z",
+        "verdict": "FAILED"
+      },
+      "RUN-05": {
+        "passRate": {
+          "display": 50,
+          "exact": 50.0
+        },
+        "runId": "RUN-05",
+        "startedAt": "2026-10-05T10:00:00Z",
+        "verdict": "FAILED"
+      },
+      "RUN-06": {
+        "passRate": {
+          "display": 100,
+          "exact": 100.0
+        },
+        "runId": "RUN-06",
+        "startedAt": "2026-10-06T10:00:00Z",
+        "verdict": "PASSED"
+      }
+    }
+  },
+  "expect_exit": 0
+}

@@ -1,0 +1,19 @@
+{
+  "args": [
+    "--run",
+    "RUN-NOPE",
+    "--plan",
+    "PLAN-7",
+    "--build-id",
+    "fw-1.4.2",
+    "--environment",
+    "Staging bench",
+    "--tester",
+    "ci-bot"
+  ],
+  "binary": "combine",
+  "expect": {
+    "_no_write": true
+  },
+  "expect_exit": 1
+}

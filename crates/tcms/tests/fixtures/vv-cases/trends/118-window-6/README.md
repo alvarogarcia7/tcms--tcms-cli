@@ -1,0 +1,7 @@
+# 118-window-6
+
+Stability window 6 in the heatmap.
+
+**Expected:** exit 0.
+
+Arguments and expected values are in `case.json`; see the index `../README.md`.

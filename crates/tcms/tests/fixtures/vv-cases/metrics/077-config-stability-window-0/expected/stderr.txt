@@ -1,0 +1,1 @@
+error: ./vv-config.yaml: stability_window_runs must be at least 1, got 0

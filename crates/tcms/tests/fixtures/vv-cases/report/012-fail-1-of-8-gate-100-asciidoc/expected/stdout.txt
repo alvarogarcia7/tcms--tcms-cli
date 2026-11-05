@@ -1,0 +1,94 @@
+= V&V metrics report
+
+== Run
+
+[cols="1,1",options="header"]
+|===
+| Item | Value
+| Run | RUN-A
+| Started | 2026-10-01T10:00:00Z
+| Finished | 2026-10-01T11:00:00Z
+| Provisional | no
+| Generated | 2026-01-01T00:00:00Z
+| Gate threshold | 100% (flag)
+|===
+
+== Gate verdict
+
+[cols="1,1",options="header"]
+|===
+| Measure | Value
+| Verdict | FAILED
+| Gate pass rate | 12% (exact 12.5%)
+| Denominator (passed + failed + not executed) | 8
+| Counts: passed / failed / not executed / skipped | 1 / 7 / 0 / 0
+| Delta from previous run | n/a
+| Previous run | none
+|===
+
+== V&V run figures
+
+[cols="1,1",options="header"]
+|===
+| Measure | Value
+| V&V test-case pass rate | 13% (exact 12.5%)
+| Test cases passed / total | 1 / 8
+| Step coverage | 42% (exact 41.666666666666664%)
+| Steps passed / total | 10 / 24
+|===
+
+== Requirement coverage
+
+[cols="1,1",options="header"]
+|===
+| Measure | Value
+| Requirements | 1
+| Covered | 0
+| Failing | 1
+| Not run | 0
+| No cases | 0
+| With problem report | 0
+| Open problem reports | 0
+|===
+
+[cols="1,1,1,1,1",options="header"]
+|===
+| Requirement | Coverage | Executed / total | Problem reports | Open problem reports
+| SUT1-1 | FAILING | 8 / 8 | - | -
+|===
+
+== Stability
+
+[cols="1,1",options="header"]
+|===
+| Measure | Value
+| Flaky threshold (flips) | 4 (default)
+| Flaky cases | 0
+|===
+
+Cases with stability FLAKY or FAILING:
+
+[cols="1,1,1",options="header"]
+|===
+| Case | Stability | Flips
+| TC_002 | FAILING | 0
+| TC_003 | FAILING | 0
+| TC_004 | FAILING | 0
+| TC_005 | FAILING | 0
+| TC_006 | FAILING | 0
+| TC_007 | FAILING | 0
+| TC_008 | FAILING | 0
+|===
+
+== Load summary
+
+[cols="1,1",options="header"]
+|===
+| Measure | Value
+| Distinct cases | 8
+| Runs recorded | 1
+| Schema errors | 0
+| First schema error file | none
+| First schema error | none
+|===
+

@@ -1,0 +1,1 @@
+error: run RUN-EMPTY has no test cases; a run with zero test cases is an error

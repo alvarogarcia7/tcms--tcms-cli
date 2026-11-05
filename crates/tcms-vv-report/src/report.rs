@@ -48,6 +48,12 @@ pub(crate) fn escape_cell(cell: &str) -> String {
         .replace(['\r', '\n'], " ")
 }
 
+/// Markdown cell text: a backslash is an escape character there, so each one is doubled before the pipe escape.
+/// Without this, `a\|b` renders as `a\\|b`, where Markdown reads the pipe as a column separator (D-10).
+pub(crate) fn escape_markdown_cell(cell: &str) -> String {
+    escape_cell(&cell.replace('\\', "\\\\"))
+}
+
 fn header(m: &Metrics, out: &mut Vec<Block>) {
     let threshold = &m.parameters.gate_threshold_percent;
     out.push(Block::Heading("Run".into()));
@@ -85,18 +91,14 @@ fn gate(m: &Metrics, out: &mut Vec<Block>) {
                 .map_or_else(|| "NO_DATA".into(), |p| percent_text(Some(p))),
         ),
         (
-            "Denominator (passed + failed + blocked)",
+            "Denominator (passed + failed + not executed)",
             g.denominator.to_string(),
         ),
         (
-            "Counts: passed / failed / blocked / skipped / untested",
+            "Counts: passed / failed / not executed / skipped",
             format!(
-                "{} / {} / {} / {} / {}",
-                g.counts.passed,
-                g.counts.failed,
-                g.counts.blocked,
-                g.counts.skipped,
-                g.counts.untested
+                "{} / {} / {} / {}",
+                g.counts.passed, g.counts.failed, g.counts.not_executed, g.counts.skipped
             ),
         ),
         (

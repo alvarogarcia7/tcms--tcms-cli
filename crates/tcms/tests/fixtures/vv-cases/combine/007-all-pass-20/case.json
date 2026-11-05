@@ -1,0 +1,47 @@
+{
+  "args": [
+    "--run",
+    "RUN-FIX-1",
+    "--plan",
+    "PLAN-7",
+    "--build-id",
+    "fw-1.4.2",
+    "--environment",
+    "Staging bench",
+    "--tester",
+    "ci-bot"
+  ],
+  "binary": "combine",
+  "expect": {
+    "build_id": "fw-1.4.2",
+    "environment": "Staging bench",
+    "finished_at": "2026-11-02T07:20:30Z",
+    "plan_id": "PLAN-7",
+    "results": {
+      "TC_P01": "pass",
+      "TC_P02": "pass",
+      "TC_P03": "pass",
+      "TC_P04": "pass",
+      "TC_P05": "pass",
+      "TC_P06": "pass",
+      "TC_P07": "pass",
+      "TC_P08": "pass",
+      "TC_P09": "pass",
+      "TC_P10": "pass",
+      "TC_P11": "pass",
+      "TC_P12": "pass",
+      "TC_P13": "pass",
+      "TC_P14": "pass",
+      "TC_P15": "pass",
+      "TC_P16": "pass",
+      "TC_P17": "pass",
+      "TC_P18": "pass",
+      "TC_P19": "pass",
+      "TC_P20": "pass"
+    },
+    "started_at": "2026-11-02T07:01:00Z",
+    "tester": "ci-bot",
+    "verification_count": 20
+  },
+  "expect_exit": 0
+}

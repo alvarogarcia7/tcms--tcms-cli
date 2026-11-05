@@ -1,11 +1,10 @@
 {
   "gate": {
     "counts": {
-      "blocked": 0,
-      "failed": 0,
       "passed": 2,
-      "skipped": 0,
-      "untested": 0
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": 0
     },
     "deltaFromPrevious": 0,
     "denominator": 2,
@@ -101,5 +100,6 @@
       "display": 100,
       "exact": 100.0
     }
-  }
+  },
+  "failingCases": []
 }

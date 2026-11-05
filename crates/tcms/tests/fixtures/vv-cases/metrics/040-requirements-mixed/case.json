@@ -1,0 +1,159 @@
+{
+  "args": [
+    "--run",
+    "RUN-R"
+  ],
+  "binary": "metrics",
+  "expect": {
+    "failingCases": [
+      {
+        "caseId": "TC_B",
+        "failureStartRunId": "RUN-R"
+      }
+    ],
+    "gate": {
+      "counts": {
+        "failed": 1,
+        "notExecuted": 1,
+        "passed": 1,
+        "skipped": 1
+      },
+      "deltaFromPrevious": null,
+      "denominator": 3,
+      "gateThresholdPercent": 90,
+      "passRate": {
+        "display": 33,
+        "exact": 33.333333333333336
+      },
+      "previousRunId": null,
+      "provisional": false,
+      "verdict": "FAILED"
+    },
+    "loadSummary": {
+      "distinctCases": 4,
+      "runsRecorded": 1
+    },
+    "parameters": {
+      "flakyThreshold": {
+        "source": "default",
+        "value": 4
+      },
+      "gateThresholdPercent": {
+        "source": "default",
+        "value": 90
+      },
+      "stability_window_runs": {
+        "source": "default",
+        "value": 12
+      }
+    },
+    "requirements": {
+      "items": {
+        "SUT1-1": {
+          "cases": {
+            "TC_A": "PASSED"
+          },
+          "coverage": "COVERED",
+          "executed": 1,
+          "openProblemReports": [],
+          "problemReports": [],
+          "total": 1
+        },
+        "SUT1-2": {
+          "cases": {
+            "TC_B": "FAILED"
+          },
+          "coverage": "FAILING",
+          "executed": 1,
+          "openProblemReports": [
+            "PR-101"
+          ],
+          "problemReports": [
+            "PR-101"
+          ],
+          "total": 1
+        },
+        "SUT1-3": {
+          "cases": {
+            "TC_C": "NOT_EXECUTED"
+          },
+          "coverage": "NOT_RUN",
+          "executed": 0,
+          "openProblemReports": [],
+          "problemReports": [],
+          "total": 1
+        },
+        "SUT1-4": {
+          "cases": {
+            "TC_D": "SKIPPED"
+          },
+          "coverage": "NOT_RUN",
+          "executed": 1,
+          "openProblemReports": [],
+          "problemReports": [],
+          "total": 1
+        },
+        "SUT1-5": {
+          "cases": {},
+          "coverage": "NO_CASES",
+          "executed": 0,
+          "openProblemReports": [],
+          "problemReports": [],
+          "total": 0
+        }
+      },
+      "summary": {
+        "covered": 1,
+        "failing": 1,
+        "noCases": 1,
+        "notRun": 2,
+        "openDefects": 1,
+        "total": 5,
+        "withDefect": 1
+      }
+    },
+    "run": {
+      "finishedAt": "2026-10-01T11:00:00Z",
+      "provisional": false,
+      "runId": "RUN-R",
+      "startedAt": "2026-10-01T10:00:00Z"
+    },
+    "stability": {
+      "cases": {
+        "TC_A": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_B": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_C": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_D": {
+          "flips": 0,
+          "stability": "STABLE"
+        }
+      },
+      "flakyCount": 0,
+      "flakyThreshold": 4
+    },
+    "vvRun": {
+      "passedSteps": 7,
+      "passedTestCases": 1,
+      "stepCoverage": {
+        "display": 58,
+        "exact": 58.333333333333336
+      },
+      "totalSteps": 12,
+      "totalTestCases": 4,
+      "vvPassRate": {
+        "display": 25,
+        "exact": 25.0
+      }
+    }
+  },
+  "expect_exit": 0
+}

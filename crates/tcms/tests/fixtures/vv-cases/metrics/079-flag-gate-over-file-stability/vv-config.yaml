@@ -1,0 +1,5 @@
+type: vv-config
+schema: tcms/vv-config.schema.v1.json
+gate_threshold_percent: 95
+flaky_flip_threshold: 3
+stability_window_runs: 2

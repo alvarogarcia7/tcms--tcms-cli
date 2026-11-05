@@ -1,11 +1,11 @@
 {
+  "failingCases": [],
   "gate": {
     "counts": {
-      "blocked": 0,
       "failed": 0,
+      "notExecuted": 0,
       "passed": 0,
-      "skipped": 1,
-      "untested": 1
+      "skipped": 2
     },
     "deltaFromPrevious": null,
     "denominator": 0,
@@ -56,11 +56,11 @@
         "cases": [
           {
             "caseId": "SUT1_PASS_001",
-            "status": "UNTESTED"
+            "status": "SKIPPED"
           }
         ],
         "coverage": "NOT_RUN",
-        "executed": 0,
+        "executed": 1,
         "id": "SUT1-2",
         "openProblemReports": [],
         "problemReports": [],

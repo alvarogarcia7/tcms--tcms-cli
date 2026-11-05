@@ -1,0 +1,50 @@
+[
+  {
+    "runId": "RUN-01",
+    "status": "PASSED"
+  },
+  {
+    "runId": "RUN-02",
+    "status": "FAILED"
+  },
+  {
+    "runId": "RUN-03",
+    "status": "SKIPPED"
+  },
+  {
+    "runId": "RUN-04",
+    "status": "PASSED"
+  },
+  {
+    "runId": "RUN-05",
+    "status": "FAILED"
+  },
+  {
+    "runId": "RUN-06",
+    "status": "SKIPPED"
+  },
+  {
+    "runId": "RUN-07",
+    "status": "PASSED"
+  },
+  {
+    "runId": "RUN-08",
+    "status": "FAILED"
+  },
+  {
+    "runId": "RUN-09",
+    "status": "SKIPPED"
+  },
+  {
+    "runId": "RUN-10",
+    "status": "PASSED"
+  },
+  {
+    "runId": "RUN-11",
+    "status": "FAILED"
+  },
+  {
+    "runId": "RUN-12",
+    "status": "SKIPPED"
+  }
+]

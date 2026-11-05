@@ -1,0 +1,75 @@
+# V&V metrics report
+
+## Run
+
+| Item | Value |
+| --- | --- |
+| Run | RUN-M |
+| Started | 2026-10-01T10:00:00Z |
+| Finished | 2026-10-01T11:00:00Z |
+| Provisional | no |
+| Generated | 2026-01-01T00:00:00Z |
+| Gate threshold | 50% (flag) |
+
+## Gate verdict
+
+| Measure | Value |
+| --- | --- |
+| Verdict | FAILED |
+| Gate pass rate | 33% (exact 33.333333333333336%) |
+| Denominator (passed + failed + not executed) | 3 |
+| Counts: passed / failed / not executed / skipped | 1 / 1 / 1 / 0 |
+| Delta from previous run | n/a |
+| Previous run | none |
+
+## V&V run figures
+
+| Measure | Value |
+| --- | --- |
+| V&V test-case pass rate | 33% (exact 33.333333333333336%) |
+| Test cases passed / total | 1 / 3 |
+| Step coverage | 44% (exact 44.44444444444444%) |
+| Steps passed / total | 4 / 9 |
+
+## Requirement coverage
+
+| Measure | Value |
+| --- | --- |
+| Requirements | 4 |
+| Covered | 1 |
+| Failing | 1 |
+| Not run | 1 |
+| No cases | 1 |
+| With problem report | 1 |
+| Open problem reports | 1 |
+
+| Requirement | Coverage | Executed / total | Problem reports | Open problem reports |
+| --- | --- | --- | --- | --- |
+| SUT1-1 | COVERED | 1 / 1 | - | - |
+| SUT1-2 | FAILING | 1 / 1 | PR-9 | PR-9 |
+| SUT1-3 | NOT_RUN | 0 / 1 | - | - |
+| SUT1-4 | NO_CASES | 0 / 0 | - | - |
+
+## Stability
+
+| Measure | Value |
+| --- | --- |
+| Flaky threshold (flips) | 4 (default) |
+| Flaky cases | 0 |
+
+Cases with stability FLAKY or FAILING:
+
+| Case | Stability | Flips |
+| --- | --- | --- |
+| TC_B | FAILING | 0 |
+
+## Load summary
+
+| Measure | Value |
+| --- | --- |
+| Distinct cases | 3 |
+| Runs recorded | 1 |
+| Schema errors | 0 |
+| First schema error file | none |
+| First schema error | none |
+

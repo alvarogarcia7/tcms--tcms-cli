@@ -1,0 +1,200 @@
+{
+  "args": [
+    "--run",
+    "RUN-A"
+  ],
+  "binary": "metrics",
+  "expect": {
+    "failingCases": [
+      {
+        "caseId": "TC_020",
+        "failureStartRunId": "RUN-A"
+      }
+    ],
+    "gate": {
+      "counts": {
+        "failed": 1,
+        "notExecuted": 0,
+        "passed": 19,
+        "skipped": 0
+      },
+      "deltaFromPrevious": null,
+      "denominator": 20,
+      "gateThresholdPercent": 90,
+      "passRate": {
+        "display": 95,
+        "exact": 95.0
+      },
+      "previousRunId": null,
+      "provisional": false,
+      "verdict": "PASSED"
+    },
+    "loadSummary": {
+      "distinctCases": 20,
+      "runsRecorded": 1
+    },
+    "parameters": {
+      "flakyThreshold": {
+        "source": "default",
+        "value": 4
+      },
+      "gateThresholdPercent": {
+        "source": "default",
+        "value": 90
+      },
+      "stability_window_runs": {
+        "source": "default",
+        "value": 12
+      }
+    },
+    "requirements": {
+      "items": {
+        "SUT1-1": {
+          "cases": {
+            "TC_001": "PASSED",
+            "TC_002": "PASSED",
+            "TC_003": "PASSED",
+            "TC_004": "PASSED",
+            "TC_005": "PASSED",
+            "TC_006": "PASSED",
+            "TC_007": "PASSED",
+            "TC_008": "PASSED",
+            "TC_009": "PASSED",
+            "TC_010": "PASSED",
+            "TC_011": "PASSED",
+            "TC_012": "PASSED",
+            "TC_013": "PASSED",
+            "TC_014": "PASSED",
+            "TC_015": "PASSED",
+            "TC_016": "PASSED",
+            "TC_017": "PASSED",
+            "TC_018": "PASSED",
+            "TC_019": "PASSED",
+            "TC_020": "FAILED"
+          },
+          "coverage": "FAILING",
+          "executed": 20,
+          "openProblemReports": [],
+          "problemReports": [],
+          "total": 20
+        }
+      },
+      "summary": {
+        "covered": 0,
+        "failing": 1,
+        "noCases": 0,
+        "notRun": 0,
+        "openDefects": 0,
+        "total": 1,
+        "withDefect": 0
+      }
+    },
+    "run": {
+      "finishedAt": "2026-10-01T11:00:00Z",
+      "provisional": false,
+      "runId": "RUN-A",
+      "startedAt": "2026-10-01T10:00:00Z"
+    },
+    "stability": {
+      "cases": {
+        "TC_001": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_002": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_003": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_004": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_005": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_006": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_007": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_008": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_009": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_010": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_011": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_012": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_013": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_014": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_015": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_016": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_017": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_018": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_019": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_020": {
+          "flips": 0,
+          "stability": "FAILING"
+        }
+      },
+      "flakyCount": 0,
+      "flakyThreshold": 4
+    },
+    "vvRun": {
+      "passedSteps": 58,
+      "passedTestCases": 19,
+      "stepCoverage": {
+        "display": 97,
+        "exact": 96.66666666666667
+      },
+      "totalSteps": 60,
+      "totalTestCases": 20,
+      "vvPassRate": {
+        "display": 95,
+        "exact": 95.0
+      }
+    }
+  },
+  "expect_exit": 0
+}

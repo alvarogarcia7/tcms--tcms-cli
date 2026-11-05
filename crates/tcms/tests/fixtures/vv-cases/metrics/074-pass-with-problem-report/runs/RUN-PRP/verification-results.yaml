@@ -1,0 +1,12 @@
+type: test_results_container
+schema: tcms/test-results-container.schema.v1.json
+title: Verification results
+project: VV cases
+test_date: "2026-10-01T10:00:00Z"
+test_results:
+- test_case_id: TC_A
+  total_steps: 3
+  passed_steps: 3
+- test_case_id: TC_B
+  total_steps: 3
+  passed_steps: 1

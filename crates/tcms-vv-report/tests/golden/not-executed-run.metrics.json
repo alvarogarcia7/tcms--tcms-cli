@@ -1,0 +1,116 @@
+{
+  "failingCases": [],
+  "gate": {
+    "counts": {
+      "failed": 0,
+      "notExecuted": 1,
+      "passed": 0,
+      "skipped": 1
+    },
+    "deltaFromPrevious": -100,
+    "denominator": 1,
+    "gateThresholdPercent": 90,
+    "passRate": {
+      "display": 0,
+      "exact": 0.0
+    },
+    "previousRunId": "RUN-32921",
+    "provisional": false,
+    "verdict": "FAILED"
+  },
+  "generatedAt": "2026-01-01T00:00:00Z",
+  "loadSummary": {
+    "distinctCases": 2,
+    "runsRecorded": 2,
+    "schemaErrorCount": 0,
+    "schemaErrors": []
+  },
+  "parameters": {
+    "flakyThreshold": {
+      "source": "default",
+      "value": 4
+    },
+    "gateThresholdPercent": {
+      "source": "default",
+      "value": 90
+    },
+    "stability_window_runs": {
+      "source": "default",
+      "value": 12
+    }
+  },
+  "requirements": {
+    "items": [
+      {
+        "cases": [
+          {
+            "caseId": "SUT1_CALC_001",
+            "status": "SKIPPED"
+          }
+        ],
+        "coverage": "NOT_RUN",
+        "executed": 1,
+        "id": "SUT1-1",
+        "openProblemReports": [],
+        "problemReports": [],
+        "total": 1
+      },
+      {
+        "cases": [
+          {
+            "caseId": "SUT1_PASS_001",
+            "status": "NOT_EXECUTED"
+          }
+        ],
+        "coverage": "NOT_RUN",
+        "executed": 0,
+        "id": "SUT1-2",
+        "openProblemReports": [],
+        "problemReports": [],
+        "total": 1
+      }
+    ],
+    "summary": {
+      "covered": 0,
+      "failing": 0,
+      "noCases": 0,
+      "notRun": 2,
+      "openDefects": 0,
+      "total": 2,
+      "withDefect": 0
+    }
+  },
+  "run": {
+    "finishedAt": "2026-10-30T12:00:00Z",
+    "provisional": false,
+    "runId": "RUN-DERIVED-NOTEXEC-01",
+    "startedAt": "2026-10-30T12:00:00Z"
+  },
+  "stability": {
+    "cases": [
+      {
+        "caseId": "SUT1_CALC_001",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "SUT1_PASS_001",
+        "flips": 0,
+        "stability": "STABLE"
+      }
+    ],
+    "flakyCount": 0,
+    "flakyThreshold": 4
+  },
+  "vvRun": {
+    "passedSteps": 0,
+    "passedTestCases": 0,
+    "stepCoverage": null,
+    "totalSteps": 0,
+    "totalTestCases": 2,
+    "vvPassRate": {
+      "display": 0,
+      "exact": 0.0
+    }
+  }
+}

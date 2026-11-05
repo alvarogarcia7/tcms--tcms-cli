@@ -1,0 +1,29 @@
+type: test_results_container
+schema: tcms/test-results-container.schema.v1.json
+title: VV fixture history/107-single-untested
+project: tcms-cli VV fixtures
+test_date: '2026-11-05T00:00:00Z'
+test_results:
+- test_case_id: TC_K
+  description: 'VV fixture history/107-single-untested: verdict untested'
+  requirement: UNLINKED
+  sequences:
+  - sequence_id: 1
+    name: VV fixture steps
+    step_results:
+    - NotExecuted:
+        step: 1
+        description: step 1
+    all_steps_passed: false
+  total_steps: 1
+  passed_steps: 0
+  failed_steps: 0
+  not_executed_steps: 1
+  overall_pass: false
+metadata:
+  environment: VV fixture
+  platform: linux
+  executor: tcms-cli fixtures
+  total_test_cases: 1
+  passed_test_cases: 0
+  failed_test_cases: 1

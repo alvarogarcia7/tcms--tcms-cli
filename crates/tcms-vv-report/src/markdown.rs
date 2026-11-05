@@ -1,6 +1,6 @@
 //! Markdown rendering of the report blocks (GitHub-flavoured pipe tables).
 
-use crate::report::{escape_cell, Block};
+use crate::report::{escape_markdown_cell, Block};
 
 pub fn render(blocks: &[Block]) -> String {
     let mut out = String::new();
@@ -23,6 +23,6 @@ pub fn render(blocks: &[Block]) -> String {
 }
 
 fn row(cells: &[String]) -> String {
-    let escaped: Vec<String> = cells.iter().map(|c| escape_cell(c)).collect();
+    let escaped: Vec<String> = cells.iter().map(|c| escape_markdown_cell(c)).collect();
     format!("| {} |\n", escaped.join(" | "))
 }

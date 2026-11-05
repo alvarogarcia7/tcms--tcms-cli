@@ -1,0 +1,18 @@
+type: test_run
+schema: tcms/test-run.schema.json
+run_id: RUN-FIX-1
+plan_id: PLAN-7
+build_id: fw-1.4.2
+environment: Staging bench
+tester: ci-bot
+started_at: 2026-11-02T11:00:00Z
+finished_at: 2026-11-02T11:03:10Z
+results:
+- test_case_id: TC_F0
+  verdict: fail
+- test_case_id: TC_F1
+  verdict: fail
+- test_case_id: TC_F2
+  verdict: fail
+- test_case_id: TC_F3
+  verdict: fail

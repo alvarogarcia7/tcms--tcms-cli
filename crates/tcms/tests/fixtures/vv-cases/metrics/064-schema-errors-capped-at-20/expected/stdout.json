@@ -1,0 +1,181 @@
+{
+  "failingCases": [],
+  "gate": {
+    "counts": {
+      "failed": 0,
+      "notExecuted": 0,
+      "passed": 1,
+      "skipped": 0
+    },
+    "deltaFromPrevious": null,
+    "denominator": 1,
+    "gateThresholdPercent": 90,
+    "passRate": {
+      "display": 100,
+      "exact": 100.0
+    },
+    "previousRunId": null,
+    "provisional": false,
+    "verdict": "PASSED"
+  },
+  "generatedAt": "2026-01-01T00:00:00Z",
+  "loadSummary": {
+    "distinctCases": 1,
+    "runsRecorded": 1,
+    "schemaErrorCount": 25,
+    "schemaErrors": [
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_000.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_001.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_002.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_003.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_004.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_005.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_006.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_007.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_008.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_009.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_010.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_011.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_012.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_013.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_014.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_015.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_016.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_017.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_018.yml"
+      },
+      {
+        "error": "Error #1: Path 'root'",
+        "file": "BAD_019.yml"
+      }
+    ]
+  },
+  "parameters": {
+    "flakyThreshold": {
+      "source": "default",
+      "value": 4
+    },
+    "gateThresholdPercent": {
+      "source": "default",
+      "value": 90
+    },
+    "stability_window_runs": {
+      "source": "default",
+      "value": 12
+    }
+  },
+  "requirements": {
+    "items": [
+      {
+        "cases": [
+          {
+            "caseId": "TC_001",
+            "status": "PASSED"
+          }
+        ],
+        "coverage": "COVERED",
+        "executed": 1,
+        "id": "SUT1-1",
+        "openProblemReports": [],
+        "problemReports": [],
+        "total": 1
+      }
+    ],
+    "summary": {
+      "covered": 1,
+      "failing": 0,
+      "noCases": 0,
+      "notRun": 0,
+      "openDefects": 0,
+      "total": 1,
+      "withDefect": 0
+    }
+  },
+  "run": {
+    "finishedAt": "2026-10-01T11:00:00Z",
+    "provisional": false,
+    "runId": "RUN-A",
+    "startedAt": "2026-10-01T10:00:00Z"
+  },
+  "stability": {
+    "cases": [
+      {
+        "caseId": "TC_001",
+        "flips": 0,
+        "stability": "STABLE"
+      }
+    ],
+    "flakyCount": 0,
+    "flakyThreshold": 4
+  },
+  "vvRun": {
+    "passedSteps": 3,
+    "passedTestCases": 1,
+    "stepCoverage": {
+      "display": 100,
+      "exact": 100.0
+    },
+    "totalSteps": 3,
+    "totalTestCases": 1,
+    "vvPassRate": {
+      "display": 100,
+      "exact": 100.0
+    }
+  }
+}

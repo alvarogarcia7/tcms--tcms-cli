@@ -1,0 +1,106 @@
+{
+  "failingCases": [],
+  "gate": {
+    "counts": {
+      "failed": 0,
+      "notExecuted": 0,
+      "passed": 0,
+      "skipped": 2
+    },
+    "deltaFromPrevious": null,
+    "denominator": 0,
+    "gateThresholdPercent": 90,
+    "passRate": null,
+    "previousRunId": null,
+    "provisional": false,
+    "verdict": "NO_DATA"
+  },
+  "generatedAt": "2026-01-01T00:00:00Z",
+  "loadSummary": {
+    "distinctCases": 2,
+    "runsRecorded": 1,
+    "schemaErrorCount": 0,
+    "schemaErrors": []
+  },
+  "parameters": {
+    "flakyThreshold": {
+      "source": "default",
+      "value": 4
+    },
+    "gateThresholdPercent": {
+      "source": "default",
+      "value": 90
+    },
+    "stability_window_runs": {
+      "source": "default",
+      "value": 12
+    }
+  },
+  "requirements": {
+    "items": [
+      {
+        "cases": [
+          {
+            "caseId": "TC_A",
+            "status": "SKIPPED"
+          },
+          {
+            "caseId": "TC_B",
+            "status": "SKIPPED"
+          }
+        ],
+        "coverage": "NOT_RUN",
+        "executed": 2,
+        "id": "SUT1-1",
+        "openProblemReports": [],
+        "problemReports": [],
+        "total": 2
+      }
+    ],
+    "summary": {
+      "covered": 0,
+      "failing": 0,
+      "noCases": 0,
+      "notRun": 1,
+      "openDefects": 0,
+      "total": 1,
+      "withDefect": 0
+    }
+  },
+  "run": {
+    "finishedAt": "2026-10-01T11:00:00Z",
+    "provisional": false,
+    "runId": "RUN-S",
+    "startedAt": "2026-10-01T10:00:00Z"
+  },
+  "stability": {
+    "cases": [
+      {
+        "caseId": "TC_A",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_B",
+        "flips": 0,
+        "stability": "STABLE"
+      }
+    ],
+    "flakyCount": 0,
+    "flakyThreshold": 4
+  },
+  "vvRun": {
+    "passedSteps": 6,
+    "passedTestCases": 0,
+    "stepCoverage": {
+      "display": 100,
+      "exact": 100.0
+    },
+    "totalSteps": 6,
+    "totalTestCases": 2,
+    "vvPassRate": {
+      "display": 0,
+      "exact": 0.0
+    }
+  }
+}

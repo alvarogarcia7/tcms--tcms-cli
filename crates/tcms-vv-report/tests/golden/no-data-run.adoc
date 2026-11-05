@@ -20,8 +20,8 @@
 | Measure | Value
 | Verdict | NO_DATA
 | Gate pass rate | NO_DATA
-| Denominator (passed + failed + blocked) | 0
-| Counts: passed / failed / blocked / skipped / untested | 0 / 0 / 0 / 1 / 1
+| Denominator (passed + failed + not executed) | 0
+| Counts: passed / failed / not executed / skipped | 0 / 0 / 0 / 2
 | Delta from previous run | n/a
 | Previous run | RUN-32921
 |===
@@ -55,7 +55,7 @@
 |===
 | Requirement | Coverage | Executed / total | Problem reports | Open problem reports
 | SUT1-1 | NOT_RUN | 1 / 1 | - | -
-| SUT1-2 | NOT_RUN | 0 / 1 | - | -
+| SUT1-2 | NOT_RUN | 1 / 1 | - | -
 |===
 
 == Stability

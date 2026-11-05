@@ -1,0 +1,18 @@
+[
+  {
+    "runId": "RUN-1",
+    "status": "PASSED"
+  },
+  {
+    "runId": "RUN-2",
+    "status": "FAILED"
+  },
+  {
+    "runId": "RUN-3",
+    "status": "PASSED"
+  },
+  {
+    "runId": "RUN-4",
+    "status": "FAILED"
+  }
+]

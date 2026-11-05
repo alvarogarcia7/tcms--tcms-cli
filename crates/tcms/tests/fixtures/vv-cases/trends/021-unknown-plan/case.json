@@ -1,0 +1,9 @@
+{
+  "args": [
+    "--plan",
+    "PLAN-404"
+  ],
+  "binary": "trends",
+  "expect": null,
+  "expect_exit": 1
+}

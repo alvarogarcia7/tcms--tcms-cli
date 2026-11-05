@@ -1,0 +1,67 @@
+{
+  "args": [
+    "--gate",
+    "50"
+  ],
+  "binary": "trends",
+  "expect": {
+    "heatmap": {
+      "cases": {
+        "TC_0": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_1": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_2": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_3": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_4": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_5": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_6": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_7": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_8": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_9": {
+          "flips": 0,
+          "stability": "FAILING"
+        }
+      },
+      "flakyCount": 0,
+      "flakyThreshold": 4
+    },
+    "runs": {
+      "RUN-01": {
+        "passRate": {
+          "display": 50,
+          "exact": 50.0
+        },
+        "runId": "RUN-01",
+        "startedAt": "2026-10-01T10:00:00Z",
+        "verdict": "PASSED"
+      }
+    }
+  },
+  "expect_exit": 0
+}

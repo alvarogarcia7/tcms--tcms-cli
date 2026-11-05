@@ -1,0 +1,18 @@
+{
+  "binary": "report",
+  "args": [
+    "--metrics",
+    "metrics.json",
+    "--out",
+    "deep/er/report.md"
+  ],
+  "expect_exit": 0,
+  "expect": null,
+  "contains": [],
+  "absent": [
+    "|"
+  ],
+  "expect_files": [
+    "deep/er/report.md"
+  ]
+}

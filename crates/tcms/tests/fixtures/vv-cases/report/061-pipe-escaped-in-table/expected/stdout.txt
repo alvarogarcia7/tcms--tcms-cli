@@ -1,0 +1,68 @@
+# V&V metrics report
+
+## Run
+
+| Item | Value |
+| --- | --- |
+| Run | RUN-A |
+| Started | 2026-10-01T10:00:00Z |
+| Finished | 2026-10-01T11:00:00Z |
+| Provisional | no |
+| Generated | 2026-01-01T00:00:00Z |
+| Gate threshold | 90% (default) |
+
+## Gate verdict
+
+| Measure | Value |
+| --- | --- |
+| Verdict | FAILED |
+| Gate pass rate | 0% (exact 0.0%) |
+| Denominator (passed + failed + not executed) | 1 |
+| Counts: passed / failed / not executed / skipped | 0 / 1 / 0 / 0 |
+| Delta from previous run | n/a |
+| Previous run | none |
+
+## V&V run figures
+
+| Measure | Value |
+| --- | --- |
+| V&V test-case pass rate | 0% (exact 0.0%) |
+| Test cases passed / total | 0 / 1 |
+| Step coverage | n/a |
+| Steps passed / total | 0 / 0 |
+
+## Requirement coverage
+
+| Measure | Value |
+| --- | --- |
+| Requirements | 1 |
+| Covered | 0 |
+| Failing | 1 |
+| Not run | 0 |
+| No cases | 0 |
+| With problem report | 0 |
+| Open problem reports | 0 |
+
+| Requirement | Coverage | Executed / total | Problem reports | Open problem reports |
+| --- | --- | --- | --- | --- |
+| SUT\|1 | FAILING | 1 / 1 | - | - |
+
+## Stability
+
+| Measure | Value |
+| --- | --- |
+| Flaky threshold (flips) | 4 (default) |
+| Flaky cases | 0 |
+
+No flaky or failing cases in the selected run.
+
+## Load summary
+
+| Measure | Value |
+| --- | --- |
+| Distinct cases | 1 |
+| Runs recorded | 1 |
+| Schema errors | 0 |
+| First schema error file | none |
+| First schema error | none |
+

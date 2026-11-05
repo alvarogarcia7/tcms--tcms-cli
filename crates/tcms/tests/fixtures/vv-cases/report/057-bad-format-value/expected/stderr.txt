@@ -1,0 +1,4 @@
+error: invalid value 'html' for '--format <FORMAT>'
+  [possible values: markdown, asciidoc]
+
+For more information, try '--help'.

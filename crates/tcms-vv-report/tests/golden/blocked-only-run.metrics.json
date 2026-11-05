@@ -1,11 +1,20 @@
 {
+  "failingCases": [
+    {
+      "caseId": "SUT1_CALC_001",
+      "failureStartRunId": "RUN-DERIVED-BLOCKED-01"
+    },
+    {
+      "caseId": "SUT1_PASS_001",
+      "failureStartRunId": "RUN-DERIVED-BLOCKED-01"
+    }
+  ],
   "gate": {
     "counts": {
-      "blocked": 2,
-      "failed": 0,
+      "failed": 2,
+      "notExecuted": 0,
       "passed": 0,
-      "skipped": 0,
-      "untested": 0
+      "skipped": 0
     },
     "deltaFromPrevious": -100,
     "denominator": 2,
@@ -45,10 +54,10 @@
         "cases": [
           {
             "caseId": "SUT1_CALC_001",
-            "status": "BLOCKED"
+            "status": "FAILED"
           }
         ],
-        "coverage": "NOT_RUN",
+        "coverage": "FAILING",
         "executed": 1,
         "id": "SUT1-1",
         "openProblemReports": [],
@@ -59,10 +68,10 @@
         "cases": [
           {
             "caseId": "SUT1_PASS_001",
-            "status": "BLOCKED"
+            "status": "FAILED"
           }
         ],
-        "coverage": "NOT_RUN",
+        "coverage": "FAILING",
         "executed": 1,
         "id": "SUT1-2",
         "openProblemReports": [],
@@ -72,9 +81,9 @@
     ],
     "summary": {
       "covered": 0,
-      "failing": 0,
+      "failing": 2,
       "noCases": 0,
-      "notRun": 2,
+      "notRun": 0,
       "openDefects": 0,
       "total": 2,
       "withDefect": 0
@@ -90,13 +99,13 @@
     "cases": [
       {
         "caseId": "SUT1_CALC_001",
-        "flips": 0,
-        "stability": "STABLE"
+        "flips": 1,
+        "stability": "FAILING"
       },
       {
         "caseId": "SUT1_PASS_001",
-        "flips": 0,
-        "stability": "STABLE"
+        "flips": 1,
+        "stability": "FAILING"
       }
     ],
     "flakyCount": 0,

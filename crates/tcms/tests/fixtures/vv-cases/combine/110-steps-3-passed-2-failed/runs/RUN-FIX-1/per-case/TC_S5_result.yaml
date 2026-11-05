@@ -1,0 +1,29 @@
+type: test_result
+schema: tcms/test-result.schema.v1.json
+test_case_id: TC_S5
+description: generated case
+sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+      - Pass:
+          step: 1
+          description: step 1
+      - Pass:
+          step: 2
+          description: step 2
+      - Pass:
+          step: 3
+          description: step 3
+      - Fail:
+          step: 4
+          description: step 4
+      - Fail:
+          step: 5
+          description: step 5
+    all_steps_passed: false
+total_steps: 5
+passed_steps: 3
+failed_steps: 2
+not_executed_steps: 0
+overall_pass: false

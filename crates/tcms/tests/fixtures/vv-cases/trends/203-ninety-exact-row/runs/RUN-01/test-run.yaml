@@ -1,0 +1,29 @@
+type: test_run
+schema: tcms/test-run.schema.json
+run_id: RUN-01
+build_id: b-1
+environment: Bench A
+tester: tester-1
+started_at: "2026-10-01T10:00:00Z"
+finished_at: "2026-10-01T11:00:00Z"
+results:
+- test_case_id: TC_0
+  verdict: pass
+- test_case_id: TC_1
+  verdict: pass
+- test_case_id: TC_2
+  verdict: pass
+- test_case_id: TC_3
+  verdict: pass
+- test_case_id: TC_4
+  verdict: pass
+- test_case_id: TC_5
+  verdict: pass
+- test_case_id: TC_6
+  verdict: pass
+- test_case_id: TC_7
+  verdict: pass
+- test_case_id: TC_8
+  verdict: pass
+- test_case_id: TC_9
+  verdict: fail

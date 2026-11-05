@@ -1,0 +1,1 @@
+combined run RUN-FIX-1: 3 cases, 1 pass, 1 fail, 1 not_executed

@@ -1,0 +1,7 @@
+type: test_results_container
+schema: tcms/verification-results.schema.json
+run_id: RUN-FIX-1
+test_results:
+- test_case_id: TC_P01
+  total_steps: 2
+  passed_steps: 2

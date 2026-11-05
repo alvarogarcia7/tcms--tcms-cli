@@ -1,0 +1,25 @@
+{
+  "args": [],
+  "binary": "trends",
+  "expect": {
+    "heatmap": {
+      "cases": {
+        "TC_A": {
+          "flips": 0,
+          "stability": "STABLE"
+        }
+      },
+      "flakyCount": 0,
+      "flakyThreshold": 4
+    },
+    "runs": {
+      "RUN-1": {
+        "passRate": null,
+        "runId": "RUN-1",
+        "startedAt": "2026-10-01T10:00:00Z",
+        "verdict": "NO_DATA"
+      }
+    }
+  },
+  "expect_exit": 0
+}

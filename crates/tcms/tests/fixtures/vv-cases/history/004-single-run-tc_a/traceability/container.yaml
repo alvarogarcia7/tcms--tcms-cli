@@ -1,0 +1,36 @@
+type: test_results_container
+schema: tcms/test-results-container.schema.v1.json
+title: VV fixture history/004-single-run-tc_a
+project: tcms-cli VV fixtures
+test_date: '2026-11-05T00:00:00Z'
+test_results:
+- test_case_id: TC_A
+  description: 'VV fixture history/004-single-run-tc_a: verdict fail'
+  requirement: UNLINKED
+  sequences:
+  - sequence_id: 1
+    name: VV fixture steps
+    step_results:
+    - Fail:
+        step: 1
+        description: step 1
+        reason: failed
+        actual_output: ''
+        actual_result: ''
+        expected:
+          success: true
+          output: ''
+          result: ''
+    all_steps_passed: false
+  total_steps: 1
+  passed_steps: 0
+  failed_steps: 1
+  not_executed_steps: 0
+  overall_pass: false
+metadata:
+  environment: VV fixture
+  platform: linux
+  executor: tcms-cli fixtures
+  total_test_cases: 1
+  passed_test_cases: 0
+  failed_test_cases: 1

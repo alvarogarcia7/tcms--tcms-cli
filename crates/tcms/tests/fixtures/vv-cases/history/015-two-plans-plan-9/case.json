@@ -1,0 +1,11 @@
+{
+  "args": [
+    "--case",
+    "TC_A",
+    "--plan",
+    "PLAN-9"
+  ],
+  "binary": "history",
+  "expect": null,
+  "expect_exit": 1
+}

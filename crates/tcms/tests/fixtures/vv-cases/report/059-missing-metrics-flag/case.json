@@ -1,0 +1,9 @@
+{
+  "binary": "report",
+  "args": [],
+  "expect_exit": 2,
+  "expect": null,
+  "contains": [],
+  "absent": [],
+  "expect_files": []
+}

@@ -1,0 +1,133 @@
+{
+  "failingCases": [
+    {
+      "caseId": "TC_FLIP",
+      "failureStartRunId": "RUN-06"
+    }
+  ],
+  "gate": {
+    "counts": {
+      "failed": 1,
+      "notExecuted": 0,
+      "passed": 2,
+      "skipped": 0
+    },
+    "deltaFromPrevious": 0,
+    "denominator": 3,
+    "gateThresholdPercent": 90,
+    "passRate": {
+      "display": 66,
+      "exact": 66.66666666666667
+    },
+    "previousRunId": "RUN-05",
+    "provisional": false,
+    "verdict": "FAILED"
+  },
+  "generatedAt": "2026-01-01T00:00:00Z",
+  "loadSummary": {
+    "distinctCases": 3,
+    "runsRecorded": 6,
+    "schemaErrorCount": 0,
+    "schemaErrors": []
+  },
+  "parameters": {
+    "flakyThreshold": {
+      "source": "default",
+      "value": 4
+    },
+    "gateThresholdPercent": {
+      "source": "default",
+      "value": 90
+    },
+    "stability_window_runs": {
+      "source": "flag",
+      "value": 3
+    }
+  },
+  "requirements": {
+    "items": [
+      {
+        "cases": [
+          {
+            "caseId": "TC_FLIP",
+            "status": "FAILED"
+          },
+          {
+            "caseId": "TC_STEADY",
+            "status": "PASSED"
+          }
+        ],
+        "coverage": "FAILING",
+        "executed": 2,
+        "id": "SUT1-1",
+        "openProblemReports": [],
+        "problemReports": [],
+        "total": 2
+      },
+      {
+        "cases": [
+          {
+            "caseId": "TC_FAILS",
+            "status": "PASSED"
+          }
+        ],
+        "coverage": "COVERED",
+        "executed": 1,
+        "id": "SUT1-2",
+        "openProblemReports": [],
+        "problemReports": [],
+        "total": 1
+      }
+    ],
+    "summary": {
+      "covered": 1,
+      "failing": 1,
+      "noCases": 0,
+      "notRun": 0,
+      "openDefects": 0,
+      "total": 2,
+      "withDefect": 0
+    }
+  },
+  "run": {
+    "finishedAt": "2026-10-06T11:00:00Z",
+    "provisional": false,
+    "runId": "RUN-06",
+    "startedAt": "2026-10-06T10:00:00Z"
+  },
+  "stability": {
+    "cases": [
+      {
+        "caseId": "TC_FAILS",
+        "flips": 1,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_FLIP",
+        "flips": 2,
+        "stability": "FAILING"
+      },
+      {
+        "caseId": "TC_STEADY",
+        "flips": 0,
+        "stability": "STABLE"
+      }
+    ],
+    "flakyCount": 0,
+    "flakyThreshold": 4
+  },
+  "vvRun": {
+    "passedSteps": 7,
+    "passedTestCases": 2,
+    "stepCoverage": {
+      "display": 78,
+      "exact": 77.77777777777777
+    },
+    "totalSteps": 9,
+    "totalTestCases": 3,
+    "vvPassRate": {
+      "display": 67,
+      "exact": 66.66666666666667
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "args": [
+    "--plan",
+    "PLAN-1"
+  ],
+  "binary": "trends",
+  "expect": {
+    "heatmap": {
+      "cases": {
+        "TC_A": {
+          "flips": 1,
+          "stability": "FAILING"
+        }
+      },
+      "flakyCount": 0,
+      "flakyThreshold": 4
+    },
+    "runs": {
+      "RUN-A1": {
+        "passRate": {
+          "display": 100,
+          "exact": 100.0
+        },
+        "runId": "RUN-A1",
+        "startedAt": "2026-10-01T10:00:00Z",
+        "verdict": "PASSED"
+      },
+      "RUN-A2": {
+        "passRate": {
+          "display": 0,
+          "exact": 0.0
+        },
+        "runId": "RUN-A2",
+        "startedAt": "2026-10-03T10:00:00Z",
+        "verdict": "FAILED"
+      }
+    }
+  },
+  "expect_exit": 0
+}

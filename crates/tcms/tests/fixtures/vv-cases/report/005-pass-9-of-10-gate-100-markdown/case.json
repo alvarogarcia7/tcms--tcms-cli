@@ -1,0 +1,17 @@
+{
+  "binary": "report",
+  "args": [
+    "--metrics",
+    "metrics.json",
+    "--format",
+    "markdown"
+  ],
+  "expect_exit": 0,
+  "expect": null,
+  "contains": [
+    "FAILED",
+    "n/a"
+  ],
+  "absent": [],
+  "expect_files": []
+}

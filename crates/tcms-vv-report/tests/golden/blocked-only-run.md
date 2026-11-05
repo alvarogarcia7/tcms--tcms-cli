@@ -17,8 +17,8 @@
 | --- | --- |
 | Verdict | FAILED |
 | Gate pass rate | 0% (exact 0.0%) |
-| Denominator (passed + failed + blocked) | 2 |
-| Counts: passed / failed / blocked / skipped / untested | 0 / 0 / 2 / 0 / 0 |
+| Denominator (passed + failed + not executed) | 2 |
+| Counts: passed / failed / not executed / skipped | 0 / 2 / 0 / 0 |
 | Delta from previous run | -100 |
 | Previous run | RUN-32921 |
 
@@ -37,16 +37,16 @@
 | --- | --- |
 | Requirements | 2 |
 | Covered | 0 |
-| Failing | 0 |
-| Not run | 2 |
+| Failing | 2 |
+| Not run | 0 |
 | No cases | 0 |
 | With problem report | 0 |
 | Open problem reports | 0 |
 
 | Requirement | Coverage | Executed / total | Problem reports | Open problem reports |
 | --- | --- | --- | --- | --- |
-| SUT1-1 | NOT_RUN | 1 / 1 | - | - |
-| SUT1-2 | NOT_RUN | 1 / 1 | - | - |
+| SUT1-1 | FAILING | 1 / 1 | - | - |
+| SUT1-2 | FAILING | 1 / 1 | - | - |
 
 ## Stability
 
@@ -55,7 +55,12 @@
 | Flaky threshold (flips) | 4 (default) |
 | Flaky cases | 0 |
 
-No flaky or failing cases in the selected run.
+Cases with stability FLAKY or FAILING:
+
+| Case | Stability | Flips |
+| --- | --- | --- |
+| SUT1_CALC_001 | FAILING | 1 |
+| SUT1_PASS_001 | FAILING | 1 |
 
 ## Load summary
 

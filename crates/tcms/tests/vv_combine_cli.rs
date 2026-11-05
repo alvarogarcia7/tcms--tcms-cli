@@ -356,3 +356,23 @@ fn unreadable_case_file_writes_nothing_and_names_the_file() {
     assert!(!run_file(tmp.path(), RUN, "test-run.yaml").exists());
     assert!(!run_file(tmp.path(), RUN, "verification-results.yaml").exists());
 }
+
+#[test]
+fn run_without_plan_records_an_empty_plan_id() {
+    // TCMS-47.4 AC 1: no --plan writes plan_id as "" (the schema types it as a string, so null is not allowed).
+    let tmp = TempDir::new().unwrap();
+    stage_fixture(tmp.path());
+    let flags: Vec<&str> = RUN_FLAGS
+        .iter()
+        .copied()
+        .filter(|f| *f != "--plan" && *f != "PLAN-FIX")
+        .collect();
+    let o = combine(tmp.path(), &flags);
+    assert!(
+        o.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&o.stderr)
+    );
+    let test_run = read_yaml(&run_file(tmp.path(), RUN, "test-run.yaml"));
+    assert_eq!(test_run["plan_id"].as_str(), Some(""));
+}

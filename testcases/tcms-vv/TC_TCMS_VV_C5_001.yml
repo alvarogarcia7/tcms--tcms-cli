@@ -5,9 +5,9 @@ item: 1
 tc: 5
 id: TC_TCMS_VV_C5_001
 description: >-
-  Test case missing from the run: SUT1_PASS_001 has an untested result in the selected run, so its
-  requirement SUT1-2 is NOT_RUN. The untested result is outside the gate denominator, so the gate is
-  PASSED over the one case that ran. Happy path only.
+  Test case missing from the run: SUT1_PASS_001 has a not_executed result in the selected run, so its
+  requirement SUT1-2 is NOT_RUN. A not_executed result is inside the gate denominator as not passed
+  (TCMS-50.2), so the gate is FAILED: 1 of 2 cases passed. Happy path only.
 general_initial_conditions:
   tooling:
   - jq is installed
@@ -17,31 +17,31 @@ initial_conditions:
 test_sequences:
 - id: 1
   name: Test case with no result in the run (derived fixture missing-case-result)
-  description: SUT1_PASS_001 is untested in RUN-DERIVED-MISSING-01; SUT1_CALC_001 passes.
+  description: SUT1_PASS_001 is not_executed in RUN-DERIVED-MISSING-01; SUT1_CALC_001 passes.
   initial_conditions:
     repository:
     - the derived fixture data is present under crates/tcms/tests/fixtures/vv-metrics
   steps:
   - step: 1
-    description: Quality gate verdict is PASSED over one counted case
+    description: 'Quality gate verdict is FAILED: the not_executed case counts in the denominator as not passed'
     command: 'set -o pipefail; "${TCMS_BIN:-target/debug/tcms}" --schemas-root schemas/ vv metrics --root crates/tcms/tests/fixtures/vv-metrics/derived/missing-case-result --run RUN-DERIVED-MISSING-01 --now 2026-11-02T10:00:00+04:00 | jq -r ".gate.verdict"'
     expected:
       success: true
       result: 0
-      output: PASSED
+      output: FAILED
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output: grep -qx 'PASSED' <<< "$COMMAND_OUTPUT"
+      output: grep -qx 'FAILED' <<< "$COMMAND_OUTPUT"
   - step: 2
-    description: Gate denominator is 1 (the untested case is outside it)
+    description: Gate denominator is 2 (the not_executed case is in it, as not passed)
     command: 'set -o pipefail; "${TCMS_BIN:-target/debug/tcms}" --schemas-root schemas/ vv metrics --root crates/tcms/tests/fixtures/vv-metrics/derived/missing-case-result --run RUN-DERIVED-MISSING-01 --now 2026-11-02T10:00:00+04:00 | jq -r ".gate.denominator"'
     expected:
       success: true
       result: 0
-      output: '1'
+      output: '2'
     verification:
       result: '[[ $EXIT_CODE -eq 0 ]]'
-      output: grep -qx '1' <<< "$COMMAND_OUTPUT"
+      output: grep -qx '2' <<< "$COMMAND_OUTPUT"
   - step: 3
     description: Requirement SUT1-2 is NOT_RUN
     command: 'set -o pipefail; "${TCMS_BIN:-target/debug/tcms}" --schemas-root schemas/ vv metrics --root crates/tcms/tests/fixtures/vv-metrics/derived/missing-case-result --run RUN-DERIVED-MISSING-01 --now 2026-11-02T10:00:00+04:00 | jq -r ".requirements.items[] | select(.id == \"SUT1-2\") | .coverage"'
@@ -53,7 +53,7 @@ test_sequences:
       result: '[[ $EXIT_CODE -eq 0 ]]'
       output: grep -qx 'NOT_RUN' <<< "$COMMAND_OUTPUT"
   - step: 4
-    description: V&V pass rate counts the untested case in the total (1 of 2 = 50)
+    description: V&V pass rate counts the not_executed case in the total (1 of 2 = 50)
     command: 'set -o pipefail; "${TCMS_BIN:-target/debug/tcms}" --schemas-root schemas/ vv metrics --root crates/tcms/tests/fixtures/vv-metrics/derived/missing-case-result --run RUN-DERIVED-MISSING-01 --now 2026-11-02T10:00:00+04:00 | jq -r ".vvRun.vvPassRate.display"'
     expected:
       success: true

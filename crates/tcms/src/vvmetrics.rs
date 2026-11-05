@@ -1,38 +1,43 @@
 //! Pure V&V metric rules (TCMS-47). No I/O.
 //!
-//! The rules are those of the tcms-web reference snapshot in `docs/reference/tcms-web/`:
-//! - pass rate and gate verdict: DECISIONS D-95 (`report/PassRate.java`)
-//! - run-over-run delta: D-96
+//! The rules are those of the tcms-web reference snapshot in `docs/reference/tcms-web/`, with the
+//! decisions of TCMS-50 applied on top:
+//! - pass rate and gate verdict: DECISIONS D-95 (`report/PassRate.java`), with the buckets of TCMS-50.2
+//! - run-over-run delta: D-96, as changed by TCMS-50.3 (difference of the printed rates)
 //! - flaky / failing / stable: D-97 (`report/StabilityClassifier.java`)
 //! - requirement coverage: D-116.3 (`trace/CoverageClassifier.java`)
 //! - V&V run figures: `vv/TestRunDataService.java`
 //!
 //! Percentages are kept as exact ratios (`Ratio`) and only turned into numbers at the edge, so the
-//! gate comparison and the delta use integer arithmetic.
+//! gate comparison uses integer arithmetic.
 
-/// Result status of one test case in one run (the tcms-web vocabulary).
+/// Result status of one test case in one run.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Status {
     Passed,
+    /// `fail`, `error` (TCMS-50.2: error is a failure for the gate) and the legacy `blocked`.
     Failed,
-    Blocked,
+    /// `not_executed` (and the legacy `untested`): the case did not run. In the gate denominator as
+    /// not passed, never counted as Failed.
+    NotExecuted,
+    /// `skipped`: outside the gate denominator.
     Skipped,
-    Untested,
 }
 
 impl Status {
-    /// Map a `verdict` value of a test-run record to a status.
+    /// Map a `verdict` value of a test-run record to a status. Any other value is `None`, so a typo
+    /// is an error, not a count.
     ///
-    /// `pass`, `fail` and `not_executed` come from the tcms-schemas test-run enum; `error` and
-    /// `blocked` mean the test could not reach a verdict (Blocked); `skipped` and `untested` are the
-    /// remaining tcms-web statuses. Any other value is `None`, so a typo is an error, not a count.
+    /// `pass`, `fail`, `error` and `not_executed` are the test-run schema enum (`error` is a failure
+    /// for the gate, TCMS-50.2). `skipped` stays as a legacy value outside the denominator. `blocked`
+    /// and `untested` are legacy tcms-web spellings: `blocked` counts as a failure, as in Kiwi TCMS,
+    /// and `untested` as not executed.
     pub fn from_verdict(verdict: &str) -> Option<Status> {
         match verdict {
             "pass" => Some(Status::Passed),
-            "fail" => Some(Status::Failed),
-            "error" | "blocked" => Some(Status::Blocked),
+            "fail" | "error" | "blocked" => Some(Status::Failed),
+            "not_executed" | "untested" => Some(Status::NotExecuted),
             "skipped" => Some(Status::Skipped),
-            "not_executed" | "untested" => Some(Status::Untested),
             _ => None,
         }
     }
@@ -41,9 +46,8 @@ impl Status {
         match self {
             Status::Passed => "PASSED",
             Status::Failed => "FAILED",
-            Status::Blocked => "BLOCKED",
+            Status::NotExecuted => "NOT_EXECUTED",
             Status::Skipped => "SKIPPED",
-            Status::Untested => "UNTESTED",
         }
     }
 }
@@ -53,9 +57,8 @@ impl Status {
 pub struct Counts {
     pub passed: u64,
     pub failed: u64,
-    pub blocked: u64,
+    pub not_executed: u64,
     pub skipped: u64,
-    pub untested: u64,
 }
 
 impl Counts {
@@ -63,15 +66,14 @@ impl Counts {
         match status {
             Status::Passed => self.passed += 1,
             Status::Failed => self.failed += 1,
-            Status::Blocked => self.blocked += 1,
+            Status::NotExecuted => self.not_executed += 1,
             Status::Skipped => self.skipped += 1,
-            Status::Untested => self.untested += 1,
         }
     }
 
-    /// Passed + Failed + Blocked: the D-95 pass-rate denominator. Skipped and Untested are outside it.
+    /// Passed + Failed + NotExecuted: the pass-rate denominator (TCMS-50.2). Skipped is outside it.
     pub fn denominator(&self) -> u64 {
-        self.passed + self.failed + self.blocked
+        self.passed + self.failed + self.not_executed
     }
 }
 
@@ -148,15 +150,12 @@ pub fn gate(counts: Counts, threshold: u64) -> Gate {
     }
 }
 
-/// Change of the exact pass rate from the previous run, in percentage points, rounded to an integer
-/// with halves rounded up (D-96). `None` when either side has no data.
+/// Change of the printed gate pass rate from the previous run, in whole percentage points (D-96 as
+/// changed by TCMS-50.3): the difference of the two floored rates, so every printed delta equals the
+/// difference of the printed rates. `None` when either side has no data.
 pub fn delta(current: Option<Ratio>, previous: Option<Ratio>) -> Option<i64> {
     let (c, p) = (current?, previous?);
-    // (c.part/c.whole - p.part/p.whole) * 100 = n / m, with m > 0.
-    let n = 100 * (c.part as i128 * p.whole as i128 - p.part as i128 * c.whole as i128);
-    let m = c.whole as i128 * p.whole as i128;
-    // round half up of n/m is floor((2n + m) / 2m); div_euclid is floor for a positive divisor.
-    Some((2 * n + m).div_euclid(2 * m) as i64)
+    Some(c.floor_percent() as i64 - p.floor_percent() as i64)
 }
 
 /// Stability of one case over the runs up to the selected one (D-97).
@@ -233,7 +232,7 @@ impl Coverage {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CoverageResult {
     pub coverage: Coverage,
-    /// Linked cases that have a result in the run other than Untested.
+    /// Linked cases that have a result in the run other than NotExecuted.
     pub executed: u64,
     pub total: u64,
 }
@@ -251,7 +250,7 @@ pub fn coverage(statuses: &[Option<Status>]) -> CoverageResult {
     }
     let executed = statuses
         .iter()
-        .filter(|s| matches!(s, Some(st) if *st != Status::Untested))
+        .filter(|s| matches!(s, Some(st) if *st != Status::NotExecuted))
         .count() as u64;
     let class = if statuses.contains(&Some(Status::Failed)) {
         Coverage::Failing
@@ -271,85 +270,92 @@ pub fn coverage(statuses: &[Option<Status>]) -> CoverageResult {
 mod tests {
     use super::*;
 
-    fn counts(passed: u64, failed: u64, blocked: u64, skipped: u64, untested: u64) -> Counts {
+    fn counts(passed: u64, failed: u64, not_executed: u64, skipped: u64) -> Counts {
         Counts {
             passed,
             failed,
-            blocked,
+            not_executed,
             skipped,
-            untested,
         }
     }
 
     #[test]
     fn gate_reached_exactly_is_passed() {
-        // 9 of 10 at gate 90: 900 >= 90 * 10.
-        let g = gate(counts(9, 1, 0, 0, 0), 90);
+        let g = gate(counts(9, 1, 0, 0), 90);
         assert_eq!(g.verdict, Verdict::Passed);
-        assert_eq!(g.pass_rate.unwrap().floor_percent(), 90);
     }
 
     #[test]
     fn one_below_the_gate_is_failed_and_display_rounds_down() {
         // 89 of 100 at gate 90: display 89, verdict FAILED.
-        let g = gate(counts(89, 11, 0, 0, 0), 90);
+        let g = gate(counts(89, 11, 0, 0), 90);
         assert_eq!(g.verdict, Verdict::Failed);
         assert_eq!(g.pass_rate.unwrap().floor_percent(), 89);
     }
 
     #[test]
     fn two_thirds_displays_66_and_keeps_exact_value() {
-        let r = gate(counts(2, 1, 0, 0, 0), 90).pass_rate.unwrap();
+        let r = Ratio::new(2, 3).unwrap();
         assert_eq!(r.floor_percent(), 66);
-        assert!((r.exact() - 66.666_666).abs() < 1e-4);
+        assert!((r.exact() - 66.666).abs() < 0.01);
     }
 
     #[test]
     fn zero_denominator_is_no_data() {
-        let g = gate(counts(0, 0, 0, 0, 0), 90);
+        let g = gate(Counts::default(), 90);
         assert_eq!(g.verdict, Verdict::NoData);
         assert!(g.pass_rate.is_none());
     }
 
     #[test]
     fn all_skipped_is_no_data() {
-        let g = gate(counts(0, 0, 0, 4, 0), 90);
-        assert_eq!(g.verdict, Verdict::NoData);
-        assert!(g.pass_rate.is_none());
-    }
-
-    #[test]
-    fn all_untested_is_no_data() {
-        let g = gate(counts(0, 0, 0, 0, 5), 90);
+        let g = gate(counts(0, 0, 0, 5), 90);
         assert_eq!(g.verdict, Verdict::NoData);
     }
 
     #[test]
-    fn only_blocked_is_failed_with_display_zero() {
-        let g = gate(counts(0, 0, 3, 0, 0), 90);
+    fn only_failed_is_failed_with_display_zero() {
+        let g = gate(counts(0, 3, 0, 0), 90);
         assert_eq!(g.verdict, Verdict::Failed);
         assert_eq!(g.pass_rate.unwrap().floor_percent(), 0);
     }
 
     #[test]
-    fn skipped_and_untested_are_outside_the_denominator() {
-        // 9 passed, 1 failed, plus skipped and untested: still 90 percent.
-        let g = gate(counts(9, 1, 0, 5, 5), 90);
-        assert_eq!(g.pass_rate.unwrap().whole, 10);
+    fn skipped_is_outside_the_denominator() {
+        // 9 passed, 1 failed, plus 5 skipped: still 90 percent.
+        let g = gate(counts(9, 1, 0, 5), 90);
+        assert_eq!(g.counts.denominator(), 10);
         assert_eq!(g.verdict, Verdict::Passed);
     }
 
     #[test]
+    fn not_executed_is_in_the_denominator_as_not_passed() {
+        // 9 passed and 1 not executed: 90 of 10 in the denominator, so the gate passes at 90 but a
+        // single not-executed case lowers the rate that a passing set would show.
+        let g = gate(counts(9, 0, 1, 0), 90);
+        assert_eq!(g.counts.denominator(), 10);
+        assert_eq!(g.pass_rate.unwrap().floor_percent(), 90);
+        let lower = gate(counts(8, 0, 2, 0), 90);
+        assert_eq!(lower.verdict, Verdict::Failed);
+    }
+
+    #[test]
+    fn not_executed_only_is_failed_not_no_data() {
+        let g = gate(counts(0, 0, 4, 0), 90);
+        assert_eq!(g.verdict, Verdict::Failed);
+        assert_eq!(g.pass_rate.unwrap().floor_percent(), 0);
+    }
+
+    #[test]
     fn gate_threshold_is_a_parameter() {
-        assert_eq!(gate(counts(8, 2, 0, 0, 0), 80).verdict, Verdict::Passed);
-        assert_eq!(gate(counts(8, 2, 0, 0, 0), 81).verdict, Verdict::Failed);
+        assert_eq!(gate(counts(8, 2, 0, 0), 80).verdict, Verdict::Passed);
+        assert_eq!(gate(counts(8, 2, 0, 0), 81).verdict, Verdict::Failed);
     }
 
     #[test]
     fn round_percent_is_half_up() {
-        assert_eq!(Ratio::new(1, 8).unwrap().round_percent(), 13); // 12.5 -> 13
-        assert_eq!(Ratio::new(2, 3).unwrap().round_percent(), 67);
-        assert_eq!(Ratio::new(1, 3).unwrap().round_percent(), 33);
+        assert_eq!(Ratio::new(1, 8).unwrap().round_percent(), 13);
+        assert_eq!(Ratio::new(1, 2).unwrap().round_percent(), 50);
     }
 
     #[test]
@@ -361,84 +367,83 @@ mod tests {
     fn delta_with_no_data_on_either_side_is_none() {
         assert_eq!(delta(None, Ratio::new(1, 1)), None);
         assert_eq!(delta(Ratio::new(1, 1), None), None);
-        assert_eq!(delta(None, None), None);
     }
 
     #[test]
-    fn delta_positive_negative_and_zero() {
-        // 2/3 against 1/1: -33.33 points, rounded to -33.
-        assert_eq!(delta(Ratio::new(2, 3), Ratio::new(1, 1)), Some(-33));
-        // 1/1 against 2/3: +33.33 points, rounded to +33.
-        assert_eq!(delta(Ratio::new(1, 1), Ratio::new(2, 3)), Some(33));
-        // Equal rates: zero.
-        assert_eq!(delta(Ratio::new(1, 2), Ratio::new(2, 4)), Some(0));
+    fn delta_is_the_difference_of_the_printed_rates() {
+        // TCMS-50.3: 0% to 12.5% prints 0 and 12, so the delta is +12, not +13.
+        let zero = Ratio::new(0, 8);
+        let eighth = Ratio::new(1, 8); // 12.5 percent, printed 12
+        assert_eq!(delta(eighth, zero), Some(12));
+        assert_eq!(delta(zero, eighth), Some(-12));
+        assert_eq!(delta(Ratio::new(1, 1), Ratio::new(1, 2)), Some(50));
     }
 
     #[test]
-    fn delta_halves_round_up_both_signs() {
-        // 1/2 against 0/1 is +50 exactly; 0/1 against 1/2 is -50 exactly.
-        assert_eq!(delta(Ratio::new(1, 2), Ratio::new(0, 1)), Some(50));
-        assert_eq!(delta(Ratio::new(0, 1), Ratio::new(1, 2)), Some(-50));
-        // 1/8 (12.5 percent) against 1/4 (25 percent): -12.5 rounds half up to -12 (Math.round).
-        assert_eq!(delta(Ratio::new(1, 8), Ratio::new(1, 4)), Some(-12));
+    fn delta_zero_when_printed_rates_are_equal() {
+        // 12.5 and 12.9 both print 12.
+        assert_eq!(delta(Ratio::new(1, 8), Ratio::new(129, 1000)), Some(0));
     }
 
     #[test]
     fn stability_flip_boundaries_at_default_threshold() {
         use Status::*;
-        // 3 flips: below the threshold of 4, last kept result Passed -> Stable.
-        let below = [Failed, Passed, Failed, Passed];
-        let r = stability(&below, 4);
-        assert_eq!((r.flips, r.stability), (3, Stability::Stable));
-        // 4 flips: at the threshold -> Flaky.
-        let at = [Passed, Failed, Passed, Failed, Passed];
-        let r = stability(&at, 4);
-        assert_eq!((r.flips, r.stability), (4, Stability::Flaky));
-        // 5 flips: above the threshold -> Flaky.
-        let above = [Passed, Failed, Passed, Failed, Passed, Failed];
-        let r = stability(&above, 4);
-        assert_eq!((r.flips, r.stability), (5, Stability::Flaky));
+        // Three flips with a threshold of 4: stable, last kept result PASSED.
+        let three = [Passed, Failed, Passed, Failed];
+        assert_eq!(stability(&three, 4).flips, 3);
+        assert_eq!(stability(&three, 4).stability, Stability::Failing);
+        // Four flips reach the threshold: flaky.
+        let four = [Passed, Failed, Passed, Failed, Passed];
+        assert_eq!(stability(&four, 4).stability, Stability::Flaky);
     }
 
     #[test]
     fn stability_threshold_is_a_parameter() {
         use Status::*;
-        let two_flips = [Passed, Failed, Passed];
-        assert_eq!(stability(&two_flips, 2).stability, Stability::Flaky);
-        assert_eq!(stability(&two_flips, 3).stability, Stability::Stable);
+        let two = [Passed, Failed, Passed];
+        assert_eq!(stability(&two, 2).stability, Stability::Flaky);
+        assert_eq!(stability(&two, 3).stability, Stability::Stable);
     }
 
     #[test]
-    fn stability_ignores_blocked_skipped_and_untested() {
+    fn stability_ignores_skipped_and_not_executed() {
         use Status::*;
-        // Kept results are Passed, Failed, Passed: two flips, last kept result Passed -> Stable.
-        let statuses = [Passed, Blocked, Skipped, Untested, Failed, Untested, Passed];
-        let r = stability(&statuses, 4);
-        assert_eq!((r.flips, r.stability), (2, Stability::Stable));
+        let h = [Passed, Skipped, NotExecuted, Passed];
+        let s = stability(&h, 1);
+        assert_eq!(s.flips, 0);
+        assert_eq!(s.stability, Stability::Stable);
+    }
+
+    #[test]
+    fn error_counts_as_failed_in_stability() {
+        // error is Failed (TCMS-50.2), so Passed then error is one flip.
+        let h = [
+            Status::from_verdict("pass").unwrap(),
+            Status::from_verdict("error").unwrap(),
+        ];
+        assert_eq!(stability(&h, 4).flips, 1);
+        assert_eq!(stability(&h, 4).stability, Stability::Failing);
     }
 
     #[test]
     fn stability_failing_when_last_kept_result_is_failed() {
         use Status::*;
-        let r = stability(&[Passed, Passed, Failed], 4);
-        assert_eq!((r.flips, r.stability), (1, Stability::Failing));
-        // A later Blocked does not hide the last kept Failed.
-        let r = stability(&[Passed, Failed, Blocked], 4);
-        assert_eq!(r.stability, Stability::Failing);
+        assert_eq!(
+            stability(&[Passed, Failed], 4).stability,
+            Stability::Failing
+        );
     }
 
     #[test]
     fn stability_no_results_is_stable() {
-        let r = stability(&[], 4);
-        assert_eq!((r.flips, r.stability), (0, Stability::Stable));
+        assert_eq!(stability(&[], 4).stability, Stability::Stable);
     }
 
     #[test]
     fn flaky_outranks_failing() {
         use Status::*;
-        // Four flips and a last kept result of Failed: Flaky, not Failing.
-        let r = stability(&[Passed, Failed, Passed, Failed, Passed, Failed], 4);
-        assert_eq!(r.stability, Stability::Flaky);
+        let h = [Failed, Passed, Failed, Passed, Failed];
+        assert_eq!(stability(&h, 4).stability, Stability::Flaky);
     }
 
     #[test]
@@ -449,36 +454,31 @@ mod tests {
             coverage(&[Some(Passed), Some(Passed)]).coverage,
             Coverage::Covered
         );
-        assert_eq!(
-            coverage(&[Some(Passed), Some(Failed)]).coverage,
-            Coverage::Failing
-        );
         assert_eq!(coverage(&[Some(Passed), None]).coverage, Coverage::NotRun);
-        assert_eq!(
-            coverage(&[Some(Passed), Some(Untested)]).coverage,
-            Coverage::NotRun
-        );
-        assert_eq!(coverage(&[Some(Blocked)]).coverage, Coverage::NotRun);
-        assert_eq!(coverage(&[None]).coverage, Coverage::NotRun);
+        assert_eq!(coverage(&[Some(NotExecuted)]).coverage, Coverage::NotRun);
     }
 
     #[test]
     fn coverage_failing_outranks_not_run_and_counts_executed() {
         use Status::*;
-        let r = coverage(&[Some(Failed), None, Some(Untested), Some(Skipped)]);
-        assert_eq!(r.coverage, Coverage::Failing);
-        assert_eq!(r.total, 4);
-        // Failed and Skipped have results; None and Untested do not.
-        assert_eq!(r.executed, 2);
+        let c = coverage(&[Some(Failed), Some(NotExecuted), Some(Passed), None]);
+        assert_eq!(c.coverage, Coverage::Failing);
+        assert_eq!(c.executed, 2);
+        assert_eq!(c.total, 4);
     }
 
     #[test]
     fn status_mapping_from_verdicts() {
         assert_eq!(Status::from_verdict("pass"), Some(Status::Passed));
         assert_eq!(Status::from_verdict("fail"), Some(Status::Failed));
-        assert_eq!(Status::from_verdict("error"), Some(Status::Blocked));
+        assert_eq!(Status::from_verdict("error"), Some(Status::Failed));
+        assert_eq!(Status::from_verdict("blocked"), Some(Status::Failed));
         assert_eq!(Status::from_verdict("skipped"), Some(Status::Skipped));
-        assert_eq!(Status::from_verdict("not_executed"), Some(Status::Untested));
+        assert_eq!(
+            Status::from_verdict("not_executed"),
+            Some(Status::NotExecuted)
+        );
+        assert_eq!(Status::from_verdict("untested"), Some(Status::NotExecuted));
         assert_eq!(Status::from_verdict("PASS"), None);
     }
 }

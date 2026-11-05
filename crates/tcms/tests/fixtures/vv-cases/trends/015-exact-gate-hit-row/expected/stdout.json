@@ -1,0 +1,83 @@
+{
+  "heatmap": {
+    "cases": [
+      {
+        "caseId": "TC_0",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_1",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_2",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_3",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_4",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_5",
+        "flips": 0,
+        "stability": "FAILING"
+      },
+      {
+        "caseId": "TC_6",
+        "flips": 0,
+        "stability": "FAILING"
+      },
+      {
+        "caseId": "TC_7",
+        "flips": 0,
+        "stability": "FAILING"
+      },
+      {
+        "caseId": "TC_8",
+        "flips": 0,
+        "stability": "FAILING"
+      },
+      {
+        "caseId": "TC_9",
+        "flips": 0,
+        "stability": "FAILING"
+      }
+    ],
+    "flakyCount": 0,
+    "flakyThreshold": 4
+  },
+  "parameters": {
+    "flakyThreshold": {
+      "source": "default",
+      "value": 4
+    },
+    "gateThresholdPercent": {
+      "source": "flag",
+      "value": 50
+    },
+    "stability_window_runs": {
+      "source": "default",
+      "value": 12
+    }
+  },
+  "runs": [
+    {
+      "passRate": {
+        "display": 50,
+        "exact": 50.0
+      },
+      "runId": "RUN-01",
+      "startedAt": "2026-10-01T10:00:00Z",
+      "verdict": "PASSED"
+    }
+  ]
+}

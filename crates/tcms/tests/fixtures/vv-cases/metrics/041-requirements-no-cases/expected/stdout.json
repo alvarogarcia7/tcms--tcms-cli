@@ -1,0 +1,104 @@
+{
+  "failingCases": [],
+  "gate": {
+    "counts": {
+      "failed": 0,
+      "notExecuted": 0,
+      "passed": 1,
+      "skipped": 0
+    },
+    "deltaFromPrevious": null,
+    "denominator": 1,
+    "gateThresholdPercent": 90,
+    "passRate": {
+      "display": 100,
+      "exact": 100.0
+    },
+    "previousRunId": null,
+    "provisional": false,
+    "verdict": "PASSED"
+  },
+  "generatedAt": "2026-01-01T00:00:00Z",
+  "loadSummary": {
+    "distinctCases": 1,
+    "runsRecorded": 1,
+    "schemaErrorCount": 0,
+    "schemaErrors": []
+  },
+  "parameters": {
+    "flakyThreshold": {
+      "source": "default",
+      "value": 4
+    },
+    "gateThresholdPercent": {
+      "source": "default",
+      "value": 90
+    },
+    "stability_window_runs": {
+      "source": "default",
+      "value": 12
+    }
+  },
+  "requirements": {
+    "items": [
+      {
+        "cases": [],
+        "coverage": "NO_CASES",
+        "executed": 0,
+        "id": "SUT1-1",
+        "openProblemReports": [],
+        "problemReports": [],
+        "total": 0
+      },
+      {
+        "cases": [],
+        "coverage": "NO_CASES",
+        "executed": 0,
+        "id": "SUT1-2",
+        "openProblemReports": [],
+        "problemReports": [],
+        "total": 0
+      }
+    ],
+    "summary": {
+      "covered": 0,
+      "failing": 0,
+      "noCases": 2,
+      "notRun": 0,
+      "openDefects": 0,
+      "total": 2,
+      "withDefect": 0
+    }
+  },
+  "run": {
+    "finishedAt": "2026-10-01T11:00:00Z",
+    "provisional": false,
+    "runId": "RUN-R",
+    "startedAt": "2026-10-01T10:00:00Z"
+  },
+  "stability": {
+    "cases": [
+      {
+        "caseId": "TC_A",
+        "flips": 0,
+        "stability": "STABLE"
+      }
+    ],
+    "flakyCount": 0,
+    "flakyThreshold": 4
+  },
+  "vvRun": {
+    "passedSteps": 3,
+    "passedTestCases": 1,
+    "stepCoverage": {
+      "display": 100,
+      "exact": 100.0
+    },
+    "totalSteps": 3,
+    "totalTestCases": 1,
+    "vvPassRate": {
+      "display": 100,
+      "exact": 100.0
+    }
+  }
+}

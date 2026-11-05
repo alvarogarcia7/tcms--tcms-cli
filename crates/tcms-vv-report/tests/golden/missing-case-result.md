@@ -15,11 +15,11 @@
 
 | Measure | Value |
 | --- | --- |
-| Verdict | PASSED |
-| Gate pass rate | 100% (exact 100.0%) |
-| Denominator (passed + failed + blocked) | 1 |
-| Counts: passed / failed / blocked / skipped / untested | 1 / 0 / 0 / 0 / 1 |
-| Delta from previous run | 0 |
+| Verdict | FAILED |
+| Gate pass rate | 50% (exact 50.0%) |
+| Denominator (passed + failed + not executed) | 2 |
+| Counts: passed / failed / not executed / skipped | 1 / 0 / 1 / 0 |
+| Delta from previous run | -50 |
 | Previous run | RUN-32921 |
 
 ## V&V run figures

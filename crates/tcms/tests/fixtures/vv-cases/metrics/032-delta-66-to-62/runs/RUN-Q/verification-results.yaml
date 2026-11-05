@@ -1,0 +1,30 @@
+type: test_results_container
+schema: tcms/test-results-container.schema.v1.json
+title: Verification results
+project: VV cases
+test_date: "2026-10-02T10:00:00Z"
+test_results:
+- test_case_id: TC_001
+  total_steps: 3
+  passed_steps: 3
+- test_case_id: TC_002
+  total_steps: 3
+  passed_steps: 3
+- test_case_id: TC_003
+  total_steps: 3
+  passed_steps: 3
+- test_case_id: TC_004
+  total_steps: 3
+  passed_steps: 3
+- test_case_id: TC_005
+  total_steps: 3
+  passed_steps: 3
+- test_case_id: TC_006
+  total_steps: 3
+  passed_steps: 1
+- test_case_id: TC_007
+  total_steps: 3
+  passed_steps: 1
+- test_case_id: TC_008
+  total_steps: 3
+  passed_steps: 1
