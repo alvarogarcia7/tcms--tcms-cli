@@ -387,17 +387,17 @@ cache sharing across multiple worktrees:
 
   ~/.cache/sccache/testcase-manager
 
-This is configured in .cargo/config.toml and is automatically used
-when building with cargo.
+This is exported by scripts/enable-sccache.sh. It is not set in
+.cargo/config.toml because Cargo's [env] table does not expand \$HOME.
 
 Additional sccache configuration options (environment variables):
 
-- SCCACHE_DIR: Cache directory (default: configured in .cargo/config.toml)
+- SCCACHE_DIR: Cache directory (default: set by scripts/enable-sccache.sh)
 - SCCACHE_CACHE_SIZE: Maximum cache size (default: 10G)
 - SCCACHE_REDIS: Redis server for distributed caching
 - SCCACHE_S3_*: S3 bucket configuration for distributed caching
 
-Example custom configuration (overrides .cargo/config.toml):
+Example custom configuration (set before sourcing enable-sccache.sh):
 
 export SCCACHE_DIR=~/my-custom-cache
 export SCCACHE_CACHE_SIZE=20G
