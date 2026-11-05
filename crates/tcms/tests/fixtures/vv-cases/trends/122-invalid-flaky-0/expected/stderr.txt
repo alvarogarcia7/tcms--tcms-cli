@@ -1,0 +1,1 @@
+error: --flaky-threshold must be at least 1

@@ -1,0 +1,1 @@
+error: ./vv-config.yaml: unknown key 'colour' (allowed: gate_threshold_percent, flaky_flip_threshold, stability_window_runs, type, schema)

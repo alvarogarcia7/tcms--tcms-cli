@@ -1,0 +1,11 @@
+{
+  "args": [
+    "--plan",
+    "PLAN-1",
+    "--run",
+    "RUN-P2"
+  ],
+  "binary": "metrics",
+  "expect": null,
+  "expect_exit": 1
+}

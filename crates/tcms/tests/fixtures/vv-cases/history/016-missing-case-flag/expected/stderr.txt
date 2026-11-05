@@ -1,0 +1,7 @@
+error: unexpected argument '--root-only-no-case' found
+
+  tip: a similar argument exists: '--root'
+
+Usage: tcms vv history --root <ROOT> --case <CASE>
+
+For more information, try '--help'.

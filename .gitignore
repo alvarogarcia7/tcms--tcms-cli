@@ -192,3 +192,9 @@ private*.pem
 
 # TPDG binary downloaded by make download-tpdg
 tools/tpdg/
+
+# Local tools for the traceability checks (CI and scripts/vv/traceability)
+.ci-tools/
+
+# VV case fixtures: their execution logs are inputs, not logs
+!crates/tcms/tests/fixtures/vv-cases/**/*_execution_log.json

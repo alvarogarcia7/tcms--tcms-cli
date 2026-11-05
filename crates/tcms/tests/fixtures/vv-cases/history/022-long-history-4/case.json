@@ -1,0 +1,38 @@
+{
+  "args": [
+    "--case",
+    "TC_A"
+  ],
+  "binary": "history",
+  "expect": [
+    {
+      "runId": "RUN-01",
+      "status": "FAILED"
+    },
+    {
+      "runId": "RUN-02",
+      "status": "SKIPPED"
+    },
+    {
+      "runId": "RUN-03",
+      "status": "PASSED"
+    },
+    {
+      "runId": "RUN-04",
+      "status": "FAILED"
+    },
+    {
+      "runId": "RUN-05",
+      "status": "SKIPPED"
+    },
+    {
+      "runId": "RUN-06",
+      "status": "PASSED"
+    },
+    {
+      "runId": "RUN-07",
+      "status": "FAILED"
+    }
+  ],
+  "expect_exit": 0
+}

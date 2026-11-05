@@ -1,0 +1,9 @@
+{
+  "args": [
+    "--run",
+    "RUN-INSIDE-9"
+  ],
+  "binary": "metrics",
+  "expect": null,
+  "expect_exit": 1
+}

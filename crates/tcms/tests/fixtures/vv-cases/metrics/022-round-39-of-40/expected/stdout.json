@@ -1,0 +1,456 @@
+{
+  "failingCases": [
+    {
+      "caseId": "TC_040",
+      "failureStartRunId": "RUN-A"
+    }
+  ],
+  "gate": {
+    "counts": {
+      "failed": 1,
+      "notExecuted": 0,
+      "passed": 39,
+      "skipped": 0
+    },
+    "deltaFromPrevious": null,
+    "denominator": 40,
+    "gateThresholdPercent": 90,
+    "passRate": {
+      "display": 97,
+      "exact": 97.5
+    },
+    "previousRunId": null,
+    "provisional": false,
+    "verdict": "PASSED"
+  },
+  "generatedAt": "2026-01-01T00:00:00Z",
+  "loadSummary": {
+    "distinctCases": 40,
+    "runsRecorded": 1,
+    "schemaErrorCount": 0,
+    "schemaErrors": []
+  },
+  "parameters": {
+    "flakyThreshold": {
+      "source": "default",
+      "value": 4
+    },
+    "gateThresholdPercent": {
+      "source": "default",
+      "value": 90
+    },
+    "stability_window_runs": {
+      "source": "default",
+      "value": 12
+    }
+  },
+  "requirements": {
+    "items": [
+      {
+        "cases": [
+          {
+            "caseId": "TC_001",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_002",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_003",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_004",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_005",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_006",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_007",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_008",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_009",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_010",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_011",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_012",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_013",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_014",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_015",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_016",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_017",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_018",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_019",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_020",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_021",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_022",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_023",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_024",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_025",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_026",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_027",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_028",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_029",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_030",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_031",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_032",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_033",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_034",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_035",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_036",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_037",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_038",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_039",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_040",
+            "status": "FAILED"
+          }
+        ],
+        "coverage": "FAILING",
+        "executed": 40,
+        "id": "SUT1-1",
+        "openProblemReports": [],
+        "problemReports": [],
+        "total": 40
+      }
+    ],
+    "summary": {
+      "covered": 0,
+      "failing": 1,
+      "noCases": 0,
+      "notRun": 0,
+      "openDefects": 0,
+      "total": 1,
+      "withDefect": 0
+    }
+  },
+  "run": {
+    "finishedAt": "2026-10-01T11:00:00Z",
+    "provisional": false,
+    "runId": "RUN-A",
+    "startedAt": "2026-10-01T10:00:00Z"
+  },
+  "stability": {
+    "cases": [
+      {
+        "caseId": "TC_001",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_002",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_003",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_004",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_005",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_006",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_007",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_008",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_009",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_010",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_011",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_012",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_013",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_014",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_015",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_016",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_017",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_018",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_019",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_020",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_021",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_022",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_023",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_024",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_025",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_026",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_027",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_028",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_029",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_030",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_031",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_032",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_033",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_034",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_035",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_036",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_037",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_038",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_039",
+        "flips": 0,
+        "stability": "STABLE"
+      },
+      {
+        "caseId": "TC_040",
+        "flips": 0,
+        "stability": "FAILING"
+      }
+    ],
+    "flakyCount": 0,
+    "flakyThreshold": 4
+  },
+  "vvRun": {
+    "passedSteps": 118,
+    "passedTestCases": 39,
+    "stepCoverage": {
+      "display": 98,
+      "exact": 98.33333333333333
+    },
+    "totalSteps": 120,
+    "totalTestCases": 40,
+    "vvPassRate": {
+      "display": 98,
+      "exact": 97.5
+    }
+  }
+}

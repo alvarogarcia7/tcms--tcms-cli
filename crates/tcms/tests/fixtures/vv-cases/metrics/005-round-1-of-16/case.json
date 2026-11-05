@@ -1,0 +1,236 @@
+{
+  "args": [
+    "--run",
+    "RUN-A"
+  ],
+  "binary": "metrics",
+  "expect": {
+    "failingCases": [
+      {
+        "caseId": "TC_002",
+        "failureStartRunId": "RUN-A"
+      },
+      {
+        "caseId": "TC_003",
+        "failureStartRunId": "RUN-A"
+      },
+      {
+        "caseId": "TC_004",
+        "failureStartRunId": "RUN-A"
+      },
+      {
+        "caseId": "TC_005",
+        "failureStartRunId": "RUN-A"
+      },
+      {
+        "caseId": "TC_006",
+        "failureStartRunId": "RUN-A"
+      },
+      {
+        "caseId": "TC_007",
+        "failureStartRunId": "RUN-A"
+      },
+      {
+        "caseId": "TC_008",
+        "failureStartRunId": "RUN-A"
+      },
+      {
+        "caseId": "TC_009",
+        "failureStartRunId": "RUN-A"
+      },
+      {
+        "caseId": "TC_010",
+        "failureStartRunId": "RUN-A"
+      },
+      {
+        "caseId": "TC_011",
+        "failureStartRunId": "RUN-A"
+      },
+      {
+        "caseId": "TC_012",
+        "failureStartRunId": "RUN-A"
+      },
+      {
+        "caseId": "TC_013",
+        "failureStartRunId": "RUN-A"
+      },
+      {
+        "caseId": "TC_014",
+        "failureStartRunId": "RUN-A"
+      },
+      {
+        "caseId": "TC_015",
+        "failureStartRunId": "RUN-A"
+      },
+      {
+        "caseId": "TC_016",
+        "failureStartRunId": "RUN-A"
+      }
+    ],
+    "gate": {
+      "counts": {
+        "failed": 15,
+        "notExecuted": 0,
+        "passed": 1,
+        "skipped": 0
+      },
+      "deltaFromPrevious": null,
+      "denominator": 16,
+      "gateThresholdPercent": 90,
+      "passRate": {
+        "display": 6,
+        "exact": 6.25
+      },
+      "previousRunId": null,
+      "provisional": false,
+      "verdict": "FAILED"
+    },
+    "loadSummary": {
+      "distinctCases": 16,
+      "runsRecorded": 1
+    },
+    "parameters": {
+      "flakyThreshold": {
+        "source": "default",
+        "value": 4
+      },
+      "gateThresholdPercent": {
+        "source": "default",
+        "value": 90
+      },
+      "stability_window_runs": {
+        "source": "default",
+        "value": 12
+      }
+    },
+    "requirements": {
+      "items": {
+        "SUT1-1": {
+          "cases": {
+            "TC_001": "PASSED",
+            "TC_002": "FAILED",
+            "TC_003": "FAILED",
+            "TC_004": "FAILED",
+            "TC_005": "FAILED",
+            "TC_006": "FAILED",
+            "TC_007": "FAILED",
+            "TC_008": "FAILED",
+            "TC_009": "FAILED",
+            "TC_010": "FAILED",
+            "TC_011": "FAILED",
+            "TC_012": "FAILED",
+            "TC_013": "FAILED",
+            "TC_014": "FAILED",
+            "TC_015": "FAILED",
+            "TC_016": "FAILED"
+          },
+          "coverage": "FAILING",
+          "executed": 16,
+          "openProblemReports": [],
+          "problemReports": [],
+          "total": 16
+        }
+      },
+      "summary": {
+        "covered": 0,
+        "failing": 1,
+        "noCases": 0,
+        "notRun": 0,
+        "openDefects": 0,
+        "total": 1,
+        "withDefect": 0
+      }
+    },
+    "run": {
+      "finishedAt": "2026-10-01T11:00:00Z",
+      "provisional": false,
+      "runId": "RUN-A",
+      "startedAt": "2026-10-01T10:00:00Z"
+    },
+    "stability": {
+      "cases": {
+        "TC_001": {
+          "flips": 0,
+          "stability": "STABLE"
+        },
+        "TC_002": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_003": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_004": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_005": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_006": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_007": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_008": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_009": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_010": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_011": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_012": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_013": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_014": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_015": {
+          "flips": 0,
+          "stability": "FAILING"
+        },
+        "TC_016": {
+          "flips": 0,
+          "stability": "FAILING"
+        }
+      },
+      "flakyCount": 0,
+      "flakyThreshold": 4
+    },
+    "vvRun": {
+      "passedSteps": 18,
+      "passedTestCases": 1,
+      "stepCoverage": {
+        "display": 38,
+        "exact": 37.5
+      },
+      "totalSteps": 48,
+      "totalTestCases": 16,
+      "vvPassRate": {
+        "display": 6,
+        "exact": 6.25
+      }
+    }
+  },
+  "expect_exit": 0
+}

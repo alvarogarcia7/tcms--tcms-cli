@@ -1,0 +1,12 @@
+[
+  {
+    "test_case_id": "TC_T1",
+    "step": 1,
+    "timestamp": "2026-11-02T13:30:00Z"
+  },
+  {
+    "test_case_id": "TC_T1",
+    "step": 2,
+    "timestamp": "2026-11-02T13:31:00Z"
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "binary": "report",
+  "args": [
+    "--metrics",
+    "metrics.json",
+    "--format",
+    "asciidoc"
+  ],
+  "expect_exit": 0,
+  "expect": null,
+  "contains": [
+    "SUT\\|1"
+  ],
+  "absent": [],
+  "expect_files": []
+}

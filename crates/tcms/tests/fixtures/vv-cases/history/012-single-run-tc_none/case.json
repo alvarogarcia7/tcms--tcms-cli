@@ -1,0 +1,14 @@
+{
+  "args": [
+    "--case",
+    "TC_NONE"
+  ],
+  "binary": "history",
+  "expect": [
+    {
+      "runId": "RUN-ONLY",
+      "status": null
+    }
+  ],
+  "expect_exit": 0
+}

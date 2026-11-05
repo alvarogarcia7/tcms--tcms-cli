@@ -1,0 +1,1191 @@
+type: test_results_container
+schema: tcms/test-results-container.schema.v1.json
+title: VV fixture combine/009-all-pass-62
+project: tcms-cli VV fixtures
+test_date: '2026-11-05T00:00:00Z'
+test_results:
+- test_case_id: TC_P01
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P02
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P03
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P04
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P05
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P06
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P07
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P08
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P09
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P10
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P11
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P12
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P13
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P14
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P15
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P16
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P17
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P18
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P19
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P20
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P21
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P22
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P23
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P24
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P25
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P26
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P27
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P28
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P29
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P30
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P31
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P32
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P33
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P34
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P35
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P36
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P37
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P38
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P39
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P40
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P41
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P42
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P43
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P44
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P45
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P46
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P47
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P48
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P49
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P50
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P51
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P52
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P53
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P54
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P55
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P56
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P57
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P58
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P59
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P60
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P61
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P62
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+metadata:
+  environment: VV fixture
+  platform: linux
+  executor: tcms-cli fixtures
+  total_test_cases: 62
+  passed_test_cases: 62
+  failed_test_cases: 0

@@ -1,0 +1,119 @@
+{
+  "args": [
+    "--run",
+    "RUN-03"
+  ],
+  "binary": "metrics",
+  "expect": {
+    "failingCases": [
+      {
+        "caseId": "TC_X",
+        "failureStartRunId": "RUN-03"
+      }
+    ],
+    "gate": {
+      "counts": {
+        "failed": 1,
+        "notExecuted": 0,
+        "passed": 1,
+        "skipped": 0
+      },
+      "deltaFromPrevious": 0,
+      "denominator": 2,
+      "gateThresholdPercent": 90,
+      "passRate": {
+        "display": 50,
+        "exact": 50.0
+      },
+      "previousRunId": "RUN-02",
+      "provisional": false,
+      "verdict": "FAILED"
+    },
+    "loadSummary": {
+      "distinctCases": 2,
+      "runsRecorded": 3
+    },
+    "parameters": {
+      "flakyThreshold": {
+        "source": "default",
+        "value": 4
+      },
+      "gateThresholdPercent": {
+        "source": "default",
+        "value": 90
+      },
+      "stability_window_runs": {
+        "source": "default",
+        "value": 12
+      }
+    },
+    "requirements": {
+      "items": {
+        "SUT1-1": {
+          "cases": {
+            "TC_X": "FAILED"
+          },
+          "coverage": "FAILING",
+          "executed": 1,
+          "openProblemReports": [],
+          "problemReports": [],
+          "total": 1
+        },
+        "SUT1-2": {
+          "cases": {
+            "TC_Y": "PASSED"
+          },
+          "coverage": "COVERED",
+          "executed": 1,
+          "openProblemReports": [],
+          "problemReports": [],
+          "total": 1
+        }
+      },
+      "summary": {
+        "covered": 1,
+        "failing": 1,
+        "noCases": 0,
+        "notRun": 0,
+        "openDefects": 0,
+        "total": 2,
+        "withDefect": 0
+      }
+    },
+    "run": {
+      "finishedAt": "2026-10-03T11:00:00Z",
+      "provisional": false,
+      "runId": "RUN-03",
+      "startedAt": "2026-10-03T10:00:00Z"
+    },
+    "stability": {
+      "cases": {
+        "TC_X": {
+          "flips": 1,
+          "stability": "FAILING"
+        },
+        "TC_Y": {
+          "flips": 0,
+          "stability": "STABLE"
+        }
+      },
+      "flakyCount": 0,
+      "flakyThreshold": 4
+    },
+    "vvRun": {
+      "passedSteps": 4,
+      "passedTestCases": 1,
+      "stepCoverage": {
+        "display": 67,
+        "exact": 66.66666666666667
+      },
+      "totalSteps": 6,
+      "totalTestCases": 2,
+      "vvPassRate": {
+        "display": 50,
+        "exact": 50.0
+      }
+    }
+  },
+  "expect_exit": 0
+}

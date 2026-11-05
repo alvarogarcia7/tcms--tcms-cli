@@ -1,0 +1,9 @@
+{
+  "args": [
+    "--case",
+    "TC_A"
+  ],
+  "binary": "history",
+  "expect": null,
+  "expect_exit": 1
+}

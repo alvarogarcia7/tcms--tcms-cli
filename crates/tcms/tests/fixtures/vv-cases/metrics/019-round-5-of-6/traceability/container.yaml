@@ -1,0 +1,159 @@
+type: test_results_container
+schema: tcms/test-results-container.schema.v1.json
+title: VV fixture metrics/019-round-5-of-6
+project: tcms-cli VV fixtures
+test_date: '2026-11-05T00:00:00Z'
+test_results:
+- test_case_id: TC_001
+  description: 'VV fixture metrics/019-round-5-of-6: verdict pass'
+  requirement: SUT1-1
+  sequences:
+  - sequence_id: 1
+    name: VV fixture steps
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    - Pass:
+        step: 3
+        description: step 3
+    all_steps_passed: true
+  total_steps: 3
+  passed_steps: 3
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+- test_case_id: TC_002
+  description: 'VV fixture metrics/019-round-5-of-6: verdict pass'
+  requirement: SUT1-1
+  sequences:
+  - sequence_id: 1
+    name: VV fixture steps
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    - Pass:
+        step: 3
+        description: step 3
+    all_steps_passed: true
+  total_steps: 3
+  passed_steps: 3
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+- test_case_id: TC_003
+  description: 'VV fixture metrics/019-round-5-of-6: verdict pass'
+  requirement: SUT1-1
+  sequences:
+  - sequence_id: 1
+    name: VV fixture steps
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    - Pass:
+        step: 3
+        description: step 3
+    all_steps_passed: true
+  total_steps: 3
+  passed_steps: 3
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+- test_case_id: TC_004
+  description: 'VV fixture metrics/019-round-5-of-6: verdict pass'
+  requirement: SUT1-1
+  sequences:
+  - sequence_id: 1
+    name: VV fixture steps
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    - Pass:
+        step: 3
+        description: step 3
+    all_steps_passed: true
+  total_steps: 3
+  passed_steps: 3
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+- test_case_id: TC_005
+  description: 'VV fixture metrics/019-round-5-of-6: verdict pass'
+  requirement: SUT1-1
+  sequences:
+  - sequence_id: 1
+    name: VV fixture steps
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    - Pass:
+        step: 3
+        description: step 3
+    all_steps_passed: true
+  total_steps: 3
+  passed_steps: 3
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+- test_case_id: TC_006
+  description: 'VV fixture metrics/019-round-5-of-6: verdict fail'
+  requirement: SUT1-1
+  sequences:
+  - sequence_id: 1
+    name: VV fixture steps
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Fail:
+        step: 2
+        description: step 2
+        reason: failed
+        actual_output: ''
+        actual_result: ''
+        expected:
+          success: true
+          output: ''
+          result: ''
+    - Fail:
+        step: 3
+        description: step 3
+        reason: failed
+        actual_output: ''
+        actual_result: ''
+        expected:
+          success: true
+          output: ''
+          result: ''
+    all_steps_passed: false
+  total_steps: 3
+  passed_steps: 1
+  failed_steps: 2
+  not_executed_steps: 0
+  overall_pass: false
+metadata:
+  environment: VV fixture
+  platform: linux
+  executor: tcms-cli fixtures
+  total_test_cases: 6
+  passed_test_cases: 5
+  failed_test_cases: 1

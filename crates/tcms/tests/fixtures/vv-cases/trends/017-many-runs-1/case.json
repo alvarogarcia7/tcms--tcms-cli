@@ -1,0 +1,67 @@
+{
+  "args": [
+    "--runs",
+    "5"
+  ],
+  "binary": "trends",
+  "expect": {
+    "heatmap": {
+      "cases": {
+        "TC_0": {
+          "flips": 11,
+          "stability": "FLAKY"
+        }
+      },
+      "flakyCount": 1,
+      "flakyThreshold": 4
+    },
+    "runs": {
+      "RUN-10": {
+        "passRate": {
+          "display": 0,
+          "exact": 0.0
+        },
+        "runId": "RUN-10",
+        "startedAt": "2026-10-10T10:00:00Z",
+        "verdict": "FAILED"
+      },
+      "RUN-11": {
+        "passRate": {
+          "display": 100,
+          "exact": 100.0
+        },
+        "runId": "RUN-11",
+        "startedAt": "2026-10-11T10:00:00Z",
+        "verdict": "PASSED"
+      },
+      "RUN-12": {
+        "passRate": {
+          "display": 0,
+          "exact": 0.0
+        },
+        "runId": "RUN-12",
+        "startedAt": "2026-10-12T10:00:00Z",
+        "verdict": "FAILED"
+      },
+      "RUN-13": {
+        "passRate": {
+          "display": 100,
+          "exact": 100.0
+        },
+        "runId": "RUN-13",
+        "startedAt": "2026-10-13T10:00:00Z",
+        "verdict": "PASSED"
+      },
+      "RUN-14": {
+        "passRate": {
+          "display": 0,
+          "exact": 0.0
+        },
+        "runId": "RUN-14",
+        "startedAt": "2026-10-14T10:00:00Z",
+        "verdict": "FAILED"
+      }
+    }
+  },
+  "expect_exit": 0
+}

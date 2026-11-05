@@ -1,0 +1,9 @@
+{
+  "args": [
+    "--run",
+    "RUN-NOPE"
+  ],
+  "binary": "metrics",
+  "expect": null,
+  "expect_exit": 1
+}

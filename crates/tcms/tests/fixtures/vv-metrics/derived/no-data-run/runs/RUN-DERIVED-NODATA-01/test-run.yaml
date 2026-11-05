@@ -8,7 +8,7 @@ started_at: "2026-10-30T12:00:00Z"
 finished_at: "2026-10-30T12:00:00Z"
 results:
 - test_case_id: SUT1_PASS_001
-  verdict: not_executed
+  verdict: skipped
   verification_result_ref: build/runs/RUN-DERIVED-NODATA-01/verification-results.yaml#SUT1_PASS_001
 - test_case_id: SUT1_CALC_001
   verdict: skipped

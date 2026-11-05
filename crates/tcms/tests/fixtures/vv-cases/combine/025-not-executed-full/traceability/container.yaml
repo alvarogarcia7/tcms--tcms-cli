@@ -1,0 +1,35 @@
+type: test_results_container
+schema: tcms/test-results-container.schema.v1.json
+title: VV fixture combine/025-not-executed-full
+project: tcms-cli VV fixtures
+test_date: '2026-11-05T00:00:00Z'
+test_results:
+- test_case_id: TC_NE
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - NotExecuted:
+        step: 1
+        description: step 1
+    - NotExecuted:
+        step: 2
+        description: step 2
+    - NotExecuted:
+        step: 3
+        description: step 3
+    all_steps_passed: false
+  total_steps: 3
+  passed_steps: 0
+  failed_steps: 0
+  not_executed_steps: 3
+  overall_pass: false
+  requirement: UNLINKED
+metadata:
+  environment: VV fixture
+  platform: linux
+  executor: tcms-cli fixtures
+  total_test_cases: 1
+  passed_test_cases: 0
+  failed_test_cases: 1

@@ -1,0 +1,35 @@
+{
+  "heatmap": {
+    "cases": [
+      {
+        "caseId": "TC_A",
+        "flips": 0,
+        "stability": "STABLE"
+      }
+    ],
+    "flakyCount": 0,
+    "flakyThreshold": 4
+  },
+  "parameters": {
+    "flakyThreshold": {
+      "source": "default",
+      "value": 4
+    },
+    "gateThresholdPercent": {
+      "source": "default",
+      "value": 90
+    },
+    "stability_window_runs": {
+      "source": "default",
+      "value": 12
+    }
+  },
+  "runs": [
+    {
+      "passRate": null,
+      "runId": "RUN-1",
+      "startedAt": "2026-10-01T10:00:00Z",
+      "verdict": "NO_DATA"
+    }
+  ]
+}

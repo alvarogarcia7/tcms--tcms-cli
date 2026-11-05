@@ -1,0 +1,9 @@
+{
+  "args": [
+    "--gate",
+    "101"
+  ],
+  "binary": "metrics",
+  "expect": null,
+  "expect_exit": 1
+}

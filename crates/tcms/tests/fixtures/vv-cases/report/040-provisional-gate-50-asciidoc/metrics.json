@@ -1,0 +1,114 @@
+{
+  "run": {
+    "runId": "RUN-V",
+    "startedAt": "2026-10-01T10:00:00Z",
+    "finishedAt": null,
+    "provisional": true
+  },
+  "gate": {
+    "gateThresholdPercent": 50,
+    "denominator": 2,
+    "counts": {
+      "passed": 1,
+      "failed": 1,
+      "notExecuted": 0,
+      "skipped": 0
+    },
+    "passRate": {
+      "display": 50,
+      "exact": 50.0
+    },
+    "verdict": "PASSED",
+    "provisional": true,
+    "deltaFromPrevious": null,
+    "previousRunId": null
+  },
+  "vvRun": {
+    "totalTestCases": 2,
+    "passedTestCases": 1,
+    "vvPassRate": {
+      "display": 50,
+      "exact": 50.0
+    },
+    "totalSteps": 6,
+    "passedSteps": 4,
+    "stepCoverage": {
+      "display": 67,
+      "exact": 66.66666666666667
+    }
+  },
+  "requirements": {
+    "summary": {
+      "total": 1,
+      "covered": 0,
+      "failing": 1,
+      "notRun": 0,
+      "noCases": 0,
+      "withDefect": 0,
+      "openDefects": 0
+    },
+    "items": [
+      {
+        "coverage": "FAILING",
+        "executed": 2,
+        "total": 2,
+        "problemReports": [],
+        "openProblemReports": [],
+        "id": "SUT1-1",
+        "cases": [
+          {
+            "caseId": "TC_001",
+            "status": "PASSED"
+          },
+          {
+            "caseId": "TC_002",
+            "status": "FAILED"
+          }
+        ]
+      }
+    ]
+  },
+  "stability": {
+    "flakyThreshold": 4,
+    "flakyCount": 0,
+    "cases": [
+      {
+        "caseId": "TC_001",
+        "stability": "STABLE",
+        "flips": 0
+      },
+      {
+        "caseId": "TC_002",
+        "stability": "FAILING",
+        "flips": 0
+      }
+    ]
+  },
+  "failingCases": [
+    {
+      "caseId": "TC_002",
+      "failureStartRunId": "RUN-V"
+    }
+  ],
+  "loadSummary": {
+    "distinctCases": 2,
+    "runsRecorded": 1,
+    "schemaErrorCount": 0,
+    "schemaErrors": []
+  },
+  "generatedAt": "2026-01-01T00:00:00Z",
+  "parameters": {
+    "gateThresholdPercent": {
+      "value": 50,
+      "source": "flag"
+    },
+    "flakyThreshold": {
+      "value": 4,
+      "source": "default"
+    },
+    "stability_window_runs": {
+      "value": 12,
+      "source": "default"
+    }
+  }
+}

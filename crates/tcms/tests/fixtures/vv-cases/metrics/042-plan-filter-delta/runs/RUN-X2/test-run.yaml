@@ -1,0 +1,30 @@
+type: test_run
+schema: tcms/test-run.schema.json
+run_id: RUN-X2
+build_id: b-1
+environment: Bench A
+tester: tester-1
+started_at: "2026-10-03T10:00:00Z"
+finished_at: "2026-10-03T11:00:00Z"
+plan_id: "PLAN-1"
+results:
+- test_case_id: TC_001
+  verdict: pass
+- test_case_id: TC_002
+  verdict: pass
+- test_case_id: TC_003
+  verdict: pass
+- test_case_id: TC_004
+  verdict: pass
+- test_case_id: TC_005
+  verdict: pass
+- test_case_id: TC_006
+  verdict: pass
+- test_case_id: TC_007
+  verdict: pass
+- test_case_id: TC_008
+  verdict: pass
+- test_case_id: TC_009
+  verdict: pass
+- test_case_id: TC_010
+  verdict: fail

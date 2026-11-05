@@ -1,0 +1,9 @@
+{
+  "args": [
+    "--stability-window",
+    "0"
+  ],
+  "binary": "trends",
+  "expect": null,
+  "expect_exit": 1
+}

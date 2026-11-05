@@ -1,0 +1,4 @@
+error: test-run.yaml fails schema validation; nothing was written: Schema validation failed for test-run.yaml: Schema constraint violations:
+  Error #1: Path 'root'
+    Constraint: "build_id" is a required property
+    Found value: {"environment":"Staging bench","finished_at":"2026-11-02T02:01:00Z","plan_id":"PLAN-7","results":[{"test_case_id":"TC_M","verdict":"pass"}],"run_id":"RUN-FIX-1","schema":"tcms/test-run.schema.json","started_at":"2026-11-02T02:00:00Z","tester":"ci-bot","type":"test_run"}

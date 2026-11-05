@@ -1,0 +1,3 @@
+type: test_result
+schema: tcms/test-result.schema.v1.json
+test_case_id: TC_ZZ

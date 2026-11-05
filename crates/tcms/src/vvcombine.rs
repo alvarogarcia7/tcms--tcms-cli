@@ -45,7 +45,8 @@ impl Verdict {
         }
     }
 
-    fn is_executed(self) -> bool {
+    /// `pass` and `fail` decide a case; `not_executed` never does (TCMS-50.1).
+    fn is_decided(self) -> bool {
         self != Verdict::NotExecuted
     }
 }
@@ -80,20 +81,18 @@ pub struct CaseAttempt {
     pub last: Option<DateTime<Utc>>,
 }
 
-/// The attempt that counts for a case. Among executed attempts the latest `started_at` wins. A
-/// `not_executed` attempt counts only when no attempt was executed, so it never replaces an executed one.
+/// The attempt that counts for a case (TCMS-50.1). Attempts are ordered by `(started_at, key)`,
+/// oldest first, and walked from the newest back: the first `pass` or `fail` decides. `not_executed`
+/// never decides. When nothing decides, the newest attempt is returned, which is `not_executed`.
 pub fn winner(attempts: &[CaseAttempt]) -> Result<&CaseAttempt> {
-    let executed: Vec<&CaseAttempt> = attempts
+    let mut ordered: Vec<&CaseAttempt> = attempts.iter().collect();
+    ordered.sort_by(|a, b| (a.first, &a.key).cmp(&(b.first, &b.key)));
+    ordered
         .iter()
-        .filter(|a| a.verdict.is_executed())
-        .collect();
-    let pool: Vec<&CaseAttempt> = if executed.is_empty() {
-        attempts.iter().collect()
-    } else {
-        executed
-    };
-    pool.into_iter()
-        .max_by(|a, b| (a.first, &a.key).cmp(&(b.first, &b.key)))
+        .rev()
+        .find(|a| a.verdict.is_decided())
+        .or_else(|| ordered.last())
+        .copied()
         .ok_or_else(|| anyhow!("no attempt to choose a winner from"))
 }
 
@@ -125,8 +124,10 @@ struct TestRunDoc<'a> {
     kind: &'static str,
     schema: &'static str,
     run_id: &'a str,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    plan_id: Option<&'a str>,
+    /// Always written. An empty string when the run has no plan (TCMS-47.4 AC 1): the schema types
+    /// `plan_id` as a string, so `null` is not allowed and an omitted key cannot be told apart from a
+    /// missing one.
+    plan_id: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     build_id: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -223,7 +224,7 @@ pub fn combine(root: &Path, meta: &RunMetadata, schemas_root: &str) -> Result<Co
         kind: "test_run",
         schema: "tcms/test-run.schema.json",
         run_id: meta.run_id,
-        plan_id: meta.plan_id,
+        plan_id: meta.plan_id.unwrap_or(""),
         build_id: meta.build_id,
         environment: meta.environment,
         tester: meta.tester,
@@ -447,6 +448,52 @@ mod tests {
             ),
         ];
         assert_eq!(winner(&a).unwrap().key, "CASE__a2");
+    }
+
+    #[test]
+    fn newest_decided_attempt_wins_even_when_it_fails() {
+        let a = [
+            attempt("CASE__a1", Verdict::Pass, Some("2026-11-02T06:00:00Z")),
+            attempt("CASE__a2", Verdict::Fail, Some("2026-11-02T09:00:00Z")),
+            attempt(
+                "CASE__a3",
+                Verdict::NotExecuted,
+                Some("2026-11-02T10:00:00Z"),
+            ),
+        ];
+        assert_eq!(winner(&a).unwrap().key, "CASE__a2");
+        assert_eq!(winner(&a).unwrap().verdict, Verdict::Fail);
+    }
+
+    #[test]
+    fn tie_on_started_at_greater_key_is_later() {
+        let same = "2026-11-02T06:00:00Z";
+        let a = [
+            attempt("CASE__b", Verdict::Fail, Some(same)),
+            attempt("CASE__a", Verdict::Pass, Some(same)),
+        ];
+        assert_eq!(winner(&a).unwrap().key, "CASE__b");
+        let reversed = [a[1].clone(), a[0].clone()];
+        assert_eq!(winner(&reversed).unwrap().key, "CASE__b");
+    }
+
+    #[test]
+    fn no_decided_attempt_gives_the_newest_not_executed() {
+        let a = [
+            attempt(
+                "CASE__a1",
+                Verdict::NotExecuted,
+                Some("2026-11-02T09:00:00Z"),
+            ),
+            attempt(
+                "CASE__a2",
+                Verdict::NotExecuted,
+                Some("2026-11-02T06:00:00Z"),
+            ),
+        ];
+        let w = winner(&a).unwrap();
+        assert_eq!(w.key, "CASE__a1");
+        assert_eq!(w.verdict, Verdict::NotExecuted);
     }
 
     #[test]

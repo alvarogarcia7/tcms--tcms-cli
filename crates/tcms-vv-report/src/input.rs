@@ -68,9 +68,9 @@ pub struct Gate {
 pub struct Counts {
     pub passed: u64,
     pub failed: u64,
-    pub blocked: u64,
+    #[serde(rename = "notExecuted")]
+    pub not_executed: u64,
     pub skipped: u64,
-    pub untested: u64,
 }
 
 /// A percentage: `display` is the rounded figure, `exact` the unrounded one.

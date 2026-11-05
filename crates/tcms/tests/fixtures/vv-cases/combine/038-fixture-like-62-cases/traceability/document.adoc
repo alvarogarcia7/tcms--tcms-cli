@@ -1,0 +1,3691 @@
+= VV fixture combine/038-fixture-like-62-cases
+:doctype: book
+:toc: left
+:toclevels: 3
+:sectnums:
+:sectnumlevels: 3
+:chapter-label:
+:icons: font
+:imagesdir: images
+:source-highlighter: rouge
+
+[discrete]
+== Document Information
+
+*Project:* tcms-cli VV fixtures
+
+*Test Date:* 2026-11-05T00:00:00Z
+
+*Environment:* VV fixture
+
+*Platform:* linux
+
+*Executor:* tcms-cli fixtures
+
+
+
+<<<
+
+== Table of Contents
+
+toc::[]
+
+<<<
+
+== Executive Summary
+
+=== Test Execution Overview
+
+This document presents the results of test execution for tcms-cli VV fixtures.
+
+[cols="1,2", options="header"]
+|===
+| Metric
+| Value
+
+| Total Test Cases
+| 62
+
+| Passed Test Cases
+| 58
+
+| Failed Test Cases
+| 4
+
+| Not Executed Test Cases
+| 0
+
+|===
+
+=== Success Rate
+
+*Pass Rate:* 93.55%
+
+
+<<<
+
+= Detailed Test Results
+
+== Test Case: TC_B01
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B02
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B03
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B04
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B05
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B06
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B07
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B08
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B09
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B10
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B11
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B12
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B13
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B14
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B15
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B16
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B17
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B18
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B19
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B20
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B21
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B22
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B23
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B24
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B25
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B26
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B27
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B28
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B29
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B30
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B31
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B32
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B33
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B34
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B35
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B36
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B37
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B38
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B39
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B40
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B41
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B42
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B43
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B44
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B45
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B46
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B47
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B48
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B49
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B50
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B51
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B52
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B53
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B54
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B55
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B56
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_B57
+
+*Description*: generated case
+
+*Overall Status*: ✓ PASS
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 2
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✓ PASS
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✓ Pass
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_FIX_010
+
+*Description*: generated case
+
+*Overall Status*: ✗ FAIL
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 1
+
+| Failed Steps
+| 1
+
+| Not Executed Steps
+| 0
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✗ FAIL
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ✓ Pass
+
+| 2
+| step 2
+| ✗ Fail
+
+
+|===
+
+
+=== Step 2 - Failure Details
+
+*Description*: step 2
+
+*Reason*: 
+
+[cols="1,2,2", options="header"]
+|===
+| Property
+| Expected
+| Actual
+
+| Result
+| 
+| 
+
+| Output
+| 
+| 
+
+| Success
+| true
+| N/A
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_NE0
+
+*Description*: generated case
+
+*Overall Status*: ✗ FAIL
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 0
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 2
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✗ FAIL
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ⊘ Not Executed
+
+| 2
+| step 2
+| ⊘ Not Executed
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_NE1
+
+*Description*: generated case
+
+*Overall Status*: ✗ FAIL
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 0
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 2
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✗ FAIL
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ⊘ Not Executed
+
+| 2
+| step 2
+| ⊘ Not Executed
+
+
+|===
+
+
+
+
+
+
+
+== Test Case: TC_NE2
+
+*Description*: generated case
+
+*Overall Status*: ✗ FAIL
+
+== Execution Summary
+
+[cols="1,1", options="header"]
+|===
+| Metric
+| Count
+
+| Total Steps
+| 2
+
+| Passed Steps
+| 0
+
+| Failed Steps
+| 0
+
+| Not Executed Steps
+| 2
+
+|===
+
+
+== Test Sequence 1: Generated sequence
+
+*Sequence Status*: ✗ FAIL
+
+=== Step Results
+
+[cols="1,3,2", options="header"]
+|===
+| Step
+| Description
+| Status
+
+| 1
+| step 1
+| ⊘ Not Executed
+
+| 2
+| step 2
+| ⊘ Not Executed
+
+
+|===
+
+
+
+
+
+
+<<<
+
+== Final Verification Verdict
+
+=== Overall Test Execution Status
+
+[cols="1,2", options="header"]
+|===
+| Verdict
+| Result
+
+| Overall Status
+| ✗ *FAIL*
+
+| Total Test Cases
+| 62
+
+| Passed
+| 58
+
+| Failed
+| 4
+
+| Not Executed
+| 0
+
+|===
+
+=== Conclusion
+
+4 test case(s) failed during execution. Review the detailed test results section for failure analysis and remediation actions.
+
+
+<<<
+
+== Traceability Matrix
+
+[cols="1,2", options="header"]
+|===
+| Requirement
+| UNLINKED
+
+| Tests
+a|
+✓ TC_B01 +
+✓ TC_B02 +
+✓ TC_B03 +
+✓ TC_B04 +
+✓ TC_B05 +
+✓ TC_B06 +
+✓ TC_B07 +
+✓ TC_B08 +
+✓ TC_B09 +
+✓ TC_B10 +
+✓ TC_B11 +
+✓ TC_B12 +
+✓ TC_B13 +
+✓ TC_B14 +
+✓ TC_B15 +
+✓ TC_B16 +
+✓ TC_B17 +
+✓ TC_B18 +
+✓ TC_B19 +
+✓ TC_B20 +
+✓ TC_B21 +
+✓ TC_B22 +
+✓ TC_B23 +
+✓ TC_B24 +
+✓ TC_B25 +
+✓ TC_B26 +
+✓ TC_B27 +
+✓ TC_B28 +
+✓ TC_B29 +
+✓ TC_B30 +
+✓ TC_B31 +
+✓ TC_B32 +
+✓ TC_B33 +
+✓ TC_B34 +
+✓ TC_B35 +
+✓ TC_B36 +
+✓ TC_B37 +
+✓ TC_B38 +
+✓ TC_B39 +
+✓ TC_B40 +
+✓ TC_B41 +
+✓ TC_B42 +
+✓ TC_B43 +
+✓ TC_B44 +
+✓ TC_B45 +
+✓ TC_B46 +
+✓ TC_B47 +
+✓ TC_B48 +
+✓ TC_B49 +
+✓ TC_B50 +
+✓ TC_B51 +
+✓ TC_B52 +
+✓ TC_B53 +
+✓ TC_B54 +
+✓ TC_B55 +
+✓ TC_B56 +
+✓ TC_B57 +
+✓ TC_FIX_010 +
+[red]#✗# TC_FIX_010 +
+[red]#✗# TC_NE0 +
+[red]#✗# TC_NE1 +
+[red]#✗# TC_NE2 +
+
+
+| Verdict
+| FAIL
+
+|===
+
+
+<<<
+
+[discrete]
+== Copyright Notice
+
+(C) GSMA 2024. All rights reserved.

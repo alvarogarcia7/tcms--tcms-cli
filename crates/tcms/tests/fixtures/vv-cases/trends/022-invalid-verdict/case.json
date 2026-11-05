@@ -1,0 +1,6 @@
+{
+  "args": [],
+  "binary": "trends",
+  "expect": null,
+  "expect_exit": 1
+}

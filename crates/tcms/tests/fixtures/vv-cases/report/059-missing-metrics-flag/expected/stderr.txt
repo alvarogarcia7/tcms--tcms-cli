@@ -1,0 +1,6 @@
+error: the following required arguments were not provided:
+  --metrics <FILE>
+
+Usage: tcms-vv-report --metrics <FILE>
+
+For more information, try '--help'.

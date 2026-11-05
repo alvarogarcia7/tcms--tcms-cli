@@ -1,0 +1,1 @@
+error: parsing ./runs/RUN-FIX-1/per-case/TC_BROKEN_result.yaml: type: invalid type: sequence, expected a string at line 1 column 7

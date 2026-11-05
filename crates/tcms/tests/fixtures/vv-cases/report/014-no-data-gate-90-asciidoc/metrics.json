@@ -1,0 +1,97 @@
+{
+  "run": {
+    "runId": "RUN-A",
+    "startedAt": "2026-10-01T10:00:00Z",
+    "finishedAt": "2026-10-01T11:00:00Z",
+    "provisional": false
+  },
+  "gate": {
+    "gateThresholdPercent": 90,
+    "denominator": 0,
+    "counts": {
+      "passed": 0,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": 1
+    },
+    "passRate": null,
+    "verdict": "NO_DATA",
+    "provisional": false,
+    "deltaFromPrevious": null,
+    "previousRunId": null
+  },
+  "vvRun": {
+    "totalTestCases": 1,
+    "passedTestCases": 0,
+    "vvPassRate": {
+      "display": 0,
+      "exact": 0.0
+    },
+    "totalSteps": 3,
+    "passedSteps": 3,
+    "stepCoverage": {
+      "display": 100,
+      "exact": 100.0
+    }
+  },
+  "requirements": {
+    "summary": {
+      "total": 1,
+      "covered": 0,
+      "failing": 0,
+      "notRun": 1,
+      "noCases": 0,
+      "withDefect": 0,
+      "openDefects": 0
+    },
+    "items": [
+      {
+        "coverage": "NOT_RUN",
+        "executed": 1,
+        "total": 1,
+        "problemReports": [],
+        "openProblemReports": [],
+        "id": "SUT1-1",
+        "cases": [
+          {
+            "caseId": "TC_A",
+            "status": "SKIPPED"
+          }
+        ]
+      }
+    ]
+  },
+  "stability": {
+    "flakyThreshold": 4,
+    "flakyCount": 0,
+    "cases": [
+      {
+        "caseId": "TC_A",
+        "stability": "STABLE",
+        "flips": 0
+      }
+    ]
+  },
+  "failingCases": [],
+  "loadSummary": {
+    "distinctCases": 1,
+    "runsRecorded": 1,
+    "schemaErrorCount": 0,
+    "schemaErrors": []
+  },
+  "generatedAt": "2026-01-01T00:00:00Z",
+  "parameters": {
+    "gateThresholdPercent": {
+      "value": 90,
+      "source": "default"
+    },
+    "flakyThreshold": {
+      "value": 4,
+      "source": "default"
+    },
+    "stability_window_runs": {
+      "value": 12,
+      "source": "default"
+    }
+  }
+}

@@ -1,0 +1,70 @@
+type: test_results_container
+schema: tcms/test-results-container.schema.v1.json
+title: VV fixture combine/003-all-pass-3
+project: tcms-cli VV fixtures
+test_date: '2026-11-05T00:00:00Z'
+test_results:
+- test_case_id: TC_P01
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P02
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+- test_case_id: TC_P03
+  description: generated case
+  sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+    - Pass:
+        step: 1
+        description: step 1
+    - Pass:
+        step: 2
+        description: step 2
+    all_steps_passed: true
+  total_steps: 2
+  passed_steps: 2
+  failed_steps: 0
+  not_executed_steps: 0
+  overall_pass: true
+  requirement: UNLINKED
+metadata:
+  environment: VV fixture
+  platform: linux
+  executor: tcms-cli fixtures
+  total_test_cases: 3
+  passed_test_cases: 3
+  failed_test_cases: 0

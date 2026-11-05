@@ -1,0 +1,17 @@
+{
+  "args": [
+    "--run",
+    "RUN-FIX-1",
+    "--plan",
+    "PLAN-7",
+    "--build-id",
+    "fw-1.4.2",
+    "--environment",
+    "Staging bench"
+  ],
+  "binary": "combine",
+  "expect": {
+    "_no_write": true
+  },
+  "expect_exit": 1
+}

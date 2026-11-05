@@ -1,0 +1,1 @@
+tcms-vv-report: error: invalid metrics JSON: missing field `stability` at line 130 column 1

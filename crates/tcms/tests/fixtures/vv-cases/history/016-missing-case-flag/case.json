@@ -1,0 +1,8 @@
+{
+  "args": [
+    "--root-only-no-case"
+  ],
+  "binary": "history",
+  "expect": null,
+  "expect_exit": 2
+}

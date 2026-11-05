@@ -1,0 +1,20 @@
+type: test_result
+schema: tcms/test-result.schema.v1.json
+test_case_id: TC_B51
+description: generated case
+sequences:
+  - sequence_id: 1
+    name: Generated sequence
+    step_results:
+      - Pass:
+          step: 1
+          description: step 1
+      - Pass:
+          step: 2
+          description: step 2
+    all_steps_passed: true
+total_steps: 2
+passed_steps: 2
+failed_steps: 0
+not_executed_steps: 0
+overall_pass: true

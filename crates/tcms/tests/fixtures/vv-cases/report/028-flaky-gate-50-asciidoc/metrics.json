@@ -1,0 +1,105 @@
+{
+  "run": {
+    "runId": "RUN-06",
+    "startedAt": "2026-10-06T10:00:00Z",
+    "finishedAt": "2026-10-06T11:00:00Z",
+    "provisional": false
+  },
+  "gate": {
+    "gateThresholdPercent": 50,
+    "denominator": 1,
+    "counts": {
+      "passed": 0,
+      "failed": 1,
+      "notExecuted": 0,
+      "skipped": 0
+    },
+    "passRate": {
+      "display": 0,
+      "exact": 0.0
+    },
+    "verdict": "FAILED",
+    "provisional": false,
+    "deltaFromPrevious": -100,
+    "previousRunId": "RUN-05"
+  },
+  "vvRun": {
+    "totalTestCases": 1,
+    "passedTestCases": 0,
+    "vvPassRate": {
+      "display": 0,
+      "exact": 0.0
+    },
+    "totalSteps": 3,
+    "passedSteps": 1,
+    "stepCoverage": {
+      "display": 33,
+      "exact": 33.333333333333336
+    }
+  },
+  "requirements": {
+    "summary": {
+      "total": 1,
+      "covered": 0,
+      "failing": 1,
+      "notRun": 0,
+      "noCases": 0,
+      "withDefect": 0,
+      "openDefects": 0
+    },
+    "items": [
+      {
+        "coverage": "FAILING",
+        "executed": 1,
+        "total": 1,
+        "problemReports": [],
+        "openProblemReports": [],
+        "id": "SUT1-1",
+        "cases": [
+          {
+            "caseId": "TC_FLIP",
+            "status": "FAILED"
+          }
+        ]
+      }
+    ]
+  },
+  "stability": {
+    "flakyThreshold": 4,
+    "flakyCount": 1,
+    "cases": [
+      {
+        "caseId": "TC_FLIP",
+        "stability": "FLAKY",
+        "flips": 5
+      }
+    ]
+  },
+  "failingCases": [
+    {
+      "caseId": "TC_FLIP",
+      "failureStartRunId": "RUN-06"
+    }
+  ],
+  "loadSummary": {
+    "distinctCases": 1,
+    "runsRecorded": 6,
+    "schemaErrorCount": 0,
+    "schemaErrors": []
+  },
+  "generatedAt": "2026-01-01T00:00:00Z",
+  "parameters": {
+    "gateThresholdPercent": {
+      "value": 50,
+      "source": "flag"
+    },
+    "flakyThreshold": {
+      "value": 4,
+      "source": "default"
+    },
+    "stability_window_runs": {
+      "value": 12,
+      "source": "default"
+    }
+  }
+}

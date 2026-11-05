@@ -1,0 +1,1 @@
+error: --gate must be between 50 and 100, got 40

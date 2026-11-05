@@ -1,0 +1,9 @@
+{
+  "args": [
+    "--runs",
+    "many"
+  ],
+  "binary": "trends",
+  "expect": null,
+  "expect_exit": 2
+}

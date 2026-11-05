@@ -1,0 +1,32 @@
+{
+  "args": [
+    "--run",
+    "RUN-FIX-1",
+    "--plan",
+    "PLAN-7",
+    "--build-id",
+    "fw-1.4.2",
+    "--environment",
+    "Staging bench",
+    "--tester",
+    "ci-bot"
+  ],
+  "binary": "combine",
+  "expect": {
+    "build_id": "fw-1.4.2",
+    "environment": "Staging bench",
+    "finished_at": "2026-11-02T07:05:30Z",
+    "plan_id": "PLAN-7",
+    "results": {
+      "TC_P01": "pass",
+      "TC_P02": "pass",
+      "TC_P03": "pass",
+      "TC_P04": "pass",
+      "TC_P05": "pass"
+    },
+    "started_at": "2026-11-02T07:01:00Z",
+    "tester": "ci-bot",
+    "verification_count": 5
+  },
+  "expect_exit": 0
+}

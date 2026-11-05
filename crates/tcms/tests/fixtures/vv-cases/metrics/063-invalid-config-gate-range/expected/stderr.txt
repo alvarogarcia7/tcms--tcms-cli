@@ -1,0 +1,1 @@
+error: ./vv-config.yaml: gate_threshold_percent must be between 50 and 100, got 40

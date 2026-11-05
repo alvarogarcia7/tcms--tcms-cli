@@ -1,0 +1,1 @@
+error: --stability-window must be at least 1

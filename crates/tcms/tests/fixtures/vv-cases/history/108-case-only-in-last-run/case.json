@@ -1,0 +1,22 @@
+{
+  "args": [
+    "--case",
+    "TC_NEW"
+  ],
+  "binary": "history",
+  "expect": [
+    {
+      "runId": "RUN-1",
+      "status": null
+    },
+    {
+      "runId": "RUN-2",
+      "status": null
+    },
+    {
+      "runId": "RUN-3",
+      "status": "FAILED"
+    }
+  ],
+  "expect_exit": 0
+}

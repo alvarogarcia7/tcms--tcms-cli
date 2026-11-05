@@ -1,0 +1,12 @@
+type: test_run
+schema: tcms/test-run.schema.json
+run_id: RUN-03
+build_id: b-1
+environment: Bench A
+tester: tester-1
+started_at: "2026-10-03T10:00:00Z"
+finished_at: "2026-10-03T11:00:00Z"
+plan_id: "PLAN-1"
+results:
+- test_case_id: TC_A
+  verdict: pass

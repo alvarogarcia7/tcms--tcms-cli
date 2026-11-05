@@ -1,0 +1,53 @@
+{
+  "heatmap": {
+    "cases": [
+      {
+        "caseId": "TC_A",
+        "flips": 1,
+        "stability": "FAILING"
+      }
+    ],
+    "flakyCount": 0,
+    "flakyThreshold": 4
+  },
+  "parameters": {
+    "flakyThreshold": {
+      "source": "default",
+      "value": 4
+    },
+    "gateThresholdPercent": {
+      "source": "default",
+      "value": 90
+    },
+    "stability_window_runs": {
+      "source": "default",
+      "value": 12
+    }
+  },
+  "runs": [
+    {
+      "passRate": {
+        "display": 100,
+        "exact": 100.0
+      },
+      "runId": "RUN-1",
+      "startedAt": "2026-10-01T10:00:00Z",
+      "verdict": "PASSED"
+    },
+    {
+      "passRate": null,
+      "runId": "RUN-2",
+      "startedAt": "2026-10-02T10:00:00Z",
+      "verdict": "NO_DATA"
+    },
+    {
+      "passRate": {
+        "display": 0,
+        "exact": 0.0
+      },
+      "runId": "RUN-3",
+      "startedAt": "2026-10-03T10:00:00Z",
+      "verdict": "FAILED"
+    }
+  ]
+}
