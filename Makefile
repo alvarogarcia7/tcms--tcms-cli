@@ -901,6 +901,7 @@ build-acceptance-binaries:
 	@cargo build --package test-executor
 	@cargo build --package verifier
 	@cargo build --package validate-yaml
+	@cargo build --package validate-json
 	@cargo build -p tcms -p jira-client --features mock
 	@echo "✓ All required binaries built successfully"
 	@echo ""
